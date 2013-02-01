@@ -52,7 +52,7 @@ Post conditions
 
 Usage:
 @code
-PYTHONPATH=${PYTHONPATH}:../:../../NHDPlus2Lib:../../SpatialDataLib python2.7 ./GetNHDStreamflowGageIdentifiersAndLocation.py -i macosx2.cfg -p ../../../scratchspace/scratch3 -g 01589330
+python ./GetNHDStreamflowGageIdentifiersAndLocation.py -i macosx2.cfg -p /path/to/project_dir -g 01589330
 @endcode
 """
 import os

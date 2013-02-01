@@ -46,7 +46,7 @@ Post conditions:
 
 Usage:
 @code
-PYTHONPATH=${PYTHONPATH}:../:../../SpatialDataLib python2.7 ./GetBoundingboxFromStudyareaShapefile.py -p ../../../scratchspace/scratch3
+python ./GetBoundingboxFromStudyareaShapefile.py -p /path/to/project_dir
 @endcode
 """
 import os

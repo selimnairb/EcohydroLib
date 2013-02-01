@@ -54,7 +54,7 @@ Post conditions
 
 Usage:
 @code
-PYTHONPATH=${PYTHONPATH}:../:../../SSURGOLib:../../SpatialDataLib:../../NHDPlus2Lib python2.7 ./GetSSURGOFeaturesForBoundingbox.py -i macosx2.cfg -p ../../../scratchspace/scratch3
+python ./GetSSURGOFeaturesForBoundingbox.py -i macosx2.cfg -p /path/to/project_dir
 @encode
 """
 import os

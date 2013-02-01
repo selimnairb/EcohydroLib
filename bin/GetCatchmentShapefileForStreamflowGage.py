@@ -53,7 +53,7 @@ Post conditions
 
 Usage:
 @code
-PYTHONPATH=${PYTHONPATH}:../:../../NHDPlus2Lib:../../SpatialDataLib python2.7 ./GetCatchmentShapefileForStreamflowGage.py -i macosx2.cfg -p ../../../scratchspace/scratch3 -f catchment
+python ./GetCatchmentShapefileForStreamflowGage.py -i macosx2.cfg -p /path/to/project_dir -f catchment
 @endcode
 """
 import os

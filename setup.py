@@ -15,8 +15,7 @@ setup(name='ecohydrologyworkflowlib',
         'License :: OSI Approved :: BSD License',
         'Natural Language :: English',
         'Operating System :: Unix',
-        'Topic :: Scientific/Engineering :: GIS',
-        
+        'Topic :: Scientific/Engineering :: GIS'        
       ],
       url='https://github.com/selimnairb/EcohydrologyWorkflowLib',
       author='Brian Miles',
@@ -32,12 +31,12 @@ setup(name='ecohydrologyworkflowlib',
         'OWSLib',
         'oset'
       ],
-      scripts=['bin/NHDPlusV2Setup/NHDPlusV2Setup',
-               'bin/GetBoundingboxFromStudyareaShapefile',
-               'bin/GetCatchmentShapefileForStreamflowGage',
-               'bin/GetDEMForBoundingbox',
-               'bin/GetNHDStreamflowGageIdentifiersAndLocation',
-               'bin/GetNLCDForBoundingbox',
-               'bin/GetSSURGOFeaturesForBoundingbox'
+      scripts=['bin/NHDPlusV2Setup/NHDPlusV2Setup.py',
+               'bin/GetBoundingboxFromStudyareaShapefile.py',
+               'bin/GetCatchmentShapefileForStreamflowGage.py',
+               'bin/GetDEMForBoundingbox.py',
+               'bin/GetNHDStreamflowGageIdentifiersAndLocation.py',
+               'bin/GetNLCDForBoundingbox.py',
+               'bin/GetSSURGOFeaturesForBoundingbox.py'
       ],
       zip_safe=False)

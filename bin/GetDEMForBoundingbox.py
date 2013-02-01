@@ -55,7 +55,7 @@ Post conditions
 
 Usage:
 @code
-PYTHONPATH=${PYTHONPATH}:../:../../WCS4DEMLib:../../SpatialDataLib python2.7./GetDEMForBoundingbox.py -i macosx2.cfg -t EPSG:26918 -s 3 3 -p ../../../scratchspace/scratch3 -f DEM
+python ./GetDEMForBoundingbox.py -i macosx2.cfg -t EPSG:26918 -s 3 3 -p /path/to/project_dir -f DEM
 @endcode
 """
 import os

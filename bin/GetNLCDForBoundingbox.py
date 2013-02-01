@@ -54,7 +54,7 @@ Post conditions
 
 Usage:
 @code
-PYTHONPATH=${PYTHONPATH}:../:../../SpatialDataLib python2.7 ./GetNLCDForBoundingbox.py -i macosx2.cfg -p ../../../scratchspace/scratch3 -f NLCD
+python ./GetNLCDForBoundingbox.py -i macosx2.cfg -p /path/to/project_dir -f NLCD
 @endcode
 
 @todo Buffer bounding box to ensure full coverage with valid NLCD data
