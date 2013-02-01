@@ -18,7 +18,7 @@ setup(name='ecohydrologyworkflowlib',
         'Topic :: Scientific/Engineering :: GIS',
         
       ],
-      url='http://...',
+      url='https://github.com/selimnairb/EcohydrologyWorkflowLib',
       author='Brian Miles',
       author_email='brian_miles@unc.edu',
       license='BSD',
