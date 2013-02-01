@@ -41,6 +41,13 @@ Introduction
 TODO: WRITE
 
 
+Installation
+------------
+Using Python setuputils:
+
+easy_install --script-dir /path/to/install/scripts ecohydrologyworkflowlib
+
+
 Required runtime software
 -------------------------
 * GDAL/OGR binaries (throughout)
