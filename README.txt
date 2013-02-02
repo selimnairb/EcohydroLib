@@ -47,7 +47,7 @@ Installation
 ------------
 Using Python setuputils:
 
-easy_install --script-dir /path/to/install/scripts ecohydrologyworkflowlib
+easy_install --script-dir /path/to/install/scripts ecohydroworkflowlib
 
 
 Required runtime software
