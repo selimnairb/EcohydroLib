@@ -1,4 +1,3 @@
-include README.rst
-/bin/*.cfg
-docs/*
+include README.txt
+
 
