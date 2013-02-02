@@ -122,7 +122,7 @@ Variables</h2></td></tr>
 <tr class="separator:af9fcd55dea79c6a544ae0c207a4cac46"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8527487942d0447017ce9ceffabba867"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_s_s_u_r_g_o_features_for_boundingbox.html#a8527487942d0447017ce9ceffabba867">shpFilename</a> convertGMLToShapefile(<a class="el" href="namespace_get_s_s_u_r_g_o_features_for_boundingbox.html#adcd011bf6a856a0d04c9f227fba1c17e">config</a>, <a class="el" href="namespace_get_s_s_u_r_g_o_features_for_boundingbox.html#a47fbe82d3b7b145daceb7178a28f7703">projectDir</a>, <a class="el" href="namespace_get_s_s_u_r_g_o_features_for_boundingbox.html#a553d711949cb56e83c74bf1f4bd48538">gmlFilepath</a>, <a class="el" href="namespace_get_s_s_u_r_g_o_features_for_boundingbox.html#af9fcd55dea79c6a544ae0c207a4cac46">layerName</a>, <a class="el" href="namespace_get_s_s_u_r_g_o_features_for_boundingbox.html#a0331b281715fe459381a8823237f1ec6">srs</a>)</td></tr>
 <tr class="separator:a8527487942d0447017ce9ceffabba867"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a47cad49cd16fdfb58b75f6f11c84d9cf"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_s_s_u_r_g_o_features_for_boundingbox.html#a47cad49cd16fdfb58b75f6f11c84d9cf">attrList</a> [elem[:10] for elem in <a class="el" href="namespacessurgolib_1_1attributequery.html#a89f1e067afcccfb502e9bef6d7affa13">ssurgolib.attributequery.attributeListNumeric</a>]</td></tr>
+<tr class="memitem:a47cad49cd16fdfb58b75f6f11c84d9cf"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_s_s_u_r_g_o_features_for_boundingbox.html#a47cad49cd16fdfb58b75f6f11c84d9cf">attrList</a> [elem[:10] for elem in <a class="el" href="namespaceecohydroworkflowlib_1_1ssurgo_1_1attributequery.html#a5bf4a444e3f67e461eba10123f60d50f">ecohydroworkflowlib.ssurgo.attributequery.attributeListNumeric</a>]</td></tr>
 <tr class="separator:a47cad49cd16fdfb58b75f6f11c84d9cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7bda5d856f7a690d2504ffbae43db02a"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_s_s_u_r_g_o_features_for_boundingbox.html#a7bda5d856f7a690d2504ffbae43db02a">rasterFiles</a></td></tr>
 <tr class="separator:a7bda5d856f7a690d2504ffbae43db02a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -151,7 +151,7 @@ Variables</h2></td></tr>
 <li>Will write the following entry(ies) to the manifest section of metadata associated with the project directory: soil_features [the name of the vector file containing the soil features] soil_raster_&lt;attr&gt; [the name of the raster file for each soil property raster]</li>
 </ol>
 <p>Usage: </p>
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;PYTHONPATH=${PYTHONPATH}:../:../../SSURGOLib:../../SpatialDataLib:../../NHDPlus2Lib python2.7 ./GetSSURGOFeaturesForBoundingbox.py -i macosx2.cfg -p ../../../scratchspace/scratch3</div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;python ./GetSSURGOFeaturesForBoundingbox.py -i macosx2.cfg -p /path/to/project_dir</div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;@encode</div>
 </div><!-- fragment --></div><h2 class="groupheader">Variable Documentation</h2>
 <a class="anchor" id="af20a1824b6481f18cccc1c299ecca6eb"></a>
@@ -171,7 +171,7 @@ Variables</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">list GetSSURGOFeaturesForBoundingbox.attrList [elem[:10] for elem in <a class="el" href="namespacessurgolib_1_1attributequery.html#a89f1e067afcccfb502e9bef6d7affa13">ssurgolib.attributequery.attributeListNumeric</a>]</td>
+          <td class="memname">list GetSSURGOFeaturesForBoundingbox.attrList [elem[:10] for elem in <a class="el" href="namespaceecohydroworkflowlib_1_1ssurgo_1_1attributequery.html#a5bf4a444e3f67e461eba10123f60d50f">ecohydroworkflowlib.ssurgo.attributequery.attributeListNumeric</a>]</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -307,7 +307,7 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<b>Initial value:</b><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno"><a class="code" href="namespace_get_s_s_u_r_g_o_features_for_boundingbox.html">    1</a></span>&#160;<a class="code" href="namespacessurgolib_1_1rasterize.html#af8ff142ab308a49c6cac0bbda60d8236" title="Create raster maps, in GeoTIFF format, for SSURGO attributes associated with SSURGO MapunitPoly/Mapun...">rasterizeSSURGOFeatures</a>(config=config, outputDir=projectDir, featureFilename=shpFilename, featureLayername=layerName, \</div>
+<b>Initial value:</b><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno"><a class="code" href="namespace_get_s_s_u_r_g_o_features_for_boundingbox.html">    1</a></span>&#160;<a class="code" href="namespaceecohydroworkflowlib_1_1ssurgo_1_1rasterize.html#af1b8eb408f3df236426c774f5fc5b368" title="Create raster maps, in GeoTIFF format, for SSURGO attributes associated with SSURGO MapunitPoly/Mapun...">rasterizeSSURGOFeatures</a>(config=config, outputDir=projectDir, featureFilename=shpFilename, featureLayername=layerName, \</div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;                                      featureAttrList=attrList, \</div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;                                      rasterResolutionX=outputrasterresolutionX, rasterResolutionY=outputrasterresolutionY)</div>
 </div><!-- fragment -->
@@ -352,7 +352,7 @@ Variables</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 1 2013 16:38:59 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Feb 2 2013 13:27:58 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3
 </small></address>

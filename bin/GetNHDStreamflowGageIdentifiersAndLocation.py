@@ -61,9 +61,9 @@ import errno
 import argparse
 import ConfigParser
 
-import ecohydrologyworkflowlib.metadata as metadata
-from nhdplus2lib.networkanalysis import getNHDReachcodeAndMeasureForGageSourceFea
-from nhdplus2lib.networkanalysis import getLocationForStreamGageByGageSourceFea
+import ecohydroworkflowlib.metadata as metadata
+from ecohydroworkflowlib.nhdplus2.networkanalysis import getNHDReachcodeAndMeasureForGageSourceFea
+from ecohydroworkflowlib.nhdplus2.networkanalysis import getLocationForStreamGageByGageSourceFea
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get NHDPlus2 streamflow gage identifiers for a USGS gage.')

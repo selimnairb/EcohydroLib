@@ -62,8 +62,8 @@ import errno
 import argparse
 import ConfigParser
 
-import ecohydrologyworkflowlib.metadata as metadata
-from nhdplus2lib.networkanalysis import getCatchmentShapefileForGage
+import ecohydroworkflowlib.metadata as metadata
+from ecohydroworkflowlib.nhdplus2.networkanalysis import getCatchmentShapefileForGage
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get shapefile for the drainage area of an NHDPlus2 streamflow gage')

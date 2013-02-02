@@ -41,7 +41,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Usage:
 @code
-python2.7 ./NHDPlusSetup -a  <archive_dir> -o <output_dir>
+python2.7 ./NHDPlusSetup -i <config_file> -a  <archive_dir> -o <output_dir>
+@endcode
 """
 import os
 import sys
@@ -49,17 +50,14 @@ import errno
 import argparse
 import subprocess
 import sqlite3
+import ConfigParser
 
-from DBFLib import dbfreader
+from ecohydroworkflowlib.dbf import dbfreader
 
-PATH_TO_FIND = '/usr/bin/find'
-PATH_TO_SEVEN_ZIP = '/opt/local/bin/7z'
-#PATH_TO_OGR = '/opt/local/bin/ogr2ogr'
-#PATH_TO_OGR = '/Library/Frameworks/GDAL.framework/unix/bin/ogr2ogr'
-PATH_TO_OGR = '/Library/Frameworks/GDAL.framework/Versions/1.9/Programs/ogr2ogr' 
-PATH_TO_SQLITE = '/opt/local/bin/sqlite3'
 
 parser = argparse.ArgumentParser(description='Assemble regional NHDPLus V2 data into a national dataset')
+parser.add_argument('-i', '--configfile', dest='configfile', required=True,
+                    help='The configuration file')
 parser.add_argument('-a', '--archive', dest='archiveDir', 
                     required=True,
                     help='Directory in which to look for NHDPLus V2 .7z archives')
@@ -80,6 +78,27 @@ parser.add_argument('-s4', '--skipGageLoc', dest='skipGageLoc', action='store_tr
                     help='Skip step where GageLoc database is created')
 args = parser.parse_args()
 
+config = ConfigParser.RawConfigParser()
+config.read(args.configfile)
+
+if not config.has_option('GDAL/OGR', 'PATH_OF_OGR2OGR'):
+    sys.exit("Config file %s does not define option %s in section %s" & \
+          (args.configfile, 'GDAL/OGR', 'PATH_OF_OGR2OGR'))
+if not config.has_option('UTIL', 'PATH_OF_FIND'):
+    sys.exit("Config file %s does not define option %s in section %s" & \
+          (args.configfile, 'UTIL', 'PATH_OF_FIND'))
+if not config.has_option('UTIL', 'PATH_OF_SEVEN_ZIP'):
+    sys.exit("Config file %s does not define option %s in section %s" & \
+          (args.configfile, 'UTIL', 'PATH_OF_SEVEN_ZIP'))
+if not config.has_option('UTIL', 'PATH_OF_SQLITE'):
+    sys.exit("Config file %s does not define option %s in section %s" & \
+          (args.configfile, 'UTIL', 'PATH_OF_SQLITE'))
+    
+pathOfOgr = config.get('GDAL/OGR', 'PATH_OF_OGR2OGR')
+pathOfFind = config.get('UTIL', 'PATH_OF_FIND')
+pathOfSevenZip = config.get('UTIL', 'PATH_OF_SEVEN_ZIP')
+pathOfSqlite = config.get('UTIL', 'PATH_OF_SQLITE')
+
 if not os.access(args.archiveDir, os.R_OK):
     raise IOError(errno.EACCES, "Not allowed to read from archive directory %s" %
                   args.archiveDir)
@@ -95,12 +114,12 @@ if not args.skipUnzip:
     print("Unpacking NHDPlus archives into output directory %s" % (args.outputDir,))
 
     # Get a list of zip files
-    zipFiles = subprocess.check_output("%s %s -type f -name *.7z -print" % (PATH_TO_FIND, args.archiveDir,), shell=True).split()
+    zipFiles = subprocess.check_output("%s %s -type f -name *.7z -print" % (pathOfFind, args.archiveDir,), shell=True).split()
 
     # Unpack zip files into output directory
     for file in zipFiles:
         sevenZCommand = "%s x -y -o%s %s" % \
-            (PATH_TO_SEVEN_ZIP, args.outputDir, file)
+            (pathOfSevenZip, args.outputDir, file)
         print sevenZCommand
         returnCode = os.system(sevenZCommand)
         assert(returnCode == 0)
@@ -109,20 +128,20 @@ if not args.skipUnzip:
 if not args.skipGageLoc:
     print("Converting GageLoc shapefile to sqlite database ...")
     gageLocDB = os.path.join(args.outputDir, "GageLoc.sqlite")
-    gageLoc = subprocess.check_output("%s %s -type f -iname GageLoc.shp -print" % (PATH_TO_FIND, args.outputDir,), shell=True).split()
+    gageLoc = subprocess.check_output("%s %s -type f -iname GageLoc.shp -print" % (pathOfFind, args.outputDir,), shell=True).split()
     assert(gageLoc)
     gageLocShp = gageLoc[0]
     assert(os.access(gageLocShp, os.R_OK))
-    ogrCommand = '%s -gt 65536 -f "SQLite" -t_srs "EPSG:4326" %s %s' % (PATH_TO_OGR, gageLocDB, gageLocShp)
+    ogrCommand = '%s -gt 65536 -f "SQLite" -t_srs "EPSG:4326" %s %s' % (pathOfFind, gageLocDB, gageLocShp)
     returnCode = os.system(ogrCommand)
     assert(returnCode == 0) 
     
     # Index fields
-    sqliteCommand = "%s %s 'CREATE INDEX IF NOT EXISTS reachcode_measure_idx on GageLoc (reachcode,measure)'" % (PATH_TO_SQLITE, gageLocDB)
+    sqliteCommand = "%s %s 'CREATE INDEX IF NOT EXISTS reachcode_measure_idx on GageLoc (reachcode,measure)'" % (pathOfSqlite, gageLocDB)
     returnCode = os.system(sqliteCommand)
     assert(returnCode == 0)
     
-    sqliteCommand = "%s %s 'CREATE INDEX IF NOT EXISTS gage_loc_source_fea_idx ON GageLoc (source_fea)'" % (PATH_TO_SQLITE, gageLocDB)
+    sqliteCommand = "%s %s 'CREATE INDEX IF NOT EXISTS gage_loc_source_fea_idx ON GageLoc (source_fea)'" % (pathOfSqlite, gageLocDB)
     returnCode = os.system(sqliteCommand)
     assert(returnCode == 0)
     #cursor.execute("""""")
@@ -138,7 +157,7 @@ if not args.skipCatchment:
         os.remove(conusCatchment)
 
     print("Finding catchment shapefiles")
-    shapefiles = subprocess.check_output("%s %s -type f -iname Catchment.shp -print" % (PATH_TO_FIND, args.outputDir,), shell=True).split()
+    shapefiles = subprocess.check_output("%s %s -type f -iname Catchment.shp -print" % (pathOfFind, args.outputDir,), shell=True).split()
     #print shapefiles
 
     # 3. Intersect all catchment shapefiles into one shapefile for the entire CONUS
@@ -148,7 +167,7 @@ if not args.skipCatchment:
     for file in shapefiles:
         pctComplete = (float(currFile) / float(numFiles)) * 100
         currFile = currFile + 1
-        ogrCommand = '%s -gt 65536 -f "SQLite" -append %s %s' % (PATH_TO_OGR, conusCatchment, file)
+        ogrCommand = '%s -gt 65536 -f "SQLite" -append %s %s' % (pathOfOgr, conusCatchment, file)
         #print ogrCommand
         sys.stdout.write("\r\tProcessing file %d of %d (%.0f%%)" % (currFile, numFiles, pctComplete))
         sys.stdout.flush()
@@ -160,7 +179,7 @@ if not args.skipCatchment:
 
     # 4. Add index to CONUS catchment
     print "Indexing CONUS shapefile (this may take a while) ..."
-    sqliteCommand = "%s %s 'CREATE INDEX IF NOT EXISTS featureid_idx on catchment (featureid)'" % (PATH_TO_SQLITE, conusCatchment)
+    sqliteCommand = "%s %s 'CREATE INDEX IF NOT EXISTS featureid_idx on catchment (featureid)'" % (pathOfSqlite, conusCatchment)
     returnCode = os.system(sqliteCommand)
     assert(returnCode == 0)
 
@@ -325,7 +344,7 @@ if not args.skipDB:
     # Find PlusFlow.dbf files, open each, import into DB
     print("Importing regional PlusFlowlineVAA.dbf records into CONUS database (this will take a while) ...")
     cursor = conn.cursor()
-    dbfs = subprocess.check_output("%s %s -type f -iname PlusFlowlineVAA.dbf -print" % (PATH_TO_FIND, args.outputDir,), shell=True).split()
+    dbfs = subprocess.check_output("%s %s -type f -iname PlusFlowlineVAA.dbf -print" % (pathOfFind, args.outputDir,), shell=True).split()
     numFiles = len(dbfs)
     currFile = 0
     for file in dbfs:
@@ -353,7 +372,7 @@ if not args.skipDB:
     # Find PlusFlow.dbf files, open each, import into DB
     print("Importing regional PlusFlow.dbf records into CONUS database (this will take a while) ...")
     cursor = conn.cursor()
-    dbfs = subprocess.check_output("%s %s -type f -iname PlusFlow.dbf -print" % (PATH_TO_FIND, args.outputDir,), shell=True).split()
+    dbfs = subprocess.check_output("%s %s -type f -iname PlusFlow.dbf -print" % (pathOfFind, args.outputDir,), shell=True).split()
     numFiles = len(dbfs)
     currFile = 0
     for file in dbfs:
@@ -381,7 +400,7 @@ if not args.skipDB:
     # Find NHDReachCode_Comid.dbf files, open each, import into DB    
     print("Importing regional NHDReachCode_Comid.dbf records into CONUS database (this will take a while) ...")
     cursor = conn.cursor()
-    dbfs = subprocess.check_output("%s %s -type f -iname NHDReachCode_Comid.dbf -print" % (PATH_TO_FIND, args.outputDir,), shell=True).split()
+    dbfs = subprocess.check_output("%s %s -type f -iname NHDReachCode_Comid.dbf -print" % (pathOfFind, args.outputDir,), shell=True).split()
     numFiles = len(dbfs)
     currFile = 0
     for file in dbfs:
@@ -409,7 +428,7 @@ if not args.skipDB:
     # Find NHDFlowline.dbf files, open each, import into DB 
     print("Importing regional NHDFlowline.dbf records into CONUS database (this will take a while) ...")
     cursor = conn.cursor()
-    dbfs = subprocess.check_output("%s %s -type f -iname NHDFlowline.dbf -print" % (PATH_TO_FIND, args.outputDir,), shell=True).split()
+    dbfs = subprocess.check_output("%s %s -type f -iname NHDFlowline.dbf -print" % (pathOfFind, args.outputDir,), shell=True).split()
   
     numFiles = len(dbfs)
     currFile = 0
@@ -443,7 +462,7 @@ if not args.skipDB:
     # Find GageLoc.dbf file, import into DB 
     print("Importing national GageLoc.dbf ...")
     cursor = conn.cursor()
-    dbf = subprocess.check_output("%s %s -type f -iname GageLoc.dbf -print" % (PATH_TO_FIND, args.outputDir,), shell=True).split()[0]
+    dbf = subprocess.check_output("%s %s -type f -iname GageLoc.dbf -print" % (pathOfFind, args.outputDir,), shell=True).split()[0]
     assert(dbf)
     print dbf
     f = open(dbf, 'rb')
@@ -462,7 +481,7 @@ if not args.skipDB:
     # Find GageInfo.dbf file, import into DB 
     print("Importing national GageInfo.dbf ...")
     cursor = conn.cursor()
-    dbf = subprocess.check_output("%s %s -type f -iname GageInfo.dbf -print" % (PATH_TO_FIND, args.outputDir,), shell=True).split()[0]
+    dbf = subprocess.check_output("%s %s -type f -iname GageInfo.dbf -print" % (pathOfFind, args.outputDir,), shell=True).split()[0]
     assert(dbf)
     print dbf
     f = open(dbf, 'rb')
@@ -481,7 +500,7 @@ if not args.skipDB:
     # Find Gage_Smooth.DBF file, import into DB 
     print("Importing national Gage_Smooth.DBF ...")
     cursor = conn.cursor()
-    dbf = subprocess.check_output("%s %s -type f -iname Gage_Smooth.DBF -print" % (PATH_TO_FIND, args.outputDir,), shell=True).split()[0]
+    dbf = subprocess.check_output("%s %s -type f -iname Gage_Smooth.DBF -print" % (pathOfFind, args.outputDir,), shell=True).split()[0]
     assert(dbf)
     print dbf
     f = open(dbf, 'rb')

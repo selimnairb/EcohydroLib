@@ -152,7 +152,7 @@ Variables</h2></td></tr>
 <li>Will write the following entry(ies) to the study area section of metadata associated with the project directory: dem_res_x [X resolution of the DEM raster in units of the raster's projection] dem_res_y [Y resolution of the DEM raster in units of the raster's projection] dem_srs [spatial reference system of the DEM, in EPSG:&lt;nnnn&gt; format]</li>
 </ol>
 <p>Usage: </p>
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;PYTHONPATH=${PYTHONPATH}:../:../../WCS4DEMLib:../../SpatialDataLib python2.7./GetDEMForBoundingbox.py -i macosx2.cfg -t EPSG:26918 -s 3 3 -p ../../../scratchspace/scratch3 -f DEM</div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;python ./GetDEMForBoundingbox.py -i macosx2.cfg -t EPSG:26918 -s 3 3 -p /path/to/project_dir -f DEM</div>
 </div><!-- fragment --> </div><h2 class="groupheader">Variable Documentation</h2>
 <a class="anchor" id="a5c75314c1e99b2828165376999c45134"></a>
 <div class="memitem">
@@ -337,7 +337,7 @@ Variables</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 1 2013 16:38:59 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Feb 2 2013 13:27:58 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3
 </small></address>

@@ -53,8 +53,8 @@ import os
 import errno
 import argparse
 
-import ecohydrologyworkflowlib.metadata as metadata
-from spatialdatalib.utils import getBoundingBoxForShapefile
+import ecohydroworkflowlib.metadata as metadata
+from ecohydroworkflowlib.spatialdata.utils import getBoundingBoxForShapefile
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get bounding box from study area shapefile')

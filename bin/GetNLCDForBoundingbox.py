@@ -65,10 +65,10 @@ import errno
 import argparse
 import ConfigParser
 
-import ecohydrologyworkflowlib.metadata as metadata
-from spatialdatalib.utils import extractTileFromRaster
-from spatialdatalib.utils import resampleRaster
-from spatialdatalib.utils import deleteGeoTiff
+import ecohydroworkflowlib.metadata as metadata
+from ecohydroworkflowlib.spatialdata.utils import extractTileFromRaster
+from ecohydroworkflowlib.spatialdata.utils import resampleRaster
+from ecohydroworkflowlib.spatialdata.utils import deleteGeoTiff
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get NLCD data (in GeoTIFF format) for a bounding box from a local copy of the entire NLCD 2006 dataset.')

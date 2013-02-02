@@ -1,4 +1,4 @@
 include README.rst
-*.cfg
+/bin/*.cfg
 docs/*
 

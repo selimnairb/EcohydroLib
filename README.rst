@@ -38,7 +38,9 @@ Lawrence E. Band <lband@email.unc.edu>
 
 Introduction
 ------------
-TODO: WRITE
+TODO: Describe workflow scripts
+
+TODO: Describe task-oriented libraries
 
 
 Installation
@@ -69,7 +71,31 @@ TODO: WRITE
 
 Configuration files
 -------------------
-TODO: WRITE
+Many of the command line scripts require a configuration file to specify locations to
+executables and datasets required by the ecohydrology workflow libraries.  Here is an example
+configuration file:
+
+[GDAL/OGR]
+PATH_OF_OGR2OGR = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/ogr2ogr
+PATH_OF_GDAL_RASTERIZE = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/gdal_rasterize
+PATH_OF_GDAL_WARP = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/gdalwarp
+PATH_OF_GDAL_TRANSLATE = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/gdal_translate
+
+[NHDPLUS2]
+PATH_OF_NHDPLUS2_DB = /Users/<username>/Research/data/GIS/NHDPlusV21/national/NHDPlusDB.sqlite
+PATH_OF_NHDPLUS2_CATCHMENT = /Users/<username>/Research/data/GIS/NHDPlusV21/national/Catchment.sqlite
+PATH_OF_NHDPLUS2_GAGELOC = /Users/<username>/Research/data/GIS/NHDPlusV21/national/GageLoc.sqlite
+
+[SOLIM]
+PATH_OF_SOLIM = /Users/<username>/Research/bin/solim/solim.out
+
+[NLCD]
+PATH_OF_NLCD2006 = /Users/<username>/Research/data/GIS/NLCD2006/nlcd2006/nlcd2006_landcover_4-20-11_se5.img
+
+[UTIL]
+PATH_OF_FIND = /usr/bin/find
+PATH_OF_SEVEN_ZIP = /opt/local/bin/7z
+PATH_OF_SQLITE = /opt/local/bin/sqlite3 
 
 
 How to use - A typical workflow

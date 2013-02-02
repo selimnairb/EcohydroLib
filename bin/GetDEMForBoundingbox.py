@@ -64,10 +64,10 @@ import errno
 import argparse
 import ConfigParser
 
-import ecohydrologyworkflowlib.metadata as metadata
-from wcs4demlib.demquery import getDEMForBoundingBox
-from spatialdatalib.utils import resampleRaster
-from spatialdatalib.utils import deleteGeoTiff
+import ecohydroworkflowlib.metadata as metadata
+from ecohydroworkflowlib.wcs4dem.demquery import getDEMForBoundingBox
+from ecohydroworkflowlib.spatialdata.utils import resampleRaster
+from ecohydroworkflowlib.spatialdata.utils import deleteGeoTiff
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get DEM raster (in GeoTIFF format) for a bounding box from GeoBrain WCS4DEM')

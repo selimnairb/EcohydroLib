@@ -63,11 +63,11 @@ import errno
 import argparse
 import ConfigParser
 
-import ecohydrologyworkflowlib.metadata as metadata
-from spatialdatalib.utils import convertGMLToShapefile
-from ssurgolib.featurequery import getMapunitFeaturesForBoundingBox
-from ssurgolib.rasterize import rasterizeSSURGOFeatures
-import ssurgolib.attributequery     
+import ecohydroworkflowlib.metadata as metadata
+from ecohydroworkflowlib.spatialdata.utils import convertGMLToShapefile
+from ecohydroworkflowlib.ssurgo.featurequery import getMapunitFeaturesForBoundingBox
+from ecohydroworkflowlib.ssurgo.rasterize import rasterizeSSURGOFeatures
+import ecohydroworkflowlib.ssurgo.attributequery     
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get SSURGO features for a bounding box')
@@ -118,7 +118,7 @@ shpFilename = convertGMLToShapefile(config, projectDir, gmlFilepath, layerName, 
 metadata.writeManifestEntry(projectDir, "soil_features", shpFilename)
 
 # Truncate attributes to 10 characters because shapefiles rely on ancient technology
-attrList = [elem[:10] for elem in ssurgolib.attributequery.attributeListNumeric] 
+attrList = [elem[:10] for elem in ecohydroworkflowlib.ssurgo.attributequery.attributeListNumeric] 
 rasterFiles = rasterizeSSURGOFeatures(config=config, outputDir=projectDir, featureFilename=shpFilename, featureLayername=layerName, \
                                       featureAttrList=attrList, \
                                       rasterResolutionX=outputrasterresolutionX, rasterResolutionY=outputrasterresolutionY)
