@@ -280,7 +280,7 @@ if not args.skipDB:
     # Create Gage_Info table
     # Gage_Info.GageID maps to Gage_Loc.Source_Fea
     cursor.execute("""CREATE TABLE IF NOT EXISTS Gage_Info
-    (GageID INTEGER,
+    (GageID TEXT,
     Agency_cd TEXT,
     Station_NM TEXT,
     State_CD TEXT,
@@ -490,10 +490,17 @@ if not args.skipDB:
     records = db[2:]
     for record in records:
         #print record
-        cursor.execute("""INSERT INTO Gage_Info
-    (GageID,Agency_cd,Station_NM,State_CD,State,SiteStatus,DA_SQ_Mile,Lon_Site,Lat_Site,Lon_NHD,Lat_NHD,Reviewed)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
-        (record[0], unicode(record[1], errors='replace'), unicode(record[2], errors='replace'), unicode(record[3], errors='replace'), unicode(record[4], errors='replace'), unicode(record[5], errors='replace'), float(record[6]), float(record[7]), float(record[8]), float(record[9]), float(record[10]), unicode(record[11], errors='replace') ))
+        # Handle presence of undocumented NHD2DAGE_D field (if present)
+        if len(record) > 12:
+            cursor.execute("""INSERT INTO Gage_Info
+        (GageID,Agency_cd,Station_NM,State_CD,State,SiteStatus,DA_SQ_Mile,Lon_Site,Lat_Site,Lon_NHD,Lat_NHD,Reviewed)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (unicode(record[0],errors='replace'), unicode(record[1], errors='replace'), unicode(record[2], errors='replace'), unicode(record[3], errors='replace'), unicode(record[4], errors='replace'), unicode(record[5], errors='replace'), float(record[6]), float(record[7]), float(record[8]), float(record[9]), float(record[10]), unicode(record[12], errors='replace') ))
+        else:
+            cursor.execute("""INSERT INTO Gage_Info
+        (GageID,Agency_cd,Station_NM,State_CD,State,SiteStatus,DA_SQ_Mile,Lon_Site,Lat_Site,Lon_NHD,Lat_NHD,Reviewed)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (unicode(record[0],errors='replace'), unicode(record[1], errors='replace'), unicode(record[2], errors='replace'), unicode(record[3], errors='replace'), unicode(record[4], errors='replace'), unicode(record[5], errors='replace'), float(record[6]), float(record[7]), float(record[8]), float(record[9]), float(record[10]), unicode(record[11], errors='replace') ))
     conn.commit()
     cursor.close()
     
