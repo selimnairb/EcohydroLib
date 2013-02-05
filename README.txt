@@ -1,4 +1,4 @@
-EcohydrologyWorkflowLib
+EcohydrologyWorkflowLib			{#index}
 =======================
 
 This software is provided free of charge under the New BSD License. Please see
@@ -9,12 +9,12 @@ All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
+    - Redistributions of source code must retain the above copyright
       notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
+    - Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
-    * Neither the name of the University of North Carolina at Chapel Hill nor 
+    - Neither the name of the University of North Carolina at Chapel Hill nor 
       the names of its contributors may be used to endorse or promote products
       derived from this software without specific prior written permission.
 
@@ -36,82 +36,153 @@ Brian Miles <brian_miles@unc.edu>
 Lawrence E. Band <lband@email.unc.edu>
 
 
+Funding
+-------
+This work was supported by NSF grant #1239678 EAGER: Collaborative
+Research: Interoperability Testbed-Assessing a Layered Architecture for
+Integration of Existing Capabilities, and NSF grant #0940841 DataNet
+Federation Consortium.
+
+
 Introduction
 ------------
-TODO: Describe workflow scripts
+EcohydrologyWorkflowLib provides a series of Python scripts for performing ecohydrology 
+data preparation workflows.  Workflow sub-components are orchestrated via a metadata 
+persistence store provided by the ecohydroworkflowlib.metadata package.  These scripts are 
+built on top of a series of task-oriented APIs defined in the python package 
+ecohydroworkflowlib.  The workflows provide information needed to run a ecohydrology 
+models, information such as: digital elevation model (DEM), soils, land cover, and 
+vegetation leaf area index (LAI; NOT YET IMPLEMENTED), hydrology/meteorology point
+time series (e.g. streamflow discharge, precipitation, temperature; NOT YET IMPLEMENTED). 
+By default these data are taken from national spatial data infrastructure (NLCD, SSURGO). 
+However it is also possible to register custom datasets with the workflow metadata (NOT 
+YET IMPLEMENTED). 
 
-TODO: Describe task-oriented libraries
+The fundamental operation for any ecohydrology modeling workflow is to define the study
+region of interest (ROI).  In EcohydrologyWorkflowLib the ROI is simply defined as a
+bounding box of WGS84 latitude and longitude coordinates (e.g. coordinates for the upper-
+left and lower-right corners).  The ROI bounding box is derived using catchment polygons
+from the National Hydrography Dataset (NHD).  The user begins by picking a streamflow
+discharge gage listed in the NHD dataset.  EcohydrologyWorkflowLib can then determine
+the stream reaches upstream of the data, and then select the catchment polygons 
+associated with each upstream reach.  From these polygons, the bounding box of the land 
+area draining through the streamflow gage can easily be calculated.
+
+Once the ROI is known, EcohydrologyWorkflowLib can extract datasets (DEM, soils, etc.)
+specific to the study area.  Some of these datasets are extracted from static local copies
+of national spatial data (e.g. NLCD), while other are retrieved via web services 
+interfaces from federal agency data centers (e.g. SSURGO soils data from USDA) or from
+third-party data centers (GeoBrain's DEM Explorer).  However it is also possible for the
+user to upload their own custom data for a given datatype (e.g. local LIDAR-based DEM; NOT
+YET IMPLEMENTED).
 
 
 Installation
 ------------
-Using Python setuputils:
+Using Python PyPi:
 
 easy_install --script-dir /path/to/install/scripts ecohydroworkflowlib
+
+It is recommended that you install the workflow scripts in a location distinct from
+where the Python package will be installed.  This is accomplished by specifying the
+--script-dir option to easy install (see above).  
 
 
 Required runtime software
 -------------------------
-* GDAL/OGR binaries (throughout)
-* Seven Zip binary (NHDPlusV2Setup.py)
-* SQLite3 binary (NHDPlusV2Setup.py)
-* Unix find binary (NHDPlusV2Setup.py)
+- GDAL/OGR binaries (throughout)
+- Seven Zip binary (NHDPlusV2Setup.py)
+- SQLite3 binary, with Spatialite (NHDPlusV2Setup.py)
+- Unix find binary (NHDPlusV2Setup.py)
 
 
 Required data
 -------------
-* NLCD 2006 raster (TODO: add download URL)
-* NHDPlus V2 dataset (TODO: add download URL)
+- NLCD 2006 raster (http://www.mrlc.gov/nlcd06_data.php)
+- NHDPlus V2 dataset (http://www.horizon-systems.com/NHDPlus/NHDPlusV2_home.php)
 
 
 NHDPlus V2 database setup
 -------------------------
-TODO: WRITE
+Before EcohydrologyWorkflowLib is able to extract study area ROI, it is necessary to 
+download and build a custom SQLite3-based implementation of the NHDPlus V2 dataset.
+A script for building the dataset from downloaded NHDPlus V2 7z archives is provided
+in bin/NHDPlusV2Setup/NHDPlusV2Setup.py.  The following NHDPlus V2 datasets are required:
+- NHDPlusV21_NationalData_GageInfo_02.7z
+- NHDPlusV21_NationalData_GageLoc_01.7z
+- NHDPlusV21_NationalData_Gage_Smooth_01.7z
+- NHDPlusV21_??_??_NHDPlusAttributes_??.7z
+- NHDPlusV21_??_??_NHDPlusCatchment_??.7z
+- NHDPlusV21_??_??_NHDSnapshot_??.7z
+
+Note that the NHDPlusAttributes, NHDPlusCatchment, and NHDPlusSnapshot data are released
+as regional subsets (due to the large size and complexity of the data).  NHDPlusV2Setup.py
+can build its NHDPlus SQLite3 databases for any number of regions; all data for the
+desired number of regions will be combined into a single database.
+
+Once you've decided which NHDPlusV2 regions you wish to build a database for, simply 
+download the relevant 7z archives from the NHDPlusV2 web site (see above), and store the
+archives in a single directory.  NHDPlusV2Setup.py will unpack these archives into a 
+specified output location and then will process the unarchived files into the following
+databases:
+- Catchment.sqlite (a spatial dataset containing all catchment polygons in the selected
+NHD region(s);
+- GageLoc.sqlite (a spatial dataset containing streamflow gage points for the national
+NHD dataset;
+- NHDPlusDB.sqlite (a tabular dataset containing other NHD data needed by 
+EcohydrologyWorkflowLib).
+
+For national NHD coverage, Catchment.sqlite is over 8 GB, and NHDPlusDB.sqlite is over 
+2 GB, so you will need a kernel and filesystem that has large file support to build and 
+use these datasets.  Also, it may take over an hour to create these datasets; 8 GB of
+memory or more is recommended to build the datasets efficiently.  However, database setup 
+is a one-time process, and you can use databases created on one machine on other machines,
+provided SQLite3 is installed.  NHDPlusV2Setup.py creates each database with the indices 
+needed by EcohydrologyWorkflowLib, so lookups are very fast.
 
 
 Configuration files
 -------------------
-Many of the command line scripts require a configuration file to specify locations to
-executables and datasets required by the ecohydrology workflow libraries.  Here is an example
-configuration file:
+Many of the command line scripts (including NHDPlusV2Setup.py) require a configuration 
+file to specify locations to executables and datasets required by the ecohydrology 
+workflow libraries.  Here is an example configuration file:
 
-[GDAL/OGR]
-PATH_OF_OGR2OGR = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/ogr2ogr
-PATH_OF_GDAL_RASTERIZE = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/gdal_rasterize
-PATH_OF_GDAL_WARP = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/gdalwarp
-PATH_OF_GDAL_TRANSLATE = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/gdal_translate
-
-[NHDPLUS2]
-PATH_OF_NHDPLUS2_DB = /Users/<username>/Research/data/GIS/NHDPlusV21/national/NHDPlusDB.sqlite
-PATH_OF_NHDPLUS2_CATCHMENT = /Users/<username>/Research/data/GIS/NHDPlusV21/national/Catchment.sqlite
-PATH_OF_NHDPLUS2_GAGELOC = /Users/<username>/Research/data/GIS/NHDPlusV21/national/GageLoc.sqlite
-
-[SOLIM]
-PATH_OF_SOLIM = /Users/<username>/Research/bin/solim/solim.out
-
-[NLCD]
-PATH_OF_NLCD2006 = /Users/<username>/Research/data/GIS/NLCD2006/nlcd2006/nlcd2006_landcover_4-20-11_se5.img
-
-[UTIL]
-PATH_OF_FIND = /usr/bin/find
-PATH_OF_SEVEN_ZIP = /opt/local/bin/7z
-PATH_OF_SQLITE = /opt/local/bin/sqlite3 
+		[GDAL/OGR]
+		PATH_OF_OGR2OGR = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/ogr2ogr
+		PATH_OF_GDAL_RASTERIZE = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/gdal_rasterize
+		PATH_OF_GDAL_WARP = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/gdalwarp
+		PATH_OF_GDAL_TRANSLATE = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/gdal_translate
+		
+		[NHDPLUS2]
+		PATH_OF_NHDPLUS2_DB = /Users/<username>/Research/data/GIS/NHDPlusV21/national/NHDPlusDB.sqlite
+		PATH_OF_NHDPLUS2_CATCHMENT = /Users/<username>/Research/data/GIS/NHDPlusV21/national/Catchment.sqlite
+		PATH_OF_NHDPLUS2_GAGELOC = /Users/<username>/Research/data/GIS/NHDPlusV21/national/GageLoc.sqlite
+		
+		[SOLIM]
+		PATH_OF_SOLIM = /Users/<username>/Research/bin/solim/solim.out
+		
+		[NLCD]
+		PATH_OF_NLCD2006 = /Users/<username>/Research/data/GIS/NLCD2006/nlcd2006/nlcd2006_landcover_4-20-11_se5.img
+		
+		[UTIL]
+		PATH_OF_FIND = /usr/bin/find
+		PATH_OF_SEVEN_ZIP = /opt/local/bin/7z
+		PATH_OF_SQLITE = /opt/local/bin/sqlite3 
 
 
 How to use - A typical workflow
 -------------------------------
-TODO: FINISH
+A typical workflow will consist of runnnig the follow scripts in the following order:
 1. GetNHDStreamflowGageIdentifiersAndLocation.py
-
 2. GetCatchmentShapefileForStreamflowGage.py
-
 3. GetBoundingboxFromStudyAreaShapefile.py
-
 4. GetDEMForBoundingbox.py
-
 5. GetNLCDForBoundingbox.py
-
 6. GetSSURGOFeaturesForBoundingbox.py
 
+It is required that the first 3 steps be run in this order, the remaining workflow 
+components can be run in any order.  Other workflow components, e.g. to register a
+custom dataset, can be substituted for the latter 3 workflow components as well (NOT
+YET IMPLEMENTED).  See the documentation for each script to see invocations details.
 
 

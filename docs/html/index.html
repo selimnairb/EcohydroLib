@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.3"/>
-<title>EcohydroWorkflowLib: Main Page</title>
+<title>EcohydroWorkflowLib: EcohydrologyWorkflowLib</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -77,13 +77,98 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div class="header">
   <div class="headertitle">
-<div class="title">EcohydroWorkflowLib Documentation</div>  </div>
+<div class="title">EcohydrologyWorkflowLib </div>  </div>
 </div><!--header-->
 <div class="contents">
-</div><!-- contents -->
+<div class="textblock"><p>This software is provided free of charge under the New BSD License. Please see the following license information:</p>
+<p>Copyright (c) 2013, University of North Carolina at Chapel Hill All rights reserved.</p>
+<p>Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:</p>
+<ul>
+<li>Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.</li>
+<li>Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.</li>
+<li>Neither the name of the University of North Carolina at Chapel Hill nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.</li>
+</ul>
+<p>THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE UNIVERSITY OF NORTH CAROLINA AT CHAPEL HILL BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
+<h2>Authors</h2>
+<p>Brian Miles <a href="#" onclick="location.href='mai'+'lto:'+'bri'+'an'+'_mi'+'le'+'s@u'+'nc'+'.ed'+'u'; return false;">brian<span style="display: none;">.nosp@m.</span>_mil<span style="display: none;">.nosp@m.</span>es@un<span style="display: none;">.nosp@m.</span>c.ed<span style="display: none;">.nosp@m.</span>u</a> Lawrence E. Band <a href="#" onclick="location.href='mai'+'lto:'+'lba'+'nd'+'@em'+'ai'+'l.u'+'nc'+'.ed'+'u'; return false;">lband<span style="display: none;">.nosp@m.</span>@ema<span style="display: none;">.nosp@m.</span>il.un<span style="display: none;">.nosp@m.</span>c.ed<span style="display: none;">.nosp@m.</span>u</a></p>
+<h2>Funding</h2>
+<p>This work was supported by NSF grant #1239678 EAGER: Collaborative Research: Interoperability Testbed-Assessing a Layered Architecture for Integration of Existing Capabilities, and NSF grant #0940841 DataNet Federation Consortium.</p>
+<h2>Introduction</h2>
+<p>EcohydrologyWorkflowLib provides a series of Python scripts for performing ecohydrology data preparation workflows. Workflow sub-components are orchestrated via a metadata persistence store provided by the <a class="el" href="namespaceecohydroworkflowlib_1_1metadata.html" title="Methods for writing and reading metadata for Ecohydrology workflows.">ecohydroworkflowlib.metadata</a> package. These scripts are built on top of a series of task-oriented APIs defined in the python package ecohydroworkflowlib. The workflows provide information needed to run a ecohydrology models, information such as: digital elevation model (DEM), soils, land cover, and vegetation leaf area index (LAI; NOT YET IMPLEMENTED), hydrology/meteorology point time series (e.g. streamflow discharge, precipitation, temperature; NOT YET IMPLEMENTED). By default these data are taken from national spatial data infrastructure (NLCD, SSURGO). However it is also possible to register custom datasets with the workflow metadata (NOT YET IMPLEMENTED).</p>
+<p>The fundamental operation for any ecohydrology modeling workflow is to define the study region of interest (ROI). In EcohydrologyWorkflowLib the ROI is simply defined as a bounding box of WGS84 latitude and longitude coordinates (e.g. coordinates for the upper- left and lower-right corners). The ROI bounding box is derived using catchment polygons from the National Hydrography Dataset (NHD). The user begins by picking a streamflow discharge gage listed in the NHD dataset. EcohydrologyWorkflowLib can then determine the stream reaches upstream of the data, and then select the catchment polygons associated with each upstream reach. From these polygons, the bounding box of the land area draining through the streamflow gage can easily be calculated.</p>
+<p>Once the ROI is known, EcohydrologyWorkflowLib can extract datasets (DEM, soils, etc.) specific to the study area. Some of these datasets are extracted from static local copies of national spatial data (e.g. NLCD), while other are retrieved via web services interfaces from federal agency data centers (e.g. SSURGO soils data from USDA) or from third-party data centers (GeoBrain's DEM Explorer). However it is also possible for the user to upload their own custom data for a given datatype (e.g. local LIDAR-based DEM; NOT YET IMPLEMENTED).</p>
+<h2>Installation</h2>
+<p>Using Python PyPi:</p>
+<p>easy_install &ndash;script-dir /path/to/install/scripts ecohydroworkflowlib</p>
+<p>It is recommended that you install the workflow scripts in a location distinct from where the Python package will be installed. This is accomplished by specifying the &ndash;script-dir option to easy install (see above).</p>
+<h2>Required runtime software</h2>
+<ul>
+<li>GDAL/OGR binaries (throughout)</li>
+<li>Seven Zip binary (<a class="el" href="_n_h_d_plus_v2_setup_8py.html">NHDPlusV2Setup.py</a>)</li>
+<li>SQLite3 binary, with Spatialite (<a class="el" href="_n_h_d_plus_v2_setup_8py.html">NHDPlusV2Setup.py</a>)</li>
+<li>Unix find binary (<a class="el" href="_n_h_d_plus_v2_setup_8py.html">NHDPlusV2Setup.py</a>)</li>
+</ul>
+<h2>Required data</h2>
+<ul>
+<li>NLCD 2006 raster (<a href="http://www.mrlc.gov/nlcd06_data.php">http://www.mrlc.gov/nlcd06_data.php</a>)</li>
+<li>NHDPlus V2 dataset (<a href="http://www.horizon-systems.com/NHDPlus/NHDPlusV2_home.php">http://www.horizon-systems.com/NHDPlus/NHDPlusV2_home.php</a>)</li>
+</ul>
+<h2>NHDPlus V2 database setup</h2>
+<p>Before EcohydrologyWorkflowLib is able to extract study area ROI, it is necessary to download and build a custom SQLite3-based implementation of the NHDPlus V2 dataset. A script for building the dataset from downloaded NHDPlus V2 7z archives is provided in <a class="el" href="_n_h_d_plus_v2_setup_8py.html">bin/NHDPlusV2Setup/NHDPlusV2Setup.py</a>. The following NHDPlus V2 datasets are required:</p>
+<ul>
+<li>NHDPlusV21_NationalData_GageInfo_02.7z</li>
+<li>NHDPlusV21_NationalData_GageLoc_01.7z</li>
+<li>NHDPlusV21_NationalData_Gage_Smooth_01.7z</li>
+<li>NHDPlusV21_??_??_NHDPlusAttributes_??.7z</li>
+<li>NHDPlusV21_??_??_NHDPlusCatchment_??.7z</li>
+<li>NHDPlusV21_??_??_NHDSnapshot_??.7z</li>
+</ul>
+<p>Note that the NHDPlusAttributes, NHDPlusCatchment, and NHDPlusSnapshot data are released as regional subsets (due to the large size and complexity of the data). <a class="el" href="_n_h_d_plus_v2_setup_8py.html">NHDPlusV2Setup.py</a> can build its NHDPlus SQLite3 databases for any number of regions; all data for the desired number of regions will be combined into a single database.</p>
+<p>Once you've decided which NHDPlusV2 regions you wish to build a database for, simply download the relevant 7z archives from the NHDPlusV2 web site (see above), and store the archives in a single directory. <a class="el" href="_n_h_d_plus_v2_setup_8py.html">NHDPlusV2Setup.py</a> will unpack these archives into a specified output location and then will process the unarchived files into the following databases:</p>
+<ul>
+<li>Catchment.sqlite (a spatial dataset containing all catchment polygons in the selected NHD region(s);</li>
+<li>GageLoc.sqlite (a spatial dataset containing streamflow gage points for the national NHD dataset;</li>
+<li>NHDPlusDB.sqlite (a tabular dataset containing other NHD data needed by EcohydrologyWorkflowLib).</li>
+</ul>
+<p>For national NHD coverage, Catchment.sqlite is over 8 GB, and NHDPlusDB.sqlite is over 2 GB, so you will need a kernel and filesystem that has large file support to build and use these datasets. Also, it may take over an hour to create these datasets; 8 GB of memory or more is recommended to build the datasets efficiently. However, database setup is a one-time process, and you can use databases created on one machine on other machines, provided SQLite3 is installed. <a class="el" href="_n_h_d_plus_v2_setup_8py.html">NHDPlusV2Setup.py</a> creates each database with the indices needed by EcohydrologyWorkflowLib, so lookups are very fast.</p>
+<h2>Configuration files</h2>
+<p>Many of the command line scripts (including <a class="el" href="_n_h_d_plus_v2_setup_8py.html">NHDPlusV2Setup.py</a>) require a configuration file to specify locations to executables and datasets required by the ecohydrology workflow libraries. Here is an example configuration file: </p>
+<pre class="fragment">    [GDAL/OGR]
+    PATH_OF_OGR2OGR = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/ogr2ogr
+    PATH_OF_GDAL_RASTERIZE = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/gdal_rasterize
+    PATH_OF_GDAL_WARP = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/gdalwarp
+    PATH_OF_GDAL_TRANSLATE = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/gdal_translate
+
+    [NHDPLUS2]
+    PATH_OF_NHDPLUS2_DB = /Users/&lt;username&gt;/Research/data/GIS/NHDPlusV21/national/NHDPlusDB.sqlite
+    PATH_OF_NHDPLUS2_CATCHMENT = /Users/&lt;username&gt;/Research/data/GIS/NHDPlusV21/national/Catchment.sqlite
+    PATH_OF_NHDPLUS2_GAGELOC = /Users/&lt;username&gt;/Research/data/GIS/NHDPlusV21/national/GageLoc.sqlite
+
+    [SOLIM]
+    PATH_OF_SOLIM = /Users/&lt;username&gt;/Research/bin/solim/solim.out
+
+    [NLCD]
+    PATH_OF_NLCD2006 = /Users/&lt;username&gt;/Research/data/GIS/NLCD2006/nlcd2006/nlcd2006_landcover_4-20-11_se5.img
+
+    [UTIL]
+    PATH_OF_FIND = /usr/bin/find
+    PATH_OF_SEVEN_ZIP = /opt/local/bin/7z
+    PATH_OF_SQLITE = /opt/local/bin/sqlite3 
+</pre><h2>How to use - A typical workflow</h2>
+<p>A typical workflow will consist of runnnig the follow scripts in the following order:</p>
+<ol type="1">
+<li><a class="el" href="_get_n_h_d_streamflow_gage_identifiers_and_location_8py.html">GetNHDStreamflowGageIdentifiersAndLocation.py</a></li>
+<li><a class="el" href="_get_catchment_shapefile_for_streamflow_gage_8py.html">GetCatchmentShapefileForStreamflowGage.py</a></li>
+<li><a class="el" href="_get_boundingbox_from_studyarea_shapefile_8py.html">GetBoundingboxFromStudyAreaShapefile.py</a></li>
+<li><a class="el" href="_get_d_e_m_for_boundingbox_8py.html">GetDEMForBoundingbox.py</a></li>
+<li><a class="el" href="_get_n_l_c_d_for_boundingbox_8py.html">GetNLCDForBoundingbox.py</a></li>
+<li><a class="el" href="_get_s_s_u_r_g_o_features_for_boundingbox_8py.html">GetSSURGOFeaturesForBoundingbox.py</a></li>
+</ol>
+<p>It is required that the first 3 steps be run in this order, the remaining workflow components can be run in any order. Other workflow components, e.g. to register a custom dataset, can be substituted for the latter 3 workflow components as well (NOT YET IMPLEMENTED). See the documentation for each script to see invocations details. </p>
+</div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Feb 2 2013 13:27:58 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 5 2013 14:15:50 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3
 </small></address>
