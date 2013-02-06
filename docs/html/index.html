@@ -98,10 +98,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <p>The fundamental operation for any ecohydrology modeling workflow is to define the study region of interest (ROI). In EcohydrologyWorkflowLib the ROI is simply defined as a bounding box of WGS84 latitude and longitude coordinates (e.g. coordinates for the upper- left and lower-right corners). The ROI bounding box is derived using catchment polygons from the National Hydrography Dataset (NHD). The user begins by picking a streamflow discharge gage listed in the NHD dataset. EcohydrologyWorkflowLib can then determine the stream reaches upstream of the data, and then select the catchment polygons associated with each upstream reach. From these polygons, the bounding box of the land area draining through the streamflow gage can easily be calculated.</p>
 <p>Once the ROI is known, EcohydrologyWorkflowLib can extract datasets (DEM, soils, etc.) specific to the study area. Some of these datasets are extracted from static local copies of national spatial data (e.g. NLCD), while other are retrieved via web services interfaces from federal agency data centers (e.g. SSURGO soils data from USDA) or from third-party data centers (GeoBrain's DEM Explorer). However it is also possible for the user to upload their own custom data for a given datatype (e.g. local LIDAR-based DEM; NOT YET IMPLEMENTED).</p>
 <div class="image">
-<img src="../RHESSysWorkflowImpl-20130205.png"  alt="Fig. 1 Ecohydrology model data preparation workflow software stack"/>
-</div>
-<p> Fig. 1 Ecohydrology model data preparation workflow software stack depicting EcohydroWorkflowLib's role as an intermediary between raw data, derived data subsets, and specific ecohydrology models.</p>
-<h2>Installation</h2>
+<img src="RHESSysWorkflowImpl-20130205.png" alt="RHESSysWorkflowImpl-20130205.png"/>
+<div class="caption">
+Fig. 1 Ecohydrology model data preparation workflow software stack depicting EcohydroWorkflowLib's role as an intermediary between raw data, derived data subsets, and specific ecohydrology models</div></div>
+ <h2>Installation</h2>
 <p>Using Python PyPi:</p>
 <p>easy_install &ndash;script-dir /path/to/install/scripts ecohydroworkflowlib</p>
 <p>It is recommended that you install the workflow scripts in a location distinct from where the Python package will be installed. This is accomplished by specifying the &ndash;script-dir option to easy install (see above).</p>
@@ -172,7 +172,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Feb 6 2013 10:37:13 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Feb 6 2013 10:47:28 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3
 </small></address>
