@@ -52,6 +52,8 @@ Post conditions
    dem_res_x [X resolution of the DEM raster in units of the raster's projection]
    dem_res_y [Y resolution of the DEM raster in units of the raster's projection]
    dem_srs [spatial reference system of the DEM, in EPSG:<nnnn> format]
+   dem_columns [number of pixels in the X direction]
+   dem_rows [number of pixels in the Y direction]
 
 Usage:
 @code
@@ -67,6 +69,7 @@ import ConfigParser
 import ecohydroworkflowlib.metadata as metadata
 from ecohydroworkflowlib.wcs4dem.demquery import getDEMForBoundingBox
 from ecohydroworkflowlib.spatialdata.utils import resampleRaster
+from ecohydroworkflowlib.spatialdata.utils import getDimensionsForRaster
 from ecohydroworkflowlib.spatialdata.utils import deleteGeoTiff
 
 # Handle command line options
@@ -126,6 +129,12 @@ metadata.writeManifestEntry(projectDir, "dem", demFilename)
 metadata.writeStudyAreaEntry(projectDir, "dem_res_x", outputrasterresolutionX)
 metadata.writeStudyAreaEntry(projectDir, "dem_res_y", outputrasterresolutionY)
 metadata.writeStudyAreaEntry(projectDir, "dem_srs", args.t_srs)
+
+# Get rows and columns for resampled DEM
+demFilepath = os.path.join(projectDir, demFilename)
+(columns, rows) = getDimensionsForRaster(demFilepath)
+metadata.writeStudyAreaEntry(projectDir, "dem_columns", columns)
+metadata.writeStudyAreaEntry(projectDir, "dem_rows", rows)
 
 # Clean-up
 tmpDEMFilepath = os.path.join(projectDir, tmpDEMFilename)

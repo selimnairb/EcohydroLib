@@ -424,3 +424,29 @@ def getSpatialReferenceForRaster(filename):
                 linearUnitsConversionFactor = hSRS.GetLinearUnits()
             
     return (pixelWidth, pixelHeight, linearUnitsName, linearUnitsConversionFactor, pszProjection)
+
+def getDimensionsForRaster(filename):
+    """!Get number of columns and rows for raster.  Uses GDAL library
+        Code adapted from: http://svn.osgeo.org/gdal/trunk/gdal/swig/python/samples/gdalinfo.py
+        
+        @param filename String representing the DEM file to read pixel size and units
+        
+        @return A tuple of the form: 
+        (columns, rows) or None if raster could not be opened
+        
+        @exception IOError if filename is not readable
+    """
+    columns = None
+    rows = None
+    
+    if not os.access(filename, os.R_OK):
+        raise IOError(errno.EACCES, "Not allowed to read DEM %s to read number of columns and rows" %
+                      filename)
+    
+    hDataset = gdal.Open(filename, gdal.GA_ReadOnly)
+
+    if hDataset is not None:
+        columns = hDataset.RasterXSize
+        rows = hDataset.RasterYSize
+            
+    return (columns, rows)
