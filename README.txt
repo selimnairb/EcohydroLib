@@ -168,7 +168,7 @@ workflow libraries.  Here is an example configuration file:
 		PATH_OF_NLCD2006 = /Users/<username>/Research/data/GIS/NLCD2006/nlcd2006/nlcd2006_landcover_4-20-11_se5.img
 		
 		[HYDRO1k]
-		PATH_OF_HYDRO1K_DEM = /Users/miles/Research/data/GIS/HYDRO1k/na/na_dem.bil
+		PATH_OF_HYDRO1K_DEM = /Users/<username>/Research/data/GIS/HYDRO1k/na/na_dem.bil
 		
 		[UTIL]
 		PATH_OF_FIND = /usr/bin/find
