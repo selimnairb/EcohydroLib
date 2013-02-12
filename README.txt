@@ -101,6 +101,7 @@ Required runtime software
 Required data
 -------------
 - NLCD 2006 raster (http://www.mrlc.gov/nlcd06_data.php)
+- HYDRO1k North America dataset (http://eros.usgs.gov/#/Find_Data/Products_and_Data_Available/gtopo30/hydro/namerica)
 - NHDPlus V2 dataset (http://www.horizon-systems.com/NHDPlus/NHDPlusV2_home.php)
 
 
@@ -166,6 +167,9 @@ workflow libraries.  Here is an example configuration file:
 		[NLCD]
 		PATH_OF_NLCD2006 = /Users/<username>/Research/data/GIS/NLCD2006/nlcd2006/nlcd2006_landcover_4-20-11_se5.img
 		
+		[HYDRO1k]
+		PATH_OF_HYDRO1K_DEM = /Users/miles/Research/data/GIS/HYDRO1k/na/na_dem.bil
+		
 		[UTIL]
 		PATH_OF_FIND = /usr/bin/find
 		PATH_OF_SEVEN_ZIP = /opt/local/bin/7z
@@ -178,13 +182,13 @@ A typical workflow will consist of runnnig the follow scripts in the following o
 1. GetNHDStreamflowGageIdentifiersAndLocation.py
 2. GetCatchmentShapefileForStreamflowGage.py
 3. GetBoundingboxFromStudyAreaShapefile.py
-4. GetDEMForBoundingbox.py
+4. GetDEMExplorerDEMForBoundingbox.py or GetHYDRO1kDEMForBoundingbox.py
 5. GetNLCDForBoundingbox.py
 6. GetSSURGOFeaturesForBoundingbox.py
 
-It is required that the first 3 steps be run in this order, the remaining workflow 
+It is required that the first 4 steps be run in this order, the remaining workflow 
 components can be run in any order.  Other workflow components, e.g. to register a
-custom dataset, can be substituted for the latter 3 workflow components as well (NOT
+custom dataset, can be substituted for the latter 4 workflow components as well (NOT
 YET IMPLEMENTED).  See the documentation for each script to see invocations details.
 
 

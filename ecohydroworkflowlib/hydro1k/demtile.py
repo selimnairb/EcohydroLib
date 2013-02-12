@@ -1,6 +1,6 @@
-"""!@package ecohydroworkflowlib.wcs4dem.demquery
+"""!@package ecohydroworkflowlib.hydro1k.demtile
     
-@brief Query NASA EOS Education Alliance (NEHEA) GeoBrain for DEM data
+@brief Extract tile for HYDRO1k digital elevation model (DEM) stored locally
 
 This software is provided free of charge under the New BSD License. Please see
 the following license information:
@@ -34,40 +34,30 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 @author Brian Miles <brian_miles@unc.edu>
 """
 import os, errno
-import httplib
 
+from ecohydroworkflowlib.spatialdata.utils import extractTileFromRaster
 from ecohydroworkflowlib.spatialdata.utils import deleteGeoTiff
 
-SUPPORTED_COVERAGE = ['SRTM_30m_USA', 'SRTM_90m_Global', 'GTOPO_30arc_Global']
-SUPPORTED_FORMATS = ['image/geotiff', 'image/netcdf', 'image/PNG', 'image/JPEG', 'image/JPEG2000', 'image/HDF4IMAGE']
 
-# Example URL /cgi-bin/gbwcs-dem?service=wcs&version=1.0.0&request=getcoverage&coverage=SRTM_90m_Global&bbox=-90,38,-89,39&crs=epsg:4326&format=image/geotiff&store=true
-HOST = 'geobrain.laits.gmu.edu'
-URL_PROTO = '/cgi-bin/gbwcs-dem?service=wcs&version=1.0.0&request=getcoverage&coverage={coverage}&crs={crs}&bbox={bbox}&response_crs={response_crs}&format={format}&store={store}'
+DEFAULT_CRS = 'EPSG:2163' # spatial reference of HYDRO1k North America
 
-_DEFAULT_CRS = 'EPSG:4326'
-_BUFF_LEN = 4096 * 10
+def getDEMForBoundingBox(config, outputDir, outDEMFilename, bbox, srs='EPSG:4326', overwrite=True):
+    """!Extract tile of HYDRO1k digital elevation model (DEM) for bounding box.
     
-
-def getDEMForBoundingBox(config, outputDir, outDEMFilename, bbox, coverage='SRTM_30m_USA', srs='EPSG:4326', format='image/geotiff', overwrite=True):
-    """!Fetch a digital elevation model (DEM) from the GeoBrain WCS4DEM WCS-compliant web service.
-    
+        @param config Python ConfigParser containing the following sections and options:
+            'GDAL/OGR', 'PATH_OF_GDAL_TRANSLATE'
+            'HYDRO1k', 'PATH_OF_HYDRO1k_DEM'
         @param outputDir String representing the absolute/relative path of the directory into which output DEM should be written
         @param outDEMFilename String representing the name of the DEM file to be written
         @param bbox Dict representing the lat/long coordinates and spatial reference of the bounding box area
             for which the DEM is to be extracted.  The following keys must be specified: minX, minY, maxX, maxY, srs.
-        @param coverage String representing the DEM source from which to get the DEM coverage.  Must be a value listed in SUPPORTED_COVERAGE
         @param srs String representing the spatial reference of the raster to be returned.
-        @param format String representing the MIME type of the raster format to be returned.  Must be a value listed in 
-            SUPPORTED_FORMATS
         @param overwrite Boolean value indicating whether or not the file indicated by filename should be overwritten.
             If False and filename exists, IOError exception will be thrown with errno.EEXIST
     
-        @return True if DEM data were fetched and False if not.
+        @return True if DEM tile was created and False if not.
     """
-    dataFetched = False
-    assert(format in SUPPORTED_FORMATS)
-    assert(coverage in SUPPORTED_COVERAGE)
+    tileCreated = False
     assert('minX' in bbox)
     assert('minY' in bbox)
     assert('maxX' in bbox)
@@ -88,29 +78,14 @@ def getDEMForBoundingBox(config, outputDir, outDEMFilename, bbox, coverage='SRTM
         else:
             raise IOError(errno.EEXIST, "DEM file %s already exists" % outDEMFilepath)
     
-    crs = bbox['srs']
-    bboxStr = "%f,%f,%f,%f" % (bbox['minX'], bbox['minY'], bbox['maxX'], bbox['maxY'])
- 
-    url = URL_PROTO.format(coverage=coverage, crs=crs, bbox=bboxStr, response_crs=srs, format=format, store=False)
-    #print "WCS4DEM URL: %s" % (url,)
+    hydro1kDEMFilePath = config.get('HYDRO1k', 'PATH_OF_HYDRO1k_DEM')
+    if not os.access(hydro1kDEMFilePath, os.R_OK):
+        raise IOError(errno.EACCES, "Unable to read HYDRO1k DEM located at %s" % (hydro1kDEMFilePath,))
     
-    conn = httplib.HTTPConnection(HOST)
-    conn.request('GET', url)
-    res = conn.getresponse(buffering=True)
-    #sys.stderr.write("WCS4DEMLib URL: http://%s%s\n" % (HOST, url))
-    #sys.stderr.write("HTTP response: %s %s\n" % (res.status, httplib.responses[int(res.status)]))
-    assert(200 == res.status)
+    extractTileFromRaster(config, outputDir, hydro1kDEMFilePath, outDEMFilepath, bbox)
+    tileCreated = os.path.exists(outDEMFilepath)
     
-    data = res.read(_BUFF_LEN)
-    if data: 
-        demOut = open(outDEMFilepath, 'wb')
-        dataFetched = True
-        while data:
-            demOut.write(data)
-            data = res.read(_BUFF_LEN)
-        demOut.close()
-        
-    return dataFetched
+    return tileCreated
 
     
     

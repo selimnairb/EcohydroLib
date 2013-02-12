@@ -57,7 +57,7 @@ Post conditions
 
 Usage:
 @code
-python ./GetDEMForBoundingbox.py -i macosx2.cfg -t EPSG:26918 -s 3 3 -p /path/to/project_dir -f DEM
+python ./GetDEMExplorerDEMForBoundingbox.py -i macosx2.cfg -t EPSG:26918 -s 3 3 -p /path/to/project_dir -f DEM
 @endcode
 """
 import os
@@ -107,6 +107,12 @@ if not os.access(projectDir, os.W_OK):
                   projectDir)
 projectDir = os.path.abspath(projectDir)
 
+demFilename = "%s.tif" % (args.outfile)
+# Overwrite DEM if already present
+demFilepath = os.path.join(projectDir, demFilename)
+if os.path.exists(demFilepath):
+    os.unlink(demFilepath)
+
 # Get study area parameters
 studyArea = metadata.readStudyAreaEntries(projectDir)
 bbox = studyArea['bbox_wgs84'].split()
@@ -121,7 +127,6 @@ returnCode = getDEMForBoundingBox(projectDir, tmpDEMFilename, bbox=bbox, srs=arg
 assert(returnCode)
 
 # Resample DEM to target srs and resolution
-demFilename = "%s.tif" % (args.outfile)
 resampleRaster(config, projectDir, tmpDEMFilename, demFilename, \
                s_srs=args.t_srs, t_srs=args.t_srs, \
                trX=outputrasterresolutionX, trY=outputrasterresolutionY)

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">EcohydroWorkflowLib
-   &#160;<span id="projectnumber">0.9</span>
+   &#160;<span id="projectnumber">0.92</span>
    </div>
   </td>
  </tr>
@@ -115,6 +115,7 @@ Fig. 1 Ecohydrology model data preparation workflow software stack depicting Eco
 <h2>Required data</h2>
 <ul>
 <li>NLCD 2006 raster (<a href="http://www.mrlc.gov/nlcd06_data.php">http://www.mrlc.gov/nlcd06_data.php</a>)</li>
+<li>HYDRO1k North America dataset (<a href="http://eros.usgs.gov/#/Find_Data/Products_and_Data_Available/gtopo30/hydro/namerica">http://eros.usgs.gov/#/Find_Data/Products_and_Data_Available/gtopo30/hydro/namerica</a>)</li>
 <li>NHDPlus V2 dataset (<a href="http://www.horizon-systems.com/NHDPlus/NHDPlusV2_home.php">http://www.horizon-systems.com/NHDPlus/NHDPlusV2_home.php</a>)</li>
 </ul>
 <h2>NHDPlus V2 database setup</h2>
@@ -154,6 +155,9 @@ Fig. 1 Ecohydrology model data preparation workflow software stack depicting Eco
     [NLCD]
     PATH_OF_NLCD2006 = /Users/&lt;username&gt;/Research/data/GIS/NLCD2006/nlcd2006/nlcd2006_landcover_4-20-11_se5.img
 
+    [HYDRO1k]
+    PATH_OF_HYDRO1K_DEM = /Users/miles/Research/data/GIS/HYDRO1k/na/na_dem.bil
+
     [UTIL]
     PATH_OF_FIND = /usr/bin/find
     PATH_OF_SEVEN_ZIP = /opt/local/bin/7z
@@ -164,15 +168,15 @@ Fig. 1 Ecohydrology model data preparation workflow software stack depicting Eco
 <li><a class="el" href="_get_n_h_d_streamflow_gage_identifiers_and_location_8py.html">GetNHDStreamflowGageIdentifiersAndLocation.py</a></li>
 <li><a class="el" href="_get_catchment_shapefile_for_streamflow_gage_8py.html">GetCatchmentShapefileForStreamflowGage.py</a></li>
 <li><a class="el" href="_get_boundingbox_from_studyarea_shapefile_8py.html">GetBoundingboxFromStudyAreaShapefile.py</a></li>
-<li><a class="el" href="_get_d_e_m_for_boundingbox_8py.html">GetDEMForBoundingbox.py</a></li>
+<li><a class="el" href="_get_d_e_m_explorer_d_e_m_for_boundingbox_8py.html">GetDEMExplorerDEMForBoundingbox.py</a> or <a class="el" href="_get_h_y_d_r_o1k_d_e_m_for_boundingbox_8py.html">GetHYDRO1kDEMForBoundingbox.py</a></li>
 <li><a class="el" href="_get_n_l_c_d_for_boundingbox_8py.html">GetNLCDForBoundingbox.py</a></li>
 <li><a class="el" href="_get_s_s_u_r_g_o_features_for_boundingbox_8py.html">GetSSURGOFeaturesForBoundingbox.py</a></li>
 </ol>
-<p>It is required that the first 3 steps be run in this order, the remaining workflow components can be run in any order. Other workflow components, e.g. to register a custom dataset, can be substituted for the latter 3 workflow components as well (NOT YET IMPLEMENTED). See the documentation for each script to see invocations details. </p>
+<p>It is required that the first 4 steps be run in this order, the remaining workflow components can be run in any order. Other workflow components, e.g. to register a custom dataset, can be substituted for the latter 4 workflow components as well (NOT YET IMPLEMENTED). See the documentation for each script to see invocations details. </p>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Feb 6 2013 10:47:28 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Feb 11 2013 22:58:43 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3
 </small></address>
