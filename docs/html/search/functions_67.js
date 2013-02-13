@@ -1,6 +1,7 @@
 var searchData=
 [
   ['getboundingboxforcatchmentsforgage',['getBoundingBoxForCatchmentsForGage',['../namespaceecohydroworkflowlib_1_1nhdplus2_1_1networkanalysis.html#ae1c3ad73c81f5da74d0733f966de01ab',1,'ecohydroworkflowlib::nhdplus2::networkanalysis']]],
+  ['getboundingboxforraster',['getBoundingBoxForRaster',['../namespaceecohydroworkflowlib_1_1spatialdata_1_1utils.html#a173bcb84b1ec258d0bd6dc0919ed484d',1,'ecohydroworkflowlib::spatialdata::utils']]],
   ['getboundingboxforshapefile',['getBoundingBoxForShapefile',['../namespaceecohydroworkflowlib_1_1spatialdata_1_1utils.html#ab6bb74c6871cb06af14783e9cbe604db',1,'ecohydroworkflowlib::spatialdata::utils']]],
   ['getcatchmentshapefileforgage',['getCatchmentShapefileForGage',['../namespaceecohydroworkflowlib_1_1nhdplus2_1_1networkanalysis.html#a121afe0f50a23c6fbebbaa1fed673ed5',1,'ecohydroworkflowlib::nhdplus2::networkanalysis']]],
   ['getcomidforstreamgage',['getComIdForStreamGage',['../namespaceecohydroworkflowlib_1_1nhdplus2_1_1networkanalysis.html#a9b2ce3fd86e96fbfe9603a95a9d615c5',1,'ecohydroworkflowlib::nhdplus2::networkanalysis']]],

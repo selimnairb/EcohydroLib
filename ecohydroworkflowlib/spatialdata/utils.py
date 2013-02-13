@@ -52,6 +52,8 @@ SHP_MINY = 2
 SHP_MAXY = 3
 
 RASTER_RESAMPLE_METHOD = ['near', 'bilinear', 'cubic', 'cubicspline', 'lanczos']
+WGS84_EPSG = 4326
+WGS84_EPSG_STR = "EPSG:4326"
 
 
 def transformCoordinates(sourceX, sourceY, t_srs, s_srs="EPSG:4326"):
@@ -146,7 +148,7 @@ def resampleRaster(config, outputDir, inRasterFilename, outRasterFilename, \
     """
     gdalCmdPath = config.get('GDAL/OGR', 'PATH_OF_GDAL_WARP')
     if not os.access(gdalCmdPath, os.X_OK):
-        raise IOError(errno.EACCES, "The gdal_rasterize binary at %s is not executable" %
+        raise IOError(errno.EACCES, "The gdalwarp binary at %s is not executable" %
                       gdalCmdPath)
     gdalCmdPath = os.path.abspath(gdalCmdPath)
     
@@ -371,7 +373,7 @@ def getMeterConversionFactorForLinearUnitOfGMLfile(gmlFilename):
 def getMeterConversionFactorForLinearUnitOfShapefile(shpFilename):
     """!Get conversion factor for converting a shapefile's linear unit into meters
     
-        @param shpFilename String representing the shapefile
+        @param shpFilename String representing the name of the shapefile
         
         @return Float representing the conversion factor
     
@@ -394,7 +396,7 @@ def getSpatialReferenceForRaster(filename):
         @param filename String representing the DEM file to read pixel size and units
         
         @return A tuple of the form: 
-        (pixelWidth, pixelHeight, linearUnitsName, linearUnitsConversionFactor, WKT SRS string)
+        (pixelWidth, pixelHeight, linearUnitsName, linearUnitsConversionFactor, WKT SRS string, EPSG SRS string)
         
         @exception IOError if filename is not readable
     """
@@ -422,8 +424,10 @@ def getSpatialReferenceForRaster(filename):
             if hSRS.ImportFromWkt(pszProjection) == gdal.CE_None:
                 linearUnitsName = hSRS.GetLinearUnitsName()
                 linearUnitsConversionFactor = hSRS.GetLinearUnits()
-            
-    return (pixelWidth, pixelHeight, linearUnitsName, linearUnitsConversionFactor, pszProjection)
+        
+        epsgStr = "%s:%s" % ( hSRS.GetAttrValue("AUTHORITY", 0), hSRS.GetAttrValue("AUTHORITY", 1) )
+    return (pixelWidth, pixelHeight, linearUnitsName, linearUnitsConversionFactor, pszProjection, epsgStr)
+
 
 def getDimensionsForRaster(filename):
     """!Get number of columns and rows for raster.  Uses GDAL library
@@ -450,3 +454,158 @@ def getDimensionsForRaster(filename):
         rows = hDataset.RasterYSize
             
     return (columns, rows)
+
+
+def getBoundingBoxForRaster(filename):
+    """!Return the bounding box, in WGS84 (EPSG:4326) coordinates, for the raster dateset.  
+        Assumes raster exists and is readable.
+        Code adapted from: http://svn.osgeo.org/gdal/trunk/gdal/swig/python/samples/gdalinfo.py
+        
+        @param filename String representing the DEM file to read pixel size and units
+        
+        @return A tuple of the form: 
+        (columns, rows) or None if raster could not be opened
+        
+        @exception IOError if filename is not readable
+        @exception Exception if raster dataset failed to open
+    """
+    
+    if not os.access(filename, os.R_OK):
+        raise IOError(errno.EACCES, "Not allowed to read DEM %s to determine bounding box" %
+                      filename)
+    
+    hDataset = gdal.Open(filename, gdal.GA_ReadOnly)
+
+    if hDataset is None:
+        raise Exception("Unable to open raster dataset")
+    
+    # Setup for translating from pixels to coordinates
+    pszProjection = hDataset.GetProjectionRef()
+    assert(pszProjection is not None)
+    hProj = osr.SpatialReference(pszProjection)
+    assert(hProj is not None)
+    hLatLong = osr.SpatialReference()
+    hLatLong.ImportFromEPSG(WGS84_EPSG)
+    hTransform = osr.CoordinateTransformation( hProj, hLatLong )
+    adfGeoTransform = hDataset.GetGeoTransform(can_return_null = True)
+    assert(adfGeoTransform is not None)
+
+    (minX, maxY) = _transformPixelsToCoordinates(hDataset, hTransform, adfGeoTransform,
+                                                 0, 0)
+    (maxX, minY) = _transformPixelsToCoordinates(hDataset, hTransform, adfGeoTransform,
+                                                 hDataset.RasterXSize, hDataset.RasterYSize)
+
+    return dict({'minX': float(minX), 'minY': float(minY), 'maxX': float(maxX), 'maxY': float(maxY), 'srs': 'EPSG:4326'})
+
+
+def writeBboxPolygonToShapefile(bbox, outputDir, layerName):
+    """!Write bbox to a shapfile
+    
+        @param bbox A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
+        @param outputDir String representing the absolute/relative path of the directory into which shapefile should be written
+        @param layerName String representing the name of the layer. Will be used as root of filename of output shapefile
+        @return String representing the name of shapefile created (not the absolute path)
+        
+        @raise Exception if shapefile already exists
+        @raise Exception is failed to create shapefile
+    """
+    pszDriverName = "ESRI Shapefile"
+    shpFilename = "%s%sshp" % (layerName, os.extsep)
+    
+    if not os.path.isdir(outputDir):
+        raise IOError(errno.ENOTDIR, "Output directory %s is not a directory" % (outputDir,))
+    if not os.access(outputDir, os.W_OK):
+        raise IOError(errno.EACCES, "Not allowed to write to output directory %s" % (outputDir,))
+    outputDir = os.path.abspath(outputDir)
+    
+    shpFilepath = os.path.join(outputDir, shpFilename)
+    if os.path.exists(shpFilepath):
+        raise Exception("Shapefile %s already exists in directory %s" % \
+                        (shpFilename,outputDir) )
+    
+    ogr.UseExceptions()
+    srs = osr.SpatialReference()
+    srs.ImportFromEPSG(WGS84_EPSG)
+    hDriver = ogr.GetDriverByName(pszDriverName)
+    assert(hDriver is not None)
+    hDS = hDriver.CreateDataSource(shpFilepath)
+    assert(hDS is not None)
+    hLayer = hDS.CreateLayer(layerName, geom_type=ogr.wkbPolygon)
+    assert(hLayer is not None)
+    hFeature = ogr.Feature(hLayer.GetLayerDefn())
+    ring = ogr.Geometry(type=ogr.wkbLinearRing)
+    ring.AddPoint(bbox['minX'], bbox['minY'])
+    ring.AddPoint(bbox['minX'], bbox['maxY'])
+    ring.AddPoint(bbox['maxX'], bbox['maxY'])
+    ring.AddPoint(bbox['maxX'], bbox['minY'])
+    poly = ogr.Geometry(type=ogr.wkbPolygon)
+    poly.AssignSpatialReference(srs)
+    poly.AddGeometry(ring)
+    hFeature.SetGeometry(poly)
+    if hLayer.CreateFeature(hFeature) != 0:
+        raise Exception("Failed to create shapefile for bounding box")
+    # Clean-up
+    hFeature.Destroy()
+    hDS.Destroy()
+    
+    return shpFilename
+
+
+def copyRasterToGeoTIFF(config, outputDir, inRasterPath, outRasterName):
+    """!Copy input raster from a location outside of outputDir to a GeoTIFF format raster stored in outputDir
+    
+        @param config A Python ConfigParser containing the section 'GDAL/OGR' and option 'PATH_OF_GDAL_TRANSLATE'
+        @param outputDir String representing the absolute/relative path of the directory into which shapefile should be written
+        @param inRasterPath String representing path of input raster
+        @param outRasterName String representing name of output raster to be stored in outputDir
+        
+        @raise IOError if gdal_translate binary is not found/executable
+        @raise IOError if output directory does not exist or not writable
+        @raise IOError if input raster is not readable
+    """
+    gdalCmdPath = config.get('GDAL/OGR', 'PATH_OF_GDAL_TRANSLATE')
+    if not os.access(gdalCmdPath, os.X_OK):
+        raise IOError(errno.EACCES, "The gdal_translate binary at %s is not executable" %
+                      gdalCmdPath)
+    gdalCmdPath = os.path.abspath(gdalCmdPath)
+    
+    if not os.path.isdir(outputDir):
+        raise IOError(errno.ENOTDIR, "Output directory %s is not a directory" % (outputDir,))
+    if not os.access(outputDir, os.W_OK):
+        raise IOError(errno.EACCES, "Not allowed to write to output directory %s" % (outputDir,))
+    outputDir = os.path.abspath(outputDir)
+    
+    if not os.access(inRasterPath, os.R_OK):
+        raise IOError(errno.EACCES, "Not allowed to read input raster %s" (inRasterPath,))
+    
+    outRasterPath = os.path.join(outputDir, outRasterName)
+    
+    gdalCommand = "%s -q -of GTiff -co 'COMPRESS=LZW' %s %s" % \
+                  (gdalCmdPath, inRasterPath, outRasterPath)
+    returnCode = os.system(gdalCommand)
+    if returnCode != 0:
+        raise Exception("GDAL command %s failed." % (gdalCommand,)) 
+    
+    
+
+def _transformPixelsToCoordinates(hDataset, hTransform, adfGeoTransform, x, y):
+    """!Adapted from http://svn.osgeo.org/gdal/trunk/gdal/swig/python/samples/gdalinfo.py
+    
+        @param hDataset A GDAL raster dataset object
+        @param hTransform A GDAL transform object
+        @param adfGeoTransform A GDAL geographic transform object
+        @param x The X coordinate
+        @param y The Y coordinate
+        @return Tuple of floats representing longitude and latitude coordiates.
+    """
+    # Transform point into georeferenced coordiates
+    dfGeoX = adfGeoTransform[0] + adfGeoTransform[1] * x \
+            + adfGeoTransform[2] * y
+    dfGeoY = adfGeoTransform[3] + adfGeoTransform[4] * x \
+            + adfGeoTransform[5] * y
+    # Transform georeferenced coordinates into lat/long
+    coords = hTransform.TransformPoint(dfGeoX, dfGeoY, 0)
+    return (coords[0], coords[1])
+        
+    
+    

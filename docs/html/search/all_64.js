@@ -10,9 +10,10 @@ var searchData=
   ['default_5fcrs',['DEFAULT_CRS',['../namespaceecohydroworkflowlib_1_1hydro1k_1_1demtile.html#ab55e871055de8d468b3a3e0ecfb0e92a',1,'ecohydroworkflowlib::hydro1k::demtile']]],
   ['deletegeotiff',['deleteGeoTiff',['../namespaceecohydroworkflowlib_1_1spatialdata_1_1utils.html#a6de079d4b5064e65ab5318756f4a6c58',1,'ecohydroworkflowlib::spatialdata::utils']]],
   ['deleteshapefile',['deleteShapefile',['../namespaceecohydroworkflowlib_1_1spatialdata_1_1utils.html#a338b3cc80263da987d823e46d5121e43',1,'ecohydroworkflowlib::spatialdata::utils']]],
-  ['demfilename',['demFilename',['../namespace_get_d_e_m_explorer_d_e_m_for_boundingbox.html#a110ea700fd9868ef2c1844ef137ba8a7',1,'GetDEMExplorerDEMForBoundingbox.demFilename()'],['../namespace_get_h_y_d_r_o1k_d_e_m_for_boundingbox.html#accf4bf3a81338e2305144c55e7385c55',1,'GetHYDRO1kDEMForBoundingbox.demFilename()']]],
-  ['demfilepath',['demFilepath',['../namespace_get_d_e_m_explorer_d_e_m_for_boundingbox.html#abc47974a6e7bac8fee7c22e685acb91d',1,'GetDEMExplorerDEMForBoundingbox.demFilepath()'],['../namespace_get_h_y_d_r_o1k_d_e_m_for_boundingbox.html#a956ac091e09771fa7a5b7a21c471a843',1,'GetHYDRO1kDEMForBoundingbox.demFilepath()']]],
+  ['demfilename',['demFilename',['../namespace_get_d_e_m_explorer_d_e_m_for_boundingbox.html#a110ea700fd9868ef2c1844ef137ba8a7',1,'GetDEMExplorerDEMForBoundingbox.demFilename()'],['../namespace_get_h_y_d_r_o1k_d_e_m_for_boundingbox.html#accf4bf3a81338e2305144c55e7385c55',1,'GetHYDRO1kDEMForBoundingbox.demFilename()'],['../namespace_register_d_e_m.html#a99dcfe6251a3faf0506c2a8d55904fe4',1,'RegisterDEM.demFilename()']]],
+  ['demfilepath',['demFilepath',['../namespace_get_d_e_m_explorer_d_e_m_for_boundingbox.html#abc47974a6e7bac8fee7c22e685acb91d',1,'GetDEMExplorerDEMForBoundingbox.demFilepath()'],['../namespace_get_h_y_d_r_o1k_d_e_m_for_boundingbox.html#a956ac091e09771fa7a5b7a21c471a843',1,'GetHYDRO1kDEMForBoundingbox.demFilepath()'],['../namespace_register_d_e_m.html#a99f5f4100cee9d428ca80da6cfec7285',1,'RegisterDEM.demFilepath()']]],
   ['demquery_2epy',['demquery.py',['../demquery_8py.html',1,'']]],
+  ['demspatialmetadata',['demSpatialMetadata',['../namespace_register_d_e_m.html#a13e63ef70021f13e54588cf5db3e13d5',1,'RegisterDEM']]],
   ['demtile_2epy',['demtile.py',['../demtile_8py.html',1,'']]],
   ['dependency_5flinks_2etxt',['dependency_links.txt',['../dependency__links_8txt.html',1,'']]],
   ['dependency_5flinks',['dependency_links',['../md_dependency_links.html',1,'']]]
