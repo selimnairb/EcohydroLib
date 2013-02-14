@@ -114,7 +114,6 @@ outputrasterresolutionX = studyArea['dem_res_x']
 outputrasterresolutionY = studyArea['dem_res_y']
 srs = studyArea['dem_srs']
 
-
 # Get tile from NLCD raster
 tmpTileFilename = "%s-TEMP.tif" % (args.outfile)
 extractTileFromRaster(config, projectDir, nlcdRaster, tmpTileFilename, bbox)

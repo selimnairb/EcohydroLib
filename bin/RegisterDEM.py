@@ -1,8 +1,8 @@
 """!
 
 @brief Register digital elevation model (DEM) data into metadata store for a project directory,
-copying the DEM file in the process.  Will create a study area polygon shapefile for the extent 
-of the DEM imported. 
+copying the DEM file into the project directory in the process.  Will create a study area 
+polygon shapefile for the extent of the DEM imported. 
 
 This software is provided free of charge under the New BSD License. Please see
 the following license information:

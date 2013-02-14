@@ -145,6 +145,8 @@ def resampleRaster(config, outputDir, inRasterFilename, outRasterFilename, \
         @exception IOError(errno.EACCESS) if outputDir is not writable
         @exception ValueError if trX or trY are not floating point numbers greater than 0
         @exception Exception if a gdal_warp command fails
+        
+        TODO: rework to interpret inRasterFilename as an abs. path
     """
     gdalCmdPath = config.get('GDAL/OGR', 'PATH_OF_GDAL_WARP')
     if not os.access(gdalCmdPath, os.X_OK):
