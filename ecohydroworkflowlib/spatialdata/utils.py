@@ -120,7 +120,7 @@ def extractTileFromRaster(config, outputDir, inRasterFilename, outRasterFilename
             raise Exception("GDAL command %s failed." % (gdalCommand,)) 
 
 
-def resampleRaster(config, outputDir, inRasterFilename, outRasterFilename, \
+def resampleRaster(config, outputDir, inRasterFilepath, outRasterFilename, \
                 s_srs, t_srs, trX, trY, resampleMethod='bilinear'):
     """!Resample raster from one spatial reference system and resolution to another.
         
@@ -130,7 +130,7 @@ def resampleRaster(config, outputDir, inRasterFilename, outRasterFilename, \
         @param config Python ConfigParser containing the section 'GDAL/OGR' and option 'PATH_OF_GDAL_WARP'
         @param outputDir String representing the absolute/relative path of the directory into which output raster
             should be written
-        @param inRasterFilename String representing the name of the input raster
+        @param inRasterFilepath String representing the path of the input raster
         @param outRasterFilename String representing the name of the output raster
         @param s_srs String representing the spatial reference of the input raster, if s_srs is None, 
             the input raster's spatial reference
@@ -145,8 +145,6 @@ def resampleRaster(config, outputDir, inRasterFilename, outRasterFilename, \
         @exception IOError(errno.EACCESS) if outputDir is not writable
         @exception ValueError if trX or trY are not floating point numbers greater than 0
         @exception Exception if a gdal_warp command fails
-        
-        TODO: rework to interpret inRasterFilename as an abs. path
     """
     gdalCmdPath = config.get('GDAL/OGR', 'PATH_OF_GDAL_WARP')
     if not os.access(gdalCmdPath, os.X_OK):
@@ -169,7 +167,6 @@ def resampleRaster(config, outputDir, inRasterFilename, outRasterFilename, \
     
     assert(resampleMethod in RASTER_RESAMPLE_METHOD)
     
-    inRasterFilepath = os.path.join(outputDir, inRasterFilename)
     outRasterFilepath = os.path.join(outputDir, outRasterFilename)
     
     if not os.path.exists(outRasterFilepath):

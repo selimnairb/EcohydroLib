@@ -118,14 +118,14 @@ srs = studyArea['dem_srs']
 tmpTileFilename = "%s-TEMP.tif" % (args.outfile)
 extractTileFromRaster(config, projectDir, nlcdRaster, tmpTileFilename, bbox)
 
+tmpTileFilepath = os.path.join(projectDir, tmpTileFilename)
 # Resample DEM to target srs and resolution
 tileFilename = "%s.tif" % (args.outfile)
-resampleRaster(config, projectDir, tmpTileFilename, tileFilename, \
+resampleRaster(config, projectDir, tmpTileFilepath, tileFilename, \
             s_srs=None, t_srs=srs, \
             trX=outputrasterresolutionX, trY=outputrasterresolutionY, \
             resampleMethod='near')
 metadata.writeManifestEntry(projectDir, "landcover", tileFilename)
 
 # Clean-up
-tmpTileFilename = os.path.join(projectDir, tmpTileFilename)
-deleteGeoTiff(tmpTileFilename)
+deleteGeoTiff(tmpTileFilepath)

@@ -70,8 +70,7 @@ from ecohydroworkflowlib.spatialdata.utils import copyRasterToGeoTIFF
 from ecohydroworkflowlib.spatialdata.utils import resampleRaster
 from ecohydroworkflowlib.spatialdata.utils import getDimensionsForRaster
 from ecohydroworkflowlib.spatialdata.utils import getSpatialReferenceForRaster
-from ecohydroworkflowlib.spatialdata.utils import getBoundingBoxForRaster
-from ecohydroworkflowlib.spatialdata.utils import writeBboxPolygonToShapefile
+
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get DEM raster (in GeoTIFF format) for a bounding box from GeoBrain WCS4DEM')
@@ -83,6 +82,8 @@ parser.add_argument('-l', '--landcoverfile', dest='landcoverfile', required=True
                     help='The name of the DEM file to be registered.')
 parser.add_argument('-f', '--outfile', dest='outfile', required=True,
                     help='The name of the DEM file to be written to the project directory.  File extension ".tif" will be added.')
+parser.add_argument('--force', dest='force', required=False, action='store_true',
+                    help='Force registry of landcover data if extent does not match DEM.')
 args = parser.parse_args()
 
 if not os.access(args.configfile, os.R_OK):
@@ -113,6 +114,11 @@ projectDir = os.path.abspath(projectDir)
 if not os.access(args.landcoverfile, os.R_OK):
     raise IOError(errno.EACCES, "Not allowed to read input landcover raster %s" %
                   args.landcoverfile)
+inLandcoverPath = os.path.abspath(args.landcoverfile)
+
+force = False
+if args.force:
+    force = True
 
 # Get study area parameters
 studyArea = metadata.readStudyAreaEntries(projectDir)
@@ -131,27 +137,28 @@ if os.path.exists(landcoverFilepath):
     os.unlink(landcoverFilepath)
 
 # Ensure input landcover has the same projection and resolution as DEM
-lcMetadata = getSpatialReferenceForRaster(args.landcoverfile)
+lcMetadata = getSpatialReferenceForRaster(inLandcoverPath)
 lcSrs = lcMetadata[5]
 lcX = lcMetadata[0]
 lcY = lcMetadata[1]
 if (lcSrs != srs) or (lcX != demResolutionX) or (lcY != demResolutionY):
     # Reproject raster, copying into project directory in the process
-    # TODO: rework resample raster to interpret inRasterFilename as an abs. path
-    resampleRaster(config, projectDir, args.landcoverfile, landcoverFilepath, \
+    resampleRaster(config, projectDir, inLandcoverPath, landcoverFilepath, \
                    s_srs=lcSrs, t_srs=srs, \
                    trX=demResolutionX, trY=demResolutionY, \
                    resampleMethod='near')
 else:
     # Copy the raster in to the project directory
-    copyRasterToGeoTIFF(config, projectDir, args.landcoverfile, landcoverFilename)
+    copyRasterToGeoTIFF(config, projectDir, inLandcoverPath, landcoverFilename)
 
 # Make sure extent of resampled raster is the same as the extent of the DEM
 newLcMetadata = getDimensionsForRaster(landcoverFilepath)
-if (newLcMetadata[0] != demColumns) or (newLcMetadata[1] != demRows):
+if not force and ( (newLcMetadata[0] != demColumns) or (newLcMetadata[1] != demRows) ):
+    #print("lc cols: %s, lc rows: %s" % (newLcMetadata[0], newLcMetadata[1]))
+    #print("dem cols: %s, dem rows: %s" % (demColumns, demRows))
     # Extents to not match, roll back and bail out
     os.unlink(landcoverFilepath)
-    sys.exit("Extent of landcover dataset %s does not match extent of DEM in project directory %s" %
+    sys.exit("Extent of landcover dataset %s does not match extent of DEM in project directory %s. Use --force to override." %
              (landcoverFilename, projectDir))
 
 # Write metadata

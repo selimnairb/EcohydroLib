@@ -126,8 +126,9 @@ tmpDEMFilename = "%s-TEMP.tif" % (args.outfile)
 returnCode = getDEMForBoundingBox(projectDir, tmpDEMFilename, bbox=bbox, srs=args.t_srs)
 assert(returnCode)
 
+tmpDEMFilepath = os.path.join(projectDir, tmpDEMFilename)
 # Resample DEM to target srs and resolution
-resampleRaster(config, projectDir, tmpDEMFilename, demFilename, \
+resampleRaster(config, projectDir, tmpDEMFilepath, demFilename, \
                s_srs=args.t_srs, t_srs=args.t_srs, \
                trX=outputrasterresolutionX, trY=outputrasterresolutionY)
 metadata.writeManifestEntry(projectDir, "dem", demFilename)
@@ -142,5 +143,4 @@ metadata.writeStudyAreaEntry(projectDir, "dem_columns", columns)
 metadata.writeStudyAreaEntry(projectDir, "dem_rows", rows)
 
 # Clean-up
-tmpDEMFilepath = os.path.join(projectDir, tmpDEMFilename)
 deleteGeoTiff(tmpDEMFilepath)
