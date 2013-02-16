@@ -57,8 +57,14 @@ Post conditions
 
 Usage:
 @code
-python ./GetDEMExplorerDEMForBoundingbox.py -i macosx2.cfg -t EPSG:26918 -s 3 3 -p /path/to/project_dir -f DEM
+python ./GetDEMExplorerDEMForBoundingbox.py -p /path/to/project_dir -s 3 3  
 @endcode
+
+@note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
+or -i option must be specified. 
+
+@note If option -t is not specified, UTM projection (WGS 84 coordinate system) will be inferred
+from bounding box center.
 """
 import os
 import sys
@@ -69,28 +75,40 @@ import ConfigParser
 import ecohydroworkflowlib.metadata as metadata
 from ecohydroworkflowlib.wcs4dem.demquery import getDEMForBoundingBox
 from ecohydroworkflowlib.spatialdata.utils import resampleRaster
+from ecohydroworkflowlib.spatialdata.utils import getSpatialReferenceForRaster
 from ecohydroworkflowlib.spatialdata.utils import getDimensionsForRaster
 from ecohydroworkflowlib.spatialdata.utils import deleteGeoTiff
+from ecohydroworkflowlib.spatialdata.utils import calculateBoundingBoxCenter
+from ecohydroworkflowlib.spatialdata.utils import getUTMZoneFromCoordinates
+from ecohydroworkflowlib.spatialdata.utils import getEPSGStringForUTMZone
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get DEM raster (in GeoTIFF format) for a bounding box from GeoBrain WCS4DEM')
-parser.add_argument('-i', '--configfile', dest='configfile', required=True,
+parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=False,
                     help='The directory to which metadata, intermediate, and final files should be saved')
-parser.add_argument('-f', '--outfile', dest='outfile', required=True,
+parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the DEM file to be written.  File extension ".tif" will be added.')
-parser.add_argument('-s', '--outputrasterresolution', dest='outputrasterresolution', required=True, nargs=2, type=float,
+parser.add_argument('-s', '--demResolution', dest='demResolution', required=False, nargs=2, type=float,
                     help='Two floating point numbers representing the desired X and Y output resolution of soil property raster maps; unit: meters')
-parser.add_argument('-t', '--t_srs', dest='t_srs', required=True, 
+parser.add_argument('-t', '--t_srs', dest='t_srs', required=False, 
                     help='Target spatial reference system of output, in EPSG:num format')
 args = parser.parse_args()
 
-if not os.access(args.configfile, os.R_OK):
+configFile = None
+if args.configfile:
+    configFile = args.configfile
+else:
+    try:
+        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
+    except KeyError:
+        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
+if not os.access(configFile, os.R_OK):
     raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-                  args.configfile)
+                  configFile)
 config = ConfigParser.RawConfigParser()
-config.read(args.configfile)
+config.read(configFile)
 
 if not config.has_option('GDAL/OGR', 'PATH_OF_GDAL_WARP'):
     sys.exit("Config file %s does not define option %s in section %s" & \
@@ -107,7 +125,12 @@ if not os.access(projectDir, os.W_OK):
                   projectDir)
 projectDir = os.path.abspath(projectDir)
 
-demFilename = "%s.tif" % (args.outfile)
+if args.outfile:
+    outfile = args.outfile
+else:
+    outfile = "DEM"
+
+demFilename = "%s.tif" % (outfile)
 # Overwrite DEM if already present
 demFilepath = os.path.join(projectDir, demFilename)
 if os.path.exists(demFilepath):
@@ -118,26 +141,41 @@ studyArea = metadata.readStudyAreaEntries(projectDir)
 bbox = studyArea['bbox_wgs84'].split()
 bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
 
-outputrasterresolutionX = args.outputrasterresolution[0]
-outputrasterresolutionY = args.outputrasterresolution[1]
+# Determine target spatial reference
+if args.t_srs:
+    t_srs = args.t_srs
+else:
+    # Default for UTM
+    (centerLon, centerLat) = calculateBoundingBoxCenter(bbox)
+    (utmZone, isNorth) = getUTMZoneFromCoordinates(centerLon, centerLat)
+    t_srs = getEPSGStringForUTMZone(utmZone, isNorth)
 
 # Get DEM from DEMExplorer
-tmpDEMFilename = "%s-TEMP.tif" % (args.outfile)
-returnCode = getDEMForBoundingBox(projectDir, tmpDEMFilename, bbox=bbox, srs=args.t_srs)
+tmpDEMFilename = "%s-TEMP.tif" % (outfile)
+returnCode = getDEMForBoundingBox(config, projectDir, tmpDEMFilename, bbox=bbox, srs=t_srs)
 assert(returnCode)
-
 tmpDEMFilepath = os.path.join(projectDir, tmpDEMFilename)
+
+if args.demResolution:
+    demResolutionX = args.demResolution[0]
+    demResolutionY = args.demResolution[1]
+else:
+    demSrs = getSpatialReferenceForRaster(tmpDEMFilepath)
+    demResolutionX = demSrs[0]
+    demResolutionY = demSrs[1]
+
 # Resample DEM to target srs and resolution
 resampleRaster(config, projectDir, tmpDEMFilepath, demFilename, \
-               s_srs=args.t_srs, t_srs=args.t_srs, \
-               trX=outputrasterresolutionX, trY=outputrasterresolutionY)
-metadata.writeManifestEntry(projectDir, "dem", demFilename)
-metadata.writeStudyAreaEntry(projectDir, "dem_res_x", outputrasterresolutionX)
-metadata.writeStudyAreaEntry(projectDir, "dem_res_y", outputrasterresolutionY)
-metadata.writeStudyAreaEntry(projectDir, "dem_srs", args.t_srs)
+               s_srs=t_srs, t_srs=t_srs, \
+               trX=demResolutionX, trY=demResolutionY)
 
-# Get rows and columns for resampled DEM
-demFilepath = os.path.join(projectDir, demFilename)
+# Write metadata
+metadata.writeManifestEntry(projectDir, "dem", demFilename)
+metadata.writeStudyAreaEntry(projectDir, "dem_res_x", demResolutionX)
+metadata.writeStudyAreaEntry(projectDir, "dem_res_y", demResolutionY)
+metadata.writeStudyAreaEntry(projectDir, "dem_srs", t_srs)
+
+# Get rows and columns for DEM
 (columns, rows) = getDimensionsForRaster(demFilepath)
 metadata.writeStudyAreaEntry(projectDir, "dem_columns", columns)
 metadata.writeStudyAreaEntry(projectDir, "dem_rows", rows)

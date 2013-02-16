@@ -1,7 +1,8 @@
 var searchData=
 [
-  ['gage_5flat',['gage_lat',['../namespace_get_n_h_d_streamflow_gage_identifiers_and_location.html#aa6094198b75b6efb5d6b69784cd34d1d',1,'GetNHDStreamflowGageIdentifiersAndLocation']]],
-  ['gage_5flon',['gage_lon',['../namespace_get_n_h_d_streamflow_gage_identifiers_and_location.html#ab8f000d8929a0a35156ecdfb531d661c',1,'GetNHDStreamflowGageIdentifiersAndLocation']]],
+  ['gage_5flat',['gage_lat',['../namespace_get_n_h_d_streamflow_gage_identifiers_and_location.html#aa6094198b75b6efb5d6b69784cd34d1d',1,'GetNHDStreamflowGageIdentifiersAndLocation.gage_lat()'],['../namespace_register_gage.html#a4cb4a701436bc184dc8055ad31fa5e57',1,'RegisterGage.gage_lat()']]],
+  ['gage_5flon',['gage_lon',['../namespace_get_n_h_d_streamflow_gage_identifiers_and_location.html#ab8f000d8929a0a35156ecdfb531d661c',1,'GetNHDStreamflowGageIdentifiersAndLocation.gage_lon()'],['../namespace_register_gage.html#a5a520fa9e8f0d029703bc945d5fb6571',1,'RegisterGage.gage_lon()']]],
+  ['gageids',['gageIDs',['../namespace_register_gage.html#ab0f0545eaea41e29db681d5f85c4a6aa',1,'RegisterGage']]],
   ['gageloc',['gageLoc',['../namespace_n_h_d_plus_v2_setup.html#a867582722426cdc63858a160d35d7da3',1,'NHDPlusV2Setup']]],
   ['gagelocdb',['gageLocDB',['../namespace_n_h_d_plus_v2_setup.html#a5111f0b209e10b028ad5a4b5a7129739',1,'NHDPlusV2Setup']]],
   ['gagelocshp',['gageLocShp',['../namespace_n_h_d_plus_v2_setup.html#af0667c43246b75c80d3636409a650d94',1,'NHDPlusV2Setup']]],

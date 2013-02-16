@@ -56,8 +56,11 @@ Post conditions
 
 Usage:
 @code
-python ./RegisterLandcover.py -i macosx2.cfg -p /path/to/project_dir -l /landcoverfile/to/register -f landcover
+python ./RegisterLandcover.py -p /path/to/project_dir -l /landcoverfile/to/register
 @endcode
+
+@note If option -t is not specified, UTM projection (WGS 84 coordinate system) will be inferred
+from bounding box center.
 """
 import os
 import sys
@@ -74,23 +77,31 @@ from ecohydroworkflowlib.spatialdata.utils import getSpatialReferenceForRaster
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Register landcover dataset with project')
-parser.add_argument('-i', '--configfile', dest='configfile', required=True,
+parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=False,
                     help='The directory to which metadata, intermediate, and final files should be saved')
 parser.add_argument('-l', '--landcoverfile', dest='landcoverfile', required=True,
                     help='The name of the DEM file to be registered.')
-parser.add_argument('-f', '--outfile', dest='outfile', required=True,
+parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the DEM file to be written to the project directory.  File extension ".tif" will be added.')
 parser.add_argument('--force', dest='force', required=False, action='store_true',
                     help='Force registry of landcover data if extent does not match DEM.')
 args = parser.parse_args()
 
-if not os.access(args.configfile, os.R_OK):
+configFile = None
+if args.configfile:
+    configFile = args.configfile
+else:
+    try:
+        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
+    except KeyError:
+        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
+if not os.access(configFile, os.R_OK):
     raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-                  args.configfile)
+                  configFile)
 config = ConfigParser.RawConfigParser()
-config.read(args.configfile)
+config.read(configFile)
 
 if not config.has_option('GDAL/OGR', 'PATH_OF_GDAL_WARP'):
     sys.exit("Config file %s does not define option %s in section %s" & \
@@ -116,6 +127,11 @@ if not os.access(args.landcoverfile, os.R_OK):
                   args.landcoverfile)
 inLandcoverPath = os.path.abspath(args.landcoverfile)
 
+if args.outfile:
+    outfile = args.outfile
+else:
+    outfile = "landcover"
+
 force = False
 if args.force:
     force = True
@@ -130,7 +146,7 @@ demColumns = studyArea['dem_columns']
 demRows = studyArea['dem_rows']
 srs = studyArea['dem_srs']
 
-landcoverFilename = "%s%stif" % (args.outfile, os.extsep)
+landcoverFilename = "%s%stif" % (outfile, os.extsep)
 # Overwrite DEM if already present
 landcoverFilepath = os.path.join(projectDir, landcoverFilename)
 if os.path.exists(landcoverFilepath):

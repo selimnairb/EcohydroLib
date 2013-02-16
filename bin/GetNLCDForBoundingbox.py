@@ -54,8 +54,11 @@ Post conditions
 
 Usage:
 @code
-python ./GetNLCDForBoundingbox.py -i macosx2.cfg -p /path/to/project_dir -f NLCD
+python ./GetNLCDForBoundingbox.py -p /path/to/project_dir
 @endcode
+
+@note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
+or -i option must be specified. 
 
 @todo Buffer bounding box to ensure full coverage with valid NLCD data
 """
@@ -72,19 +75,27 @@ from ecohydroworkflowlib.spatialdata.utils import deleteGeoTiff
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get NLCD data (in GeoTIFF format) for a bounding box from a local copy of the entire NLCD 2006 dataset.')
-parser.add_argument('-i', '--configfile', dest='configfile', required=True,
+parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=False,
                     help='The directory to which metadata, intermediate, and final files should be saved')
-parser.add_argument('-f', '--outfile', dest='outfile', required=True,
+parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the DEM file to be written.  File extension ".tif" will be added.')
 args = parser.parse_args()
 
-if not os.access(args.configfile, os.R_OK):
+configFile = None
+if args.configfile:
+    configFile = args.configfile
+else:
+    try:
+        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
+    except KeyError:
+        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
+if not os.access(configFile, os.R_OK):
     raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-                  args.configfile)
+                  configFile)
 config = ConfigParser.RawConfigParser()
-config.read(args.configfile)
+config.read(configFile)
 
 if not config.has_option('GDAL/OGR', 'PATH_OF_GDAL_TRANSLATE'):
     sys.exit("Config file %s does not define option %s in section %s" & \
@@ -101,6 +112,11 @@ if not os.access(projectDir, os.W_OK):
                   projectDir)
 projectDir = os.path.abspath(projectDir)
 
+if args.outfile:
+    outfile = args.outfile
+else:
+    outfile = "NLCD"
+
 nlcdRaster = config.get('NLCD', 'PATH_OF_NLCD2006')
 if not os.access(nlcdRaster, os.R_OK):
     raise IOError(errno.EACCES, "Not allowed to read NLCD raster %s" % (nlcdRaster,))
@@ -115,12 +131,12 @@ outputrasterresolutionY = studyArea['dem_res_y']
 srs = studyArea['dem_srs']
 
 # Get tile from NLCD raster
-tmpTileFilename = "%s-TEMP.tif" % (args.outfile)
+tmpTileFilename = "%s-TEMP.tif" % (outfile)
 extractTileFromRaster(config, projectDir, nlcdRaster, tmpTileFilename, bbox)
 
 tmpTileFilepath = os.path.join(projectDir, tmpTileFilename)
 # Resample DEM to target srs and resolution
-tileFilename = "%s.tif" % (args.outfile)
+tileFilename = "%s.tif" % (outfile)
 resampleRaster(config, projectDir, tmpTileFilepath, tileFilename, \
             s_srs=None, t_srs=srs, \
             trX=outputrasterresolutionX, trY=outputrasterresolutionY, \

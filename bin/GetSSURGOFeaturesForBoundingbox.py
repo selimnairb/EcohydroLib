@@ -54,8 +54,11 @@ Post conditions
 
 Usage:
 @code
-python ./GetSSURGOFeaturesForBoundingbox.py -i macosx2.cfg -p /path/to/project_dir
+python ./GetSSURGOFeaturesForBoundingbox.py -p /path/to/project_dir
 @endcode
+
+@note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
+or -i option must be specified.
 """
 import os
 import sys
@@ -71,17 +74,25 @@ import ecohydroworkflowlib.ssurgo.attributequery
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get SSURGO features for a bounding box')
-parser.add_argument('-i', '--configfile', dest='configfile', required=True,
+parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=False,
                     help='The directory to which metadata, intermediate, and final files should be saved')
 args = parser.parse_args()
 
-if not os.access(args.configfile, os.R_OK):
+configFile = None
+if args.configfile:
+    configFile = args.configfile
+else:
+    try:
+        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
+    except KeyError:
+        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
+if not os.access(configFile, os.R_OK):
     raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-                  args.configfile)
+                  configFile)
 config = ConfigParser.RawConfigParser()
-config.read(args.configfile)
+config.read(configFile)
 
 if not config.has_option('GDAL/OGR', 'PATH_OF_OGR2OGR'):
     sys.exit("Config file %s does not define option %s in section %s" & \

@@ -53,8 +53,11 @@ Post conditions
 
 Usage:
 @code
-python ./GetCatchmentShapefileForStreamflowGage.py -i macosx2.cfg -p /path/to/project_dir -f catchment
+python ./GetCatchmentShapefileForStreamflowGage.py -i macosx2.cfg -p /path/to/project_dir
 @endcode
+
+@note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
+or -i option must be specified. 
 """
 import os
 import sys
@@ -67,20 +70,27 @@ from ecohydroworkflowlib.nhdplus2.networkanalysis import getCatchmentShapefileFo
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get shapefile for the drainage area of an NHDPlus2 streamflow gage')
-parser.add_argument('-i', '--configfile', dest='configfile', required=True,
+parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=False,
                     help='The directory to which metadata, intermediate, and final files should be saved')
-parser.add_argument('-f', '--outfile', dest='outfile', required=True,
+parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the catchment shapefile to be written.  File extension ".shp" will be added.  If a file of this name exists, program will silently exit.')
 args = parser.parse_args()
 
-if not os.access(args.configfile, os.R_OK):
+configFile = None
+if args.configfile:
+    configFile = args.configfile
+else:
+    try:
+        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
+    except KeyError:
+        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
+if not os.access(configFile, os.R_OK):
     raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-                  args.configfile)
-
+                  configFile)
 config = ConfigParser.RawConfigParser()
-config.read(args.configfile)
+config.read(configFile)
 
 if not config.has_option('GDAL/OGR', 'PATH_OF_OGR2OGR'):
     sys.exit("Config file %s does not define option %s in section %s" & \
@@ -103,12 +113,17 @@ if not os.access(projectDir, os.W_OK):
                   projectDir)
 projectDir = os.path.abspath(projectDir)
 
+if args.outfile:
+    outfile = args.outfile
+else:
+    outfile = "catchment"
+
 # Get study area parameters
 studyArea = metadata.readStudyAreaEntries(projectDir)
 reachcode = studyArea['nhd_gage_reachcode']
 measure = studyArea['nhd_gage_measure_pct']
 
-shapeFilename = "%s.shp" % (args.outfile)
+shapeFilename = "%s.shp" % (outfile)
 shapeFilepath = os.path.join(projectDir, shapeFilename)
 if not os.path.exists(shapeFilepath):
     getCatchmentShapefileForGage(config, projectDir, shapeFilename, reachcode, measure)

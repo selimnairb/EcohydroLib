@@ -55,8 +55,7 @@ models, information such as: digital elevation model (DEM), soils, land cover, a
 vegetation leaf area index (LAI; NOT YET IMPLEMENTED), hydrology/meteorology point
 time series (e.g. streamflow discharge, precipitation, temperature; NOT YET IMPLEMENTED). 
 By default these data are taken from national spatial data infrastructure (NLCD, SSURGO). 
-However it is also possible to register custom datasets with the workflow metadata (NOT 
-YET IMPLEMENTED). 
+However it is also possible to register custom datasets with the workflow metadata. 
 
 The fundamental operation for any ecohydrology modeling workflow is to define the study
 region of interest (ROI).  In EcohydrologyWorkflowLib the ROI is simply defined as a
@@ -148,7 +147,8 @@ Configuration files
 -------------------
 Many of the command line scripts (including NHDPlusV2Setup.py) require a configuration 
 file to specify locations to executables and datasets required by the ecohydrology 
-workflow libraries.  Here is an example configuration file:
+workflow libraries.  The configuration file can be specified via the environmental variable
+ECOHYDROWORKFLOW_CFG or via command line option. Here is an example configuration file:
 
 		[GDAL/OGR]
 		PATH_OF_OGR2OGR = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/ogr2ogr
@@ -176,9 +176,10 @@ workflow libraries.  Here is an example configuration file:
 		PATH_OF_SQLITE = /opt/local/bin/sqlite3 
 
 
-How to use - A typical workflow
+How to use - Typical workflow
 -------------------------------
-A typical workflow will consist of runnnig the follow scripts in the following order:
+A workflow using data from large-scale spatial data infrastructure will consist of 
+running the follow scripts in the following order:
 1. GetNHDStreamflowGageIdentifiersAndLocation.py
 2. GetCatchmentShapefileForStreamflowGage.py
 3. GetBoundingboxFromStudyAreaShapefile.py
@@ -188,7 +189,13 @@ A typical workflow will consist of runnnig the follow scripts in the following o
 
 It is required that the first 4 steps be run in this order, the remaining workflow 
 components can be run in any order.  Other workflow components, e.g. to register a
-custom dataset, can be substituted for the latter 4 workflow components as well (NOT
-YET IMPLEMENTED).  See the documentation for each script to see invocations details.
+custom dataset, can be substituted for the latter 4 workflow components as well (as
+indicated above).  See the documentation for each script to see invocations details.
 
+A workflow using custom local data sources will consist of  running the follow scripts 
+in the following order:
+1. RegisterDEM.py
+2. RegisterGage.py
+3. RegisterLandcover.py
+4. GetSSURGOFeaturesForBoundingbox.py
 

@@ -56,8 +56,11 @@ Post conditions
 
 Usage:
 @code
-python ./RegisterDEM.py -i macosx2.cfg -p /path/to/project_dir -d /demfile/to/register -f DEM
+python ./RegisterDEM.py -p /path/to/project_dir -d /demfile/to/register
 @endcode
+
+@note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
+or -i option must be specified. 
 """
 import os
 import sys
@@ -74,21 +77,29 @@ from ecohydroworkflowlib.spatialdata.utils import writeBboxPolygonToShapefile
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Register DEM with project')
-parser.add_argument('-i', '--configfile', dest='configfile', required=True,
+parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=False,
                     help='The directory to which metadata, intermediate, and final files should be saved')
 parser.add_argument('-d', '--demfile', dest='demfile', required=True,
                     help='The name of the DEM file to be registered.')
-parser.add_argument('-f', '--outfile', dest='outfile', required=True,
+parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the DEM file to be written to the project directory.  File extension ".tif" will be added.')
 args = parser.parse_args()
 
-if not os.access(args.configfile, os.R_OK):
+configFile = None
+if args.configfile:
+    configFile = args.configfile
+else:
+    try:
+        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
+    except KeyError:
+        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
+if not os.access(configFile, os.R_OK):
     raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-                  args.configfile)
+                  configFile)
 config = ConfigParser.RawConfigParser()
-config.read(args.configfile)
+config.read(configFile)
 
 if not config.has_option('GDAL/OGR', 'PATH_OF_GDAL_WARP'):
     sys.exit("Config file %s does not define option %s in section %s" & \
@@ -108,7 +119,12 @@ projectDir = os.path.abspath(projectDir)
 if not os.access(args.demfile, os.R_OK):
     raise IOError(errno.EACCES, "Not allowed to read input DEM %s" (args.demfile,))
 
-demFilename = "%s%stif" % (args.outfile, os.extsep)
+if args.outfile:
+    outfile = args.outfile
+else:
+    outfile = "DEM"
+
+demFilename = "%s%stif" % (outfile, os.extsep)
 # Overwrite DEM if already present
 demFilepath = os.path.join(projectDir, demFilename)
 if os.path.exists(demFilepath):
@@ -119,11 +135,11 @@ copyRasterToGeoTIFF(config, projectDir, args.demfile, demFilename)
 # Get the bounding box for the DEM
 bbox = getBoundingBoxForRaster(demFilepath)
 # Write a shapefile for the bounding box
-shapeFilename = writeBboxPolygonToShapefile(bbox, projectDir, "studyarea")
+shpFilename = writeBboxPolygonToShapefile(bbox, projectDir, "studyarea")
 
 # Write metadata
 metadata.writeStudyAreaEntry(projectDir, "bbox_wgs84", "%f %f %f %f" % (bbox['minX'], bbox['minY'], bbox['maxX'], bbox['maxY']))
-metadata.writeManifestEntry(projectDir, "study_area_shapefile", shapeFilename)
+metadata.writeManifestEntry(projectDir, "study_area_shapefile", shpFilename)
 metadata.writeManifestEntry(projectDir, "dem", demFilename)
 
 # Get spatial metadata for DEM

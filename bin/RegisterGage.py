@@ -52,8 +52,11 @@ Post conditions
 
 Usage:
 @code
-python ./RegisterGage.py -i macosx2.cfg -p /path/to/project_dir -g /path/to/gage/shapefile -l layername -a id_attribute -d id_value -f gage
+python ./RegisterGage.py -p /path/to/project_dir -g /path/to/gage/shapefile -l layername -a id_attribute -d id_value
 @endcode
+
+@note If option -t is not specified, UTM projection (WGS 84 coordinate system) will be inferred
+from bounding box center.
 """
 import os
 import sys
@@ -70,7 +73,7 @@ from ecohydroworkflowlib.spatialdata.utils import isCoordinatePairInBoundingBox
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Register streamflow gage shapefile with project')
-parser.add_argument('-i', '--configfile', dest='configfile', required=True,
+parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=False,
                     help='The directory to which metadata, intermediate, and final files should be saved')
@@ -82,15 +85,23 @@ parser.add_argument('-a', '--idAttribute', dest='idAttribute', required=True,
                     help='The name of the attribute field that uniquely identifies gage points.')
 parser.add_argument('-d', '--idValue', dest='idValue', required=True,
                     help='The gage ID that uniquely identifies the gage point.')
-parser.add_argument('-f', '--outfile', dest='outfile', required=True,
+parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the gage shapefile to be written to the project directory.  File extension ".shp" will be added.')
 args = parser.parse_args()
 
-#if not os.access(args.configfile, os.R_OK):
-#    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-#                  args.configfile)
-#config = ConfigParser.RawConfigParser()
-#config.read(args.configfile)
+configFile = None
+if args.configfile:
+    configFile = args.configfile
+else:
+    try:
+        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
+    except KeyError:
+        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
+if not os.access(configFile, os.R_OK):
+    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
+                  configFile)
+config = ConfigParser.RawConfigParser()
+config.read(configFile)
 
 if args.projectDir:
     projectDir = args.projectDir
@@ -108,12 +119,17 @@ if not os.access(args.gageFile, os.R_OK):
                   args.gageFile)
 inGagePath = os.path.abspath(args.gageFile)
 
+if args.outfile:
+    outfile = args.outfile
+else:
+    outfile = "gage"
+
 # Get study area parameters
 studyArea = metadata.readStudyAreaEntries(projectDir)
 bbox = studyArea['bbox_wgs84'].split()
 bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
 
-outFilename = "%s%sshp" % (args.outfile, os.extsep)
+outFilename = "%s%sshp" % (outfile, os.extsep)
 # Overwrite DEM if already present
 outFilepath = os.path.join(projectDir, outFilename)
 if os.path.exists(outFilepath):
@@ -131,7 +147,7 @@ if not isCoordinatePairInBoundingBox(bbox, coordinates):
     sys.exit("Gage coordinates %s, %s do not appear to lie within bounding box %s, %s, %s, %s" %
              ( str(gage_lon), str(gage_lat), str(bbox['minX']), str(bbox['minY']), str(bbox['maxX']), str(bbox['maxY']) ) )
 
-shpFilename = writeCoordinatePairsToPointShapefile(projectDir, args.outfile, "gage_id", gageIDs, [coordinates])
+shpFilename = writeCoordinatePairsToPointShapefile(projectDir, outfile, "gage_id", gageIDs, [coordinates])
 
 # Write metadata
 metadata.writeManifestEntry(projectDir, 'gage', shpFilename)

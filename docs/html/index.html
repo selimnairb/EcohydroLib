@@ -94,7 +94,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <h2>Funding</h2>
 <p>This work was supported by NSF grant #1239678 EAGER: Collaborative Research: Interoperability Testbed-Assessing a Layered Architecture for Integration of Existing Capabilities, and NSF grant #0940841 DataNet Federation Consortium.</p>
 <h2>Introduction</h2>
-<p>EcohydrologyWorkflowLib provides a series of Python scripts for performing ecohydrology data preparation workflows. Workflow sub-components are orchestrated via a metadata persistence store provided by the <a class="el" href="namespaceecohydroworkflowlib_1_1metadata.html" title="Methods for writing and reading metadata for Ecohydrology workflows.">ecohydroworkflowlib.metadata</a> package. These scripts are built on top of a series of task-oriented APIs defined in the python package ecohydroworkflowlib. The workflows provide information needed to run a ecohydrology models, information such as: digital elevation model (DEM), soils, land cover, and vegetation leaf area index (LAI; NOT YET IMPLEMENTED), hydrology/meteorology point time series (e.g. streamflow discharge, precipitation, temperature; NOT YET IMPLEMENTED). By default these data are taken from national spatial data infrastructure (NLCD, SSURGO). However it is also possible to register custom datasets with the workflow metadata (NOT YET IMPLEMENTED).</p>
+<p>EcohydrologyWorkflowLib provides a series of Python scripts for performing ecohydrology data preparation workflows. Workflow sub-components are orchestrated via a metadata persistence store provided by the <a class="el" href="namespaceecohydroworkflowlib_1_1metadata.html" title="Methods for writing and reading metadata for Ecohydrology workflows.">ecohydroworkflowlib.metadata</a> package. These scripts are built on top of a series of task-oriented APIs defined in the python package ecohydroworkflowlib. The workflows provide information needed to run a ecohydrology models, information such as: digital elevation model (DEM), soils, land cover, and vegetation leaf area index (LAI; NOT YET IMPLEMENTED), hydrology/meteorology point time series (e.g. streamflow discharge, precipitation, temperature; NOT YET IMPLEMENTED). By default these data are taken from national spatial data infrastructure (NLCD, SSURGO). However it is also possible to register custom datasets with the workflow metadata.</p>
 <p>The fundamental operation for any ecohydrology modeling workflow is to define the study region of interest (ROI). In EcohydrologyWorkflowLib the ROI is simply defined as a bounding box of WGS84 latitude and longitude coordinates (e.g. coordinates for the upper- left and lower-right corners). The ROI bounding box is derived using catchment polygons from the National Hydrography Dataset (NHD). The user begins by picking a streamflow discharge gage listed in the NHD dataset. EcohydrologyWorkflowLib can then determine the stream reaches upstream of the data, and then select the catchment polygons associated with each upstream reach. From these polygons, the bounding box of the land area draining through the streamflow gage can easily be calculated.</p>
 <p>Once the ROI is known, EcohydrologyWorkflowLib can extract datasets (DEM, soils, etc.) specific to the study area. Some of these datasets are extracted from static local copies of national spatial data (e.g. NLCD), while other are retrieved via web services interfaces from federal agency data centers (e.g. SSURGO soils data from USDA) or from third-party data centers (GeoBrain's DEM Explorer). However it is also possible for the user to upload their own custom data for a given datatype (e.g. local LIDAR-based DEM; NOT YET IMPLEMENTED).</p>
 <div class="image">
@@ -137,7 +137,7 @@ Fig. 1 Ecohydrology model data preparation workflow software stack depicting Eco
 </ul>
 <p>For national NHD coverage, Catchment.sqlite is over 8 GB, and NHDPlusDB.sqlite is over 2 GB, so you will need a kernel and filesystem that has large file support to build and use these datasets. Also, it may take over an hour to create these datasets; 8 GB of memory or more is recommended to build the datasets efficiently. However, database setup is a one-time process, and you can use databases created on one machine on other machines, provided SQLite3 is installed. <a class="el" href="_n_h_d_plus_v2_setup_8py.html">NHDPlusV2Setup.py</a> creates each database with the indices needed by EcohydrologyWorkflowLib, so lookups are very fast.</p>
 <h2>Configuration files</h2>
-<p>Many of the command line scripts (including <a class="el" href="_n_h_d_plus_v2_setup_8py.html">NHDPlusV2Setup.py</a>) require a configuration file to specify locations to executables and datasets required by the ecohydrology workflow libraries. Here is an example configuration file: </p>
+<p>Many of the command line scripts (including <a class="el" href="_n_h_d_plus_v2_setup_8py.html">NHDPlusV2Setup.py</a>) require a configuration file to specify locations to executables and datasets required by the ecohydrology workflow libraries. The configuration file can be specified via the environmental variable ECOHYDROWORKFLOW_CFG or via command line option. Here is an example configuration file: </p>
 <pre class="fragment">    [GDAL/OGR]
     PATH_OF_OGR2OGR = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/ogr2ogr
     PATH_OF_GDAL_RASTERIZE = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/gdal_rasterize
@@ -162,8 +162,8 @@ Fig. 1 Ecohydrology model data preparation workflow software stack depicting Eco
     PATH_OF_FIND = /usr/bin/find
     PATH_OF_SEVEN_ZIP = /opt/local/bin/7z
     PATH_OF_SQLITE = /opt/local/bin/sqlite3 
-</pre><h2>How to use - A typical workflow</h2>
-<p>A typical workflow will consist of runnnig the follow scripts in the following order:</p>
+</pre><h2>How to use - Typical workflow</h2>
+<p>A workflow using data from large-scale spatial data infrastructure will consist of running the follow scripts in the following order:</p>
 <ol type="1">
 <li><a class="el" href="_get_n_h_d_streamflow_gage_identifiers_and_location_8py.html">GetNHDStreamflowGageIdentifiersAndLocation.py</a></li>
 <li><a class="el" href="_get_catchment_shapefile_for_streamflow_gage_8py.html">GetCatchmentShapefileForStreamflowGage.py</a></li>
@@ -172,11 +172,18 @@ Fig. 1 Ecohydrology model data preparation workflow software stack depicting Eco
 <li><a class="el" href="_get_n_l_c_d_for_boundingbox_8py.html">GetNLCDForBoundingbox.py</a></li>
 <li><a class="el" href="_get_s_s_u_r_g_o_features_for_boundingbox_8py.html">GetSSURGOFeaturesForBoundingbox.py</a></li>
 </ol>
-<p>It is required that the first 4 steps be run in this order, the remaining workflow components can be run in any order. Other workflow components, e.g. to register a custom dataset, can be substituted for the latter 4 workflow components as well (NOT YET IMPLEMENTED). See the documentation for each script to see invocations details. </p>
+<p>It is required that the first 4 steps be run in this order, the remaining workflow components can be run in any order. Other workflow components, e.g. to register a custom dataset, can be substituted for the latter 4 workflow components as well (as indicated above). See the documentation for each script to see invocations details.</p>
+<p>A workflow using custom local data sources will consist of running the follow scripts in the following order:</p>
+<ol type="1">
+<li><a class="el" href="_register_d_e_m_8py.html">RegisterDEM.py</a></li>
+<li><a class="el" href="_register_gage_8py.html">RegisterGage.py</a></li>
+<li><a class="el" href="_register_landcover_8py.html">RegisterLandcover.py</a></li>
+<li><a class="el" href="_get_s_s_u_r_g_o_features_for_boundingbox_8py.html">GetSSURGOFeaturesForBoundingbox.py</a> </li>
+</ol>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Feb 12 2013 23:56:54 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Feb 16 2013 17:06:25 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3
 </small></address>

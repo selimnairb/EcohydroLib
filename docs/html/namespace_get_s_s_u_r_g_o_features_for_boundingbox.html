@@ -100,6 +100,8 @@ Variables</h2></td></tr>
 <tr class="separator:aa61084f6562ca547b9c5b8aab6ed03c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af20a1824b6481f18cccc1c299ecca6eb"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_s_s_u_r_g_o_features_for_boundingbox.html#af20a1824b6481f18cccc1c299ecca6eb">args</a> parser.parse_args()</td></tr>
 <tr class="separator:af20a1824b6481f18cccc1c299ecca6eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab3f982dcc6dd7ea2db79a1ca0e8987d3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_s_s_u_r_g_o_features_for_boundingbox.html#ab3f982dcc6dd7ea2db79a1ca0e8987d3">configFile</a> None</td></tr>
+<tr class="separator:ab3f982dcc6dd7ea2db79a1ca0e8987d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adcd011bf6a856a0d04c9f227fba1c17e"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_s_s_u_r_g_o_features_for_boundingbox.html#adcd011bf6a856a0d04c9f227fba1c17e">config</a> ConfigParser.RawConfigParser()</td></tr>
 <tr class="separator:adcd011bf6a856a0d04c9f227fba1c17e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a47fbe82d3b7b145daceb7178a28f7703"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_s_s_u_r_g_o_features_for_boundingbox.html#a47fbe82d3b7b145daceb7178a28f7703">projectDir</a> args.projectDir</td></tr>
@@ -151,9 +153,9 @@ Variables</h2></td></tr>
 <li>Will write the following entry(ies) to the manifest section of metadata associated with the project directory: soil_features [the name of the vector file containing the soil features] soil_raster_&lt;attr&gt; [the name of the raster file for each soil property raster]</li>
 </ol>
 <p>Usage: </p>
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;python ./GetSSURGOFeaturesForBoundingbox.py -i macosx2.cfg -p /path/to/project_dir</div>
-<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;@encode</div>
-</div><!-- fragment --></div><h2 class="groupheader">Variable Documentation</h2>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;python ./GetSSURGOFeaturesForBoundingbox.py -p /path/to/project_dir</div>
+</div><!-- fragment --><dl class="section note"><dt>Note</dt><dd>EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG', or -i option must be specified. </dd></dl>
+</div><h2 class="groupheader">Variable Documentation</h2>
 <a class="anchor" id="af20a1824b6481f18cccc1c299ecca6eb"></a>
 <div class="memitem">
 <div class="memproto">
@@ -196,6 +198,18 @@ Variables</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">tuple GetSSURGOFeaturesForBoundingbox.config ConfigParser.RawConfigParser()</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="ab3f982dcc6dd7ea2db79a1ca0e8987d3"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">list GetSSURGOFeaturesForBoundingbox.configFile None</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -352,7 +366,7 @@ Variables</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Feb 12 2013 23:56:54 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Feb 16 2013 17:06:25 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3
 </small></address>

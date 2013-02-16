@@ -100,6 +100,8 @@ Variables</h2></td></tr>
 <tr class="separator:a40f1b93d3e0318e1c4bd9794746f2d97"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaace7f53e966b326c7ac7d3f246a4135"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_n_h_d_streamflow_gage_identifiers_and_location.html#aaace7f53e966b326c7ac7d3f246a4135">args</a> parser.parse_args()</td></tr>
 <tr class="separator:aaace7f53e966b326c7ac7d3f246a4135"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aad8c24b059753cdbb6f3411efedccac2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_n_h_d_streamflow_gage_identifiers_and_location.html#aad8c24b059753cdbb6f3411efedccac2">configFile</a> None</td></tr>
+<tr class="separator:aad8c24b059753cdbb6f3411efedccac2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9d90ff4cd5f75fbdadd95ea6bb8a8af1"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_n_h_d_streamflow_gage_identifiers_and_location.html#a9d90ff4cd5f75fbdadd95ea6bb8a8af1">config</a> ConfigParser.RawConfigParser()</td></tr>
 <tr class="separator:a9d90ff4cd5f75fbdadd95ea6bb8a8af1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af2154c6383ed07447dd3401934a00d85"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_n_h_d_streamflow_gage_identifiers_and_location.html#af2154c6383ed07447dd3401934a00d85">projectDir</a> os.path.abspath(args.projectDir)</td></tr>
@@ -114,6 +116,8 @@ Variables</h2></td></tr>
 <tr class="separator:aa6094198b75b6efb5d6b69784cd34d1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8f000d8929a0a35156ecdfb531d661c"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_n_h_d_streamflow_gage_identifiers_and_location.html#ab8f000d8929a0a35156ecdfb531d661c">gage_lon</a> <a class="el" href="namespace_get_n_h_d_streamflow_gage_identifiers_and_location.html#abbbd786a92a2b78c6ec99783c7e60eb6">result</a>[0]</td></tr>
 <tr class="separator:ab8f000d8929a0a35156ecdfb531d661c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac666ccbf3098310ada3e335cd2bd8f69"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_n_h_d_streamflow_gage_identifiers_and_location.html#ac666ccbf3098310ada3e335cd2bd8f69">shpFilename</a></td></tr>
+<tr class="separator:ac666ccbf3098310ada3e335cd2bd8f69"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Get NHDPlus2 streamflow gage identifiers (reachcode, measure along reach in percent) for a USGS gage. </p>
@@ -134,11 +138,15 @@ Variables</h2></td></tr>
 </ol>
 <h2>Post conditions</h2>
 <ol type="1">
-<li>Will write the following entry(ies) to the study area section of metadata associated with the project directory: gage_id nhd_gage_reachcode nhd_gage_measure_pct gage_lat_wgs84 gage_lon_wgs84</li>
+<li>Will write the following entry(ies) to the manifest section of metadata associated with the project directory: gage [the name of the streamflow gage shapefile]</li>
+</ol>
+<ol type="1">
+<li>Will write the following entry(ies) to the study area section of metadata associated with the project directory: gage_id_attr [the name of the attribute in the gage shapefile that uniquely identifies a streamflow gage] gage_id nhd_gage_reachcode nhd_gage_measure_pct gage_lat_wgs84 gage_lon_wgs84</li>
 </ol>
 <p>Usage: </p>
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;python ./GetNHDStreamflowGageIdentifiersAndLocation.py -i macosx2.cfg -p /path/to/project_dir -g 01589330</div>
-</div><!-- fragment --> </div><h2 class="groupheader">Variable Documentation</h2>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;python ./GetNHDStreamflowGageIdentifiersAndLocation.py -p /path/to/project_dir -g 01589330</div>
+</div><!-- fragment --><dl class="section note"><dt>Note</dt><dd>EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG', or -i option must be specified. </dd></dl>
+</div><h2 class="groupheader">Variable Documentation</h2>
 <a class="anchor" id="aaace7f53e966b326c7ac7d3f246a4135"></a>
 <div class="memitem">
 <div class="memproto">
@@ -157,6 +165,18 @@ Variables</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">tuple GetNHDStreamflowGageIdentifiersAndLocation.config ConfigParser.RawConfigParser()</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="aad8c24b059753cdbb6f3411efedccac2"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">list GetNHDStreamflowGageIdentifiersAndLocation.configFile None</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -259,10 +279,24 @@ Variables</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="ac666ccbf3098310ada3e335cd2bd8f69"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">tuple GetNHDStreamflowGageIdentifiersAndLocation.shpFilename</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno"><a class="code" href="namespace_get_n_h_d_streamflow_gage_identifiers_and_location.html">    1</a></span>&#160;<a class="code" href="namespaceecohydroworkflowlib_1_1spatialdata_1_1utils.html#aa87c31755ca4cdce6764bdd28ebbe88a" title="Write coordinates as a point shapefile.">writeCoordinatePairsToPointShapefile</a>(projectDir, <span class="stringliteral">&quot;gage&quot;</span>, </div>
+<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;                                                   <span class="stringliteral">&quot;gage_id&quot;</span>, [args.gageid], [(gage_lon, gage_lat)])</div>
+</div><!-- fragment -->
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Feb 12 2013 23:56:54 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Feb 16 2013 17:06:25 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3
 </small></address>

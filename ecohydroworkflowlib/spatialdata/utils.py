@@ -35,10 +35,12 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 @author Brian Miles <brian_miles@unc.edu>
 
-@todo Refactor into raster and vector functions
+@todo Refactor raster and vector functions into their own sub-packages
+@toto Refactor bounding box as class
 """
 import os, sys, errno
 from math import sqrt
+import math
 
 import gdal
 import ogr
@@ -56,6 +58,36 @@ SHP_MAXY = 3
 RASTER_RESAMPLE_METHOD = ['near', 'bilinear', 'cubic', 'cubicspline', 'lanczos']
 WGS84_EPSG = 4326
 WGS84_EPSG_STR = "EPSG:4326"
+
+
+def getEPSGStringForUTMZone(zone, isNorth):
+    """!Get EPSG string, e.g. "EPSG:32618" for UTM zone (WGS84)
+    
+        @param zone Integer representing UTM zone
+        @param isNorth True if north
+        
+        @return String of the pattern "^EPSG:\d+$"
+    """
+    if isNorth:
+        epsg = 32600 + zone
+    else:
+        epsg = 32700 + zone
+    return "EPSG:%d" % (epsg,)
+
+
+def getUTMZoneFromCoordinates(longitude, latitude):
+    """!Determine the UTM zone for coordinate pair
+    
+        @param longitude Float representing WGS84 longitude
+        @param latitude Float representing WGS84 latitude
+        
+        @return Tuple of the form (zone number, true if north)
+    """
+    zone = int((math.floor((longitude + 180)/6) + 1) % 60)
+    isNorth = False
+    if latitude > 0:
+        isNorth = True
+    return (zone, isNorth)
 
 
 def transformCoordinates(sourceX, sourceY, t_srs, s_srs="EPSG:4326"):
@@ -340,6 +372,20 @@ def isCoordinatePairInBoundingBox(bbox, coordinates):
         return False
     
     return True
+
+
+def calculateBoundingBoxCenter(bbox):
+    """!Calculate the central point of the bounding box
+    
+        @param bbox A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
+        
+        @return Tuple of floats of the form (longitude, latitude)
+    """
+    x_diff = ( bbox['maxX'] - bbox['minX'] ) / 2
+    y_diff = ( bbox['maxY'] - bbox['minY'] ) / 2
+    longitude = bbox['minX'] + x_diff
+    latitude = bbox['minY'] + y_diff
+    return (longitude, latitude)
 
 
 def calculateBoundingBoxAreaSqMeters(bbox):
