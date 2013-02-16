@@ -34,6 +34,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 @author Brian Miles <brian_miles@unc.edu>
+
+@todo Refactor into raster and vector functions
 """
 import os, sys, errno
 from math import sqrt
@@ -231,6 +233,79 @@ def deleteShapefile(shpfilePath):
             os.remove(tmpFilepath)
 
 
+def getCoordinatesOfPointsFromShapefile(shpFilepath, layerName, pointIDAttr, pointIDs):
+    """!Get WGS84 coordinates of point features in shapefile
+    
+        @param shpFilepath String representing the path of the shapefile
+        @param layerName String representing the name of the layer within the shapefile from 
+        to read points
+        @param pointIDAttr String representing name of the attribute used to identify points
+        @param pointIDs List of strings representing IDs of coordinate pairs
+        
+        @return Tuple of floats of the form (longitude, latitude)
+    """
+    coordinates = []
+    
+    if not os.access(shpFilepath, os.R_OK):
+        raise IOError(errno.EACCES, "Unable to read shapefile %s" % (shpFilepath,))
+    
+    poDS = ogr.Open(shpFilepath, True)
+    assert(poDS.GetLayerCount() > 0)
+    poLayer = poDS.GetLayerByName(layerName)
+    assert(poLayer)
+    
+    # Determine type of ID field
+    poFeatureDef = poLayer.GetLayerDefn()
+    assert(poFeatureDef)
+    idAttrType = ogr.OFTString
+    numFields = poFeatureDef.GetFieldCount()
+    i = 0
+    while i < numFields:
+        poFieldDef = poFeatureDef.GetFieldDefn(i)
+        if pointIDAttr == poFieldDef.GetNameRef():
+            idAttrType = poFieldDef.GetType()
+            break
+        i = i + 1
+    
+    # Build query string to select points of interest
+    assert(len(pointIDs) > 0)
+    if ogr.OFTString == idAttrType:
+        whereFilter = "%s='%s'" % (pointIDAttr, pointIDs[0])
+        for point in pointIDs[1:]:
+            whereFilter = "%s and %s=%s" % (whereFilter, pointIDAttr, point)
+    else:
+        whereFilter = "%s=%s" % (pointIDAttr, pointIDs[0])
+        for point in pointIDs[1:]:
+            whereFilter = "%s and %s=%s" % (whereFilter, pointIDAttr, point)
+    
+    # Determine spatial reference, and if we need to convert coordinates
+    isWGS84 = True
+    inSRS = poLayer.GetSpatialRef()
+    epsgStr = "%s:%s" % ( inSRS.GetAttrValue("AUTHORITY", 0), inSRS.GetAttrValue("AUTHORITY", 1) )
+    if WGS84_EPSG_STR != epsgStr:
+        p_in = Proj(inSRS.ExportToProj4())
+        p_out = Proj(init="EPSG:4326")
+        isWGS84 = False
+    
+    # Iterate over features matching query string
+    assert(poLayer.SetAttributeFilter(whereFilter) == 0)
+    poFeature = poLayer.GetNextFeature()
+    while poFeature:
+        poGeometry = poFeature.GetGeometryRef()
+        
+        # Get coordinates
+        x = poGeometry.GetX()
+        y = poGeometry.GetY()
+        
+        # Convert coorinate pair to WGS84, if need be
+        if not isWGS84:
+            (x, y) = transform(p_in, p_out, x, y)
+        
+        coordinates.append( (x, y) )
+        poFeature = poLayer.GetNextFeature()
+    return coordinates
+
+
 def deleteGeoTiff(geoTiffPath):
     """!Delete GeoTIFF and its related files (.aux.xml)
         
@@ -244,6 +319,27 @@ def deleteGeoTiff(geoTiffPath):
         tmpFilepath = fileName + "." + ext
         if os.path.exists(tmpFilepath):
             os.remove(tmpFilepath)
+
+
+def isCoordinatePairInBoundingBox(bbox, coordinates):
+    """!Determine whether coordinate pair lies within bounding box
+    
+        @param bbox A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
+        @param coordinates List of tuples of floats of the form (longitude, latitude), in WGS84
+    
+        @return True if coordinates pair is within bounding box
+    """
+    assert(bbox['srs'] == 'EPSG:4326')
+    
+    lon = coordinates[0]
+    lat = coordinates[1]
+    
+    if (lon < bbox['minX']) or (lon > bbox['maxX']):
+        return False 
+    if (lat < bbox['minY']) or (lat > bbox['maxY']):
+        return False
+    
+    return True
 
 
 def calculateBoundingBoxAreaSqMeters(bbox):
@@ -505,6 +601,7 @@ def writeBboxPolygonToShapefile(bbox, outputDir, layerName):
         @param layerName String representing the name of the layer. Will be used as root of filename of output shapefile
         @return String representing the name of shapefile created (not the absolute path)
         
+        @raise IOError is output directory is not a writable directory
         @raise Exception if shapefile already exists
         @raise Exception is failed to create shapefile
     """
@@ -529,7 +626,7 @@ def writeBboxPolygonToShapefile(bbox, outputDir, layerName):
     assert(hDriver is not None)
     hDS = hDriver.CreateDataSource(shpFilepath)
     assert(hDS is not None)
-    hLayer = hDS.CreateLayer(layerName, geom_type=ogr.wkbPolygon)
+    hLayer = hDS.CreateLayer(layerName, srs, ogr.wkbPolygon)
     assert(hLayer is not None)
     hFeature = ogr.Feature(hLayer.GetLayerDefn())
     ring = ogr.Geometry(type=ogr.wkbLinearRing)
@@ -545,6 +642,72 @@ def writeBboxPolygonToShapefile(bbox, outputDir, layerName):
         raise Exception("Failed to create shapefile for bounding box")
     # Clean-up
     hFeature.Destroy()
+    hDS.Destroy()
+    
+    return shpFilename
+
+
+def writeCoordinatePairsToPointShapefile(outputDir, layerName, pointIDAttr, pointIDs, coordinates):
+    """!Write coordinates as a point shapefile
+    
+        @param outputDir String representing the absolute/relative path of the directory into which shapefile should be written
+        @param layerName String representing the name of the layer. Will be used as root of filename of output shapefile
+        @param pointIDAttr String representing name of the attribute used to identify points
+        @param pointIDs List of strings representing IDs of coordinate pairs 
+        @param coordinates List of tuples of floats of the form (longitude, latitude), in WGS84
+        
+        @return String representing the name of shapefile created (not the absolute path)
+        
+        @raise IOError is output directory is not a writable directory
+        @raise Exception if shapefile already exists
+        @raise Exception is failed to create shapefile
+    """
+    pszDriverName = "ESRI Shapefile"
+    shpFilename = "%s%sshp" % (layerName, os.extsep)
+    
+    numCoord = len(coordinates)
+    assert(len(pointIDs) == numCoord)
+    
+    if not os.path.isdir(outputDir):
+        raise IOError(errno.ENOTDIR, "Output directory %s is not a directory" % (outputDir,))
+    if not os.access(outputDir, os.W_OK):
+        raise IOError(errno.EACCES, "Not allowed to write to output directory %s" % (outputDir,))
+    outputDir = os.path.abspath(outputDir)
+    
+    shpFilepath = os.path.join(outputDir, shpFilename)
+    if os.path.exists(shpFilepath):
+        raise Exception("Shapefile %s already exists in directory %s" % \
+                        (shpFilename,outputDir) )
+    
+    ogr.UseExceptions()
+    srs = osr.SpatialReference()
+    srs.ImportFromEPSG(WGS84_EPSG)
+    hDriver = ogr.GetDriverByName(pszDriverName)
+    assert(hDriver is not None)
+    hDS = hDriver.CreateDataSource(shpFilepath)
+    assert(hDS is not None)
+    hLayer = hDS.CreateLayer(layerName, srs, ogr.wkbPoint)
+    assert(hLayer is not None)
+    
+    # Create ID field
+    hField = ogr.FieldDefn(pointIDAttr, ogr.OFTString)
+    hField.SetWidth(32)
+    assert(hLayer.CreateField(hField) == 0)
+    
+    i = 0
+    while i < numCoord:
+        x = coordinates[i][0]
+        y = coordinates[i][1]
+        hFeature = ogr.Feature(hLayer.GetLayerDefn())
+        hFeature.SetField(pointIDAttr, pointIDs[i])
+        hPoint = ogr.Geometry(ogr.wkbPoint)
+        hPoint.AssignSpatialReference(srs)
+        hPoint.SetPoint_2D(0, x, y)
+        hFeature.SetGeometry(hPoint)
+        assert(hLayer.CreateFeature(hFeature) == 0)
+        hFeature.Destroy()
+        i = i + 1
+    
     hDS.Destroy()
     
     return shpFilename

@@ -73,7 +73,7 @@ from ecohydroworkflowlib.spatialdata.utils import getBoundingBoxForRaster
 from ecohydroworkflowlib.spatialdata.utils import writeBboxPolygonToShapefile
 
 # Handle command line options
-parser = argparse.ArgumentParser(description='Get DEM raster (in GeoTIFF format) for a bounding box from GeoBrain WCS4DEM')
+parser = argparse.ArgumentParser(description='Register DEM with project')
 parser.add_argument('-i', '--configfile', dest='configfile', required=True,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=False,
