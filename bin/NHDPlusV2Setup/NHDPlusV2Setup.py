@@ -41,7 +41,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Usage:
 @code
-python2.7 ./NHDPlusSetup -i <config_file> -a  <archive_dir> -o <output_dir>
+python2.7 ./NHDPlusSetup.py -i <config_file> -a  <archive_dir> -o <output_dir>
 @endcode
 """
 import os

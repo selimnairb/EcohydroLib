@@ -52,6 +52,7 @@ _BUFF_LEN = 4096 * 10
 def getDEMForBoundingBox(config, outputDir, outDEMFilename, bbox, coverage='SRTM_30m_USA', srs='EPSG:4326', format='image/geotiff', overwrite=True):
     """!Fetch a digital elevation model (DEM) from the GeoBrain WCS4DEM WCS-compliant web service.
     
+        @param config A Python ConfigParser (not currently used)
         @param outputDir String representing the absolute/relative path of the directory into which output DEM should be written
         @param outDEMFilename String representing the name of the DEM file to be written
         @param bbox Dict representing the lat/long coordinates and spatial reference of the bounding box area
@@ -62,6 +63,9 @@ def getDEMForBoundingBox(config, outputDir, outDEMFilename, bbox, coverage='SRTM
             SUPPORTED_FORMATS
         @param overwrite Boolean value indicating whether or not the file indicated by filename should be overwritten.
             If False and filename exists, IOError exception will be thrown with errno.EEXIST
+    
+        @raise IOError if outputDir is not a writable directory
+        @raise IOError if outDEMFilename already exists and overwrite is False (see above)
     
         @return True if DEM data were fetched and False if not.
     """

@@ -50,7 +50,10 @@ Pre conditions
 Post conditions
 ---------------
 1. Will write the following entry(ies) to the manifest section of metadata associated with the project directory:
-   landcover [the name of the landcover raster]  
+   landcover [the name of the landcover raster]
+   
+2. Will write the following entry(ies) to the study area section of metadata associated with the project directory:
+   landcover_type=NLCD2006
 
 Usage:
 @code
@@ -142,6 +145,7 @@ resampleRaster(config, projectDir, tmpTileFilepath, tileFilename, \
             trX=outputrasterresolutionX, trY=outputrasterresolutionY, \
             resampleMethod='near')
 metadata.writeManifestEntry(projectDir, "landcover", tileFilename)
+metadata.writeStudyAreaEntry(projectDir, "landcover_type", "NLCD2006")
 
 # Clean-up
 deleteGeoTiff(tmpTileFilepath)

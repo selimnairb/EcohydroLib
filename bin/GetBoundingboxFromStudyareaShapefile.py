@@ -59,13 +59,19 @@ from ecohydroworkflowlib.spatialdata.utils import getBoundingBoxForShapefile
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get bounding box from study area shapefile')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
-                  help='The directory to which metadata, intermediate, and final files should be saved')
+                    help='The directory to which metadata, intermediate, and final files should be saved')
+parser.add_argument('-b', '--buffer', dest='buffer', required=False,
+                    help='Number of WGS84 degrees by which to buffer the bounding box')
 args = parser.parse_args()
 
 if not os.access(args.projectDir, os.W_OK):
     raise IOError(errno.EACCES, "Unable to write to project directory %s" % \
                   (args.projectDir,))
 projectDir = os.path.abspath(args.projectDir)
+
+buffer = 0.01
+if args.buffer:
+    buffer = float(args.buffer)
 
 # Get name of study area shapefile
 manifest = metadata.readManifestEntries(projectDir)
@@ -76,7 +82,7 @@ if not os.access(shapefilePath, os.R_OK):
     raise IOError(errno.EACCES, "Unable to read shapefile %s" %
                   args.shapefile)
 
-# Get bounding box
-bbox = getBoundingBoxForShapefile(shapefilePath)
+# Get bounding box, buffer by about 1 km
+bbox = getBoundingBoxForShapefile(shapefilePath, buffer=buffer)
 metadata.writeStudyAreaEntry(projectDir, "bbox_wgs84", "%f %f %f %f" % (bbox['minX'], bbox['minY'], bbox['maxX'], bbox['maxY']))
 

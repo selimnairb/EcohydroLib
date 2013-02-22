@@ -96,19 +96,21 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 Variables</h2></td></tr>
 <tr class="memitem:a419ddecf7c97f0617f0835748466085f"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#a419ddecf7c97f0617f0835748466085f">parser</a> argparse.ArgumentParser(description='Get bounding box from study area shapefile')</td></tr>
 <tr class="separator:a419ddecf7c97f0617f0835748466085f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8502ae02bf063d30cbb06fd41348f209"><td class="memItemLeft" align="right" valign="top">string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#a8502ae02bf063d30cbb06fd41348f209">help</a> 'The directory to which metadata, intermediate, and final files should be saved'</td></tr>
-<tr class="separator:a8502ae02bf063d30cbb06fd41348f209"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a21cb13693239d19b5994946c4afa1353"><td class="memItemLeft" align="right" valign="top">string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#a21cb13693239d19b5994946c4afa1353">help</a> 'The directory to which metadata, intermediate, and final files should be saved'</td></tr>
+<tr class="separator:a21cb13693239d19b5994946c4afa1353"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6000f8ae5a26f283aa7902ab14c1263e"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#a6000f8ae5a26f283aa7902ab14c1263e">args</a> parser.parse_args()</td></tr>
 <tr class="separator:a6000f8ae5a26f283aa7902ab14c1263e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa0533aca933ab41040d38d3e15a58fb4"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#aa0533aca933ab41040d38d3e15a58fb4">projectDir</a> os.path.abspath(args.projectDir)</td></tr>
 <tr class="separator:aa0533aca933ab41040d38d3e15a58fb4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acb0f3b571db8d8f754debf23e85cba31"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#acb0f3b571db8d8f754debf23e85cba31">buffer</a> 0.01</td></tr>
+<tr class="separator:acb0f3b571db8d8f754debf23e85cba31"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7026649e2ecd39538b4cccf56d8172fd"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#a7026649e2ecd39538b4cccf56d8172fd">manifest</a> metadata.readManifestEntries(<a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#aa0533aca933ab41040d38d3e15a58fb4">projectDir</a>)</td></tr>
 <tr class="separator:a7026649e2ecd39538b4cccf56d8172fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a934a34a2ea933af998b12a3a255a6338"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#a934a34a2ea933af998b12a3a255a6338">shapefileName</a> <a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#a7026649e2ecd39538b4cccf56d8172fd">manifest</a>['study_area_shapefile']</td></tr>
 <tr class="separator:a934a34a2ea933af998b12a3a255a6338"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeddcd0a5d0d8b0f46a4d52e313a748c5"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#aeddcd0a5d0d8b0f46a4d52e313a748c5">shapefilePath</a> os.path.join(<a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#aa0533aca933ab41040d38d3e15a58fb4">projectDir</a>, <a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#a934a34a2ea933af998b12a3a255a6338">shapefileName</a>)</td></tr>
 <tr class="separator:aeddcd0a5d0d8b0f46a4d52e313a748c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9f3f157ec77fa31658ce353fcd34dff3"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#a9f3f157ec77fa31658ce353fcd34dff3">bbox</a> getBoundingBoxForShapefile(<a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#aeddcd0a5d0d8b0f46a4d52e313a748c5">shapefilePath</a>)</td></tr>
+<tr class="memitem:a9f3f157ec77fa31658ce353fcd34dff3"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#a9f3f157ec77fa31658ce353fcd34dff3">bbox</a> getBoundingBoxForShapefile(<a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#aeddcd0a5d0d8b0f46a4d52e313a748c5">shapefilePath</a>, <a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#acb0f3b571db8d8f754debf23e85cba31">buffer</a>=<a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#acb0f3b571db8d8f754debf23e85cba31">buffer</a>)</td></tr>
 <tr class="separator:a9f3f157ec77fa31658ce353fcd34dff3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -151,14 +153,26 @@ Variables</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">tuple GetBoundingboxFromStudyareaShapefile.bbox getBoundingBoxForShapefile(<a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#aeddcd0a5d0d8b0f46a4d52e313a748c5">shapefilePath</a>)</td>
+          <td class="memname">tuple GetBoundingboxFromStudyareaShapefile.bbox getBoundingBoxForShapefile(<a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#aeddcd0a5d0d8b0f46a4d52e313a748c5">shapefilePath</a>, <a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#acb0f3b571db8d8f754debf23e85cba31">buffer</a>=<a class="el" href="namespace_get_boundingbox_from_studyarea_shapefile.html#acb0f3b571db8d8f754debf23e85cba31">buffer</a>)</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 </div>
 </div>
-<a class="anchor" id="a8502ae02bf063d30cbb06fd41348f209"></a>
+<a class="anchor" id="acb0f3b571db8d8f754debf23e85cba31"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">tuple GetBoundingboxFromStudyareaShapefile.buffer 0.01</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a21cb13693239d19b5994946c4afa1353"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -233,7 +247,7 @@ Variables</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Feb 16 2013 17:06:25 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 22 2013 15:17:31 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3
 </small></address>

@@ -444,19 +444,23 @@ def tileBoundingBox(bbox, threshold):
     return bboxes
 
 
-def getBoundingBoxForShapefile(shapefileName):
+def getBoundingBoxForShapefile(shapefileName, buffer=0.0):
     """!Return the bounding box, in WGS84 (EPSG:4326) coordinates, for the ESRI shapefile.  
         Assumes shapefile exists and is readable.
         Based on http://svn.osgeo.org/gdal/trunk/gdal/swig/python/samples/ogrinfo.py
    
-        @param shapefileName A string representing the path of the shapefile whose bounding box should be determined.
+        @param shapefileName String representing the path of the shapefile whose bounding box should be determined.
+        @param buffer Float >= 0.0 representing number of degrees by which to buffer the bounding box; 0.0 = no buffer, 
+        0.01 = 0.01 degree buffer
         
         @return A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
     """
-    minX = 0
-    minY = 90
-    maxX = -180
-    maxY = 0
+    assert(buffer >= 0.0)
+    
+    minX = 0.0
+    minY = 90.0
+    maxX = -180.0
+    maxY = 0.0
     
     # Get spatial reference system for shapefile
     poDS = ogr.Open(shapefileName, True)
@@ -488,8 +492,39 @@ def getBoundingBoxForShapefile(shapefileName):
             maxY = tmpMaxY 
         #print minX,minY,maxX,maxY  
         poFeature = poLayer.GetNextFeature()
-            
-    return dict({'minX': minX, 'minY': minY, 'maxX': maxX, 'maxY': maxY, 'srs': 'EPSG:4326'})
+    
+    bbox = dict({'minX': minX, 'minY': minY, 'maxX': maxX, 'maxY': maxY, 'srs': 'EPSG:4326'})
+    bufferBoundingBox(bbox, buffer)
+    
+    return bbox
+
+
+def bufferBoundingBox(bbox, buffer):
+    """!Buffer the bounding by a given percentage
+    
+        @param bbox A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
+        @param buffer Float >= 0.0 representing number of degrees by which to buffer the bounding box; 0.0 = no buffer, 
+        0.01 = 0.01 degree buffer
+    """
+    if buffer > 0.0:
+        # Apply buffer
+        minX = bbox['minX']
+        minY = bbox['minY']
+        maxX = bbox['maxX']
+        maxY = bbox['maxY']
+        minX = minX - buffer
+        minY = minY - buffer
+        maxX = maxX + buffer
+        maxY = maxY + buffer
+        # Correct any wrapping that occurred
+        if minX < -180.0: minX = 360.0 + minX
+        if minY < -90.0: minY = -90.0
+        if maxX > 180.0: maxX = -360.0 + maxX
+        if minY > 90.0: maxY = 90.0
+        bbox['minX'] = minX
+        bbox['minY'] = minY
+        bbox['maxX'] = maxX
+        bbox['maxY'] = maxY
 
 
 def getMeterConversionFactorForLinearUnitOfGMLfile(gmlFilename):

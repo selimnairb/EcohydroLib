@@ -53,6 +53,9 @@ Post conditions
 ---------------
 1. Will write the following entry(ies) to the manifest section of metadata associated with the project directory:
    landcover [the name of the landcover raster]  
+   
+2. Will write the following entry(ies) to the study area section of metadata associated with the project directory:
+   landcover_type=custom
 
 Usage:
 @code
@@ -179,3 +182,4 @@ if not force and ( (newLcMetadata[0] != demColumns) or (newLcMetadata[1] != demR
 
 # Write metadata
 metadata.writeManifestEntry(projectDir, "landcover", landcoverFilename)
+metadata.writeStudyAreaEntry(projectDir, "landcover_type", "custom")
