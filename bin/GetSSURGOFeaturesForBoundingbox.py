@@ -1,4 +1,5 @@
-"""!
+#!/usr/bin/env python
+"""@package GetSSURGOFeaturesForBoundingbox
 
 @brief Query USDA soil datamart for SSURGO features and attributes
 

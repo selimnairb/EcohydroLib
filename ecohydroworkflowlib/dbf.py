@@ -1,4 +1,4 @@
-"""!@package ecohydroworkflowlib.dbf
+"""@package ecohydroworkflowlib.dbf
     
 @brief Methods for reading and write DBF data files
 @brief Adapted from: http://code.activestate.com/recipes/362715-dbf-reader-and-writer/
@@ -38,15 +38,17 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import struct, datetime, decimal, itertools
 
 def dbfreader(f):
-    """Returns an iterator over records in a Xbase DBF file.
+    """ Returns an iterator over records in a Xbase DBF file.
 
-    The first row returned contains the field names.
-    The second row contains field specs: (type, size, decimal places).
-    Subsequent rows contain the data records.
-    If a record is marked as deleted, it is skipped.
-
-    File should be opened for binary reads.
-
+        @param f A file descriptor
+        @return An iterator of records in the file
+    
+        The first row returned contains the field names.
+        The second row contains field specs: (type, size, decimal places).
+        Subsequent rows contain the data records.
+        If a record is marked as deleted, it is skipped.
+    
+        File should be opened for binary reads.
     """
     # See DBF format spec at:
     #     http://www.pgts.com.au/download/public/xbase.htm#DBF_STRUCT
@@ -106,20 +108,18 @@ def dbfreader(f):
 def dbfwriter(f, fieldnames, fieldspecs, records):
     """ Return a string suitable for writing directly to a binary dbf file.
 
-    File f should be open for writing in a binary mode.
-
-    Fieldnames should be no longer than ten characters and not include \x00.
-    Fieldspecs are in the form (type, size, deci) where
-        type is one of:
-            C for ascii character data
-            M for ascii character memo data (real memo fields not supported)
-            D for datetime objects
-            N for ints or decimal objects
-            L for logical values 'T', 'F', or '?'
-        size is the field width
-        deci is the number of decimal places in the provided decimal object
-    Records can be an iterable over the records (sequences of field values).
-    
+        @param f File descriptor, should be open for writing in a binary mode.
+        @param fieldnames List of field names, should be no longer than ten characters and not include \x00.
+        @param fieldspecs List of field specifications, in the form (type, size, deci) where
+            type is one of:
+                C for ascii character data
+                M for ascii character memo data (real memo fields not supported)
+                D for datetime objects
+                N for ints or decimal objects
+                L for logical values 'T', 'F', or '?'
+            size is the field width
+            deci is the number of decimal places in the provided decimal object
+        @param records An iterable over the records (sequences of field values).
     """
     # header info
     ver = 3

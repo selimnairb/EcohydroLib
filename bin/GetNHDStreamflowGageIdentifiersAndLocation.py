@@ -1,4 +1,5 @@
-"""!
+#!/usr/bin/env python
+"""@package GetNHDStreamflowGageIdentifiersAndLocation
  
 @brief Get NHDPlus2 streamflow gage identifiers (reachcode, measure along reach in percent) for a USGS gage 
 @brief Get lat/lon, in WGS84 (EPSG:4326), from gage point layer (Gage_Loc) for gage identified by a source_fea (e.g. USGS Site Number) 

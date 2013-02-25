@@ -1,4 +1,5 @@
-"""!
+#!/usr/bin/env python
+"""@package GetHYDRO1kDEMForBoundingbox
 
 @brief Extract tile for HYDRO1k digital elevation model (DEM) stored locally
 

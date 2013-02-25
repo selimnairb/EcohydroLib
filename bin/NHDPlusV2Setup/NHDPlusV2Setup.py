@@ -1,4 +1,5 @@
-"""!
+#!/usr/bin/env python
+"""@package NHDPlusV2Setup
     
 @brief Builds SQLite3 databases from NHDPlus V2 data archives downloaded from
 http://www.horizon-systems.com/NHDPlus/NHDPlusV2_home.php

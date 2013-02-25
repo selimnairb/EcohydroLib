@@ -1,4 +1,5 @@
-"""!
+#!/usr/bin/env python
+"""@package RegisterGage
 
 @brief Register streamflow gage coordinates from a point shapefile into metadata 
 store for a project directory, copying the shapefile into the project directory 

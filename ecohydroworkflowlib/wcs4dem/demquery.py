@@ -1,4 +1,4 @@
-"""!@package ecohydroworkflowlib.wcs4dem.demquery
+"""@package ecohydroworkflowlib.wcs4dem.demquery
     
 @brief Query NASA EOS Education Alliance (NEHEA) GeoBrain for DEM data
 
@@ -50,7 +50,7 @@ _BUFF_LEN = 4096 * 10
     
 
 def getDEMForBoundingBox(config, outputDir, outDEMFilename, bbox, coverage='SRTM_30m_USA', srs='EPSG:4326', format='image/geotiff', overwrite=True):
-    """!Fetch a digital elevation model (DEM) from the GeoBrain WCS4DEM WCS-compliant web service.
+    """ Fetch a digital elevation model (DEM) from the GeoBrain WCS4DEM WCS-compliant web service.
     
         @param config A Python ConfigParser (not currently used)
         @param outputDir String representing the absolute/relative path of the directory into which output DEM should be written

@@ -1,4 +1,4 @@
-"""!@package ecohydroworkflowlib.ssurgo.featurequery
+"""@package ecohydroworkflowlib.ssurgo.featurequery
     
 @brief Make feature queries against USDA Soil Data Mart OGC web service interface
 
@@ -53,7 +53,7 @@ MAX_SSURGO_EXTENT = MAX_SSURGO_EXTENT / 10
 
 def getMapunitFeaturesForBoundingBox(outputDir, bbox, \
                                      mapunitExtended=False, tileBbox=False):
-    """!Query USDA Soil Data Mart for SSURGO Mapunit features with a given bounding box.
+    """ Query USDA Soil Data Mart for SSURGO Mapunit features with a given bounding box.
         Features will be written to one or more GML files, one file for each bboxTile tile,
         stored in the specified output directory. The filename will be returned as a string.
         Will fetch SSURGO tabular data (see ssurgolib.attributequery.attributeList for a list

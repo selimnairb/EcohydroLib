@@ -1,4 +1,4 @@
-"""!@package ecohydroworkflowlib.tests.test_manifest_and_studyarea
+"""@package ecohydroworkflowlib.tests.test_manifest_and_studyarea
     
     @brief Test methods for ecohydrologyworkflowlib.metadata
     
@@ -35,7 +35,7 @@
     
     Usage: 
     @code
-    PYTHONPATH=${PYTHONPATH}:../../../EcohydroWorkflowLib python -m unittest test_manifest_and_studyarea
+    python -m unittest test_manifest_and_studyarea
     @endcode
     
 """ 

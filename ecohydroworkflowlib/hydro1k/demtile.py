@@ -1,4 +1,4 @@
-"""!@package ecohydroworkflowlib.hydro1k.demtile
+"""@package ecohydroworkflowlib.hydro1k.demtile
     
 @brief Extract tile for HYDRO1k digital elevation model (DEM) stored locally
 
@@ -42,7 +42,7 @@ from ecohydroworkflowlib.spatialdata.utils import deleteGeoTiff
 DEFAULT_CRS = 'EPSG:2163' # spatial reference of HYDRO1k North America
 
 def getDEMForBoundingBox(config, outputDir, outDEMFilename, bbox, srs='EPSG:4326', overwrite=True):
-    """!Extract tile of HYDRO1k digital elevation model (DEM) for bounding box.
+    """ Extract tile of HYDRO1k digital elevation model (DEM) for bounding box.
     
         @param config Python ConfigParser containing the following sections and options:
             'GDAL/OGR', 'PATH_OF_GDAL_TRANSLATE'

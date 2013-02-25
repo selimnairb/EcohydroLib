@@ -1,4 +1,5 @@
-"""!
+#!/usr/bin/env python
+"""@package GetNLCDForBoundingbox
 
 @brief Extract a tile of NLCD 2006 data for bounding box from a locally stored copy of the entire NLCD 2006 dataset
 dataset. 

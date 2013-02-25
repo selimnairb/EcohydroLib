@@ -1,4 +1,4 @@
-"""!@package ecohydroworkflowlib.ssurgo.saxhandlers
+"""@package ecohydroworkflowlib.ssurgo.saxhandlers
     
 @brief xml.sax.ContentHandler subclass for parsing SSURGO features stored as GML files
 
@@ -38,7 +38,7 @@ import xml.sax
 from oset import oset
 
 class SSURGOFeatureHandler(xml.sax.ContentHandler):
-    """!Parse SSURGO features fetched from USDA soil datamart WFS 1.0.0 web service.
+    """ Parse SSURGO features fetched from USDA soil datamart WFS 1.0.0 web service.
         Currently pulls out MUKEYs for each feature returned as either MapunitPoly or MapunitPolyExtended
         For example:
             /wfs:FeatureCollection/gml:featureMember/ms:MapunitPolyExtended/ms:MUKEY
@@ -60,7 +60,7 @@ class SSURGOFeatureHandler(xml.sax.ContentHandler):
     mukeys = None
     
     def __init__(self):
-        """!Default constructor
+        """ Default constructor
             
             @param self This object
         """
@@ -68,7 +68,7 @@ class SSURGOFeatureHandler(xml.sax.ContentHandler):
         self.mukeys = list()
         
     def characters(self, content):
-        """!Called when character data are encountered
+        """ Called when character data are encountered
         
             @param self This object
             @param content String containing characters
@@ -78,7 +78,7 @@ class SSURGOFeatureHandler(xml.sax.ContentHandler):
             self.mukeys.append(content)
             
     def startElement(self, name, attrs):
-        """!Called at the start of an element
+        """ Called at the start of an element
         
             @param self This object
             @param name The name of the object
@@ -98,7 +98,7 @@ class SSURGOFeatureHandler(xml.sax.ContentHandler):
             
             
     def endElement(self, name):
-        """!Called at the end of an element
+        """ Called at the end of an element
         
             @param self This object
             @param name The name of the object
@@ -116,7 +116,7 @@ class SSURGOFeatureHandler(xml.sax.ContentHandler):
             
 
 class SSURGOMUKEYQueryHandler(xml.sax.ContentHandler):
-    """!Parse query results fetched via USDA soil datamart tabular query web service.
+    """ Parse query results fetched via USDA soil datamart tabular query web service.
         Query results are assumed to contain one or more attributes associated with MUKEYs.
         Supports results who contain multiple "rows" for a given MUKEY
     

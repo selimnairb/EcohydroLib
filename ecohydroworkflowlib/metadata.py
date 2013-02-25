@@ -1,4 +1,4 @@
-"""!@package ecohydroworkflowlib.metadata
+"""@package ecohydroworkflowlib.metadata
     
 @brief Methods for writing and reading metadata for Ecohydrology workflows
 
@@ -45,7 +45,7 @@ STUDY_AREA_SECTION = 'STUDY_AREA'
 
 
 def _writeEntryToSection(projectDir, section, key, value):
-    """!Write a manifest entry to the metadata store for a given project. 
+    """ Write a manifest entry to the metadata store for a given project. 
     
         @note Will blindly overwrite a the value for a key that already exists
         
@@ -91,7 +91,7 @@ def _writeEntryToSection(projectDir, section, key, value):
 
 
 def writeManifestEntry(projectDir, key, value):
-    """!Write a manifest entry to the metadata store for a given project.
+    """ Write a manifest entry to the metadata store for a given project.
         
         @note Will blindly overwrite a the value for a key that already exists
     
@@ -105,7 +105,7 @@ def writeManifestEntry(projectDir, key, value):
     
     
 def writeStudyAreaEntry(projectDir, key, value):
-    """!Write a study area entry to the metadata store for a given project.
+    """ Write a study area entry to the metadata store for a given project.
         
         @note Will blindly overwrite a the value for a key that already exists
     
@@ -119,7 +119,7 @@ def writeStudyAreaEntry(projectDir, key, value):
 
 
 def _readEntriesForSection(projectDir, section):
-    """!Read all entries for the given section from the metadata store for a given project
+    """ Read all entries for the given section from the metadata store for a given project
     
         @param projectDir Absolute path of the project whose metadata are to be read
         @param section The section the key is to be written to
@@ -143,7 +143,7 @@ def _readEntriesForSection(projectDir, section):
 
 
 def readManifestEntries(projectDir):
-    """!Read all manifest entries from the metadata store for a given project
+    """ Read all manifest entries from the metadata store for a given project
     
         @param projectDir Absolute path of the project whose metadata are to be read
         
@@ -153,7 +153,7 @@ def readManifestEntries(projectDir):
 
 
 def readStudyAreaEntries(projectDir):
-    """!Read all study area entries from the metadata store for a given project
+    """ Read all study area entries from the metadata store for a given project
     
         @param projectDir Absolute path of the project whose metadata are to be read
         

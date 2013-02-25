@@ -1,4 +1,5 @@
-"""!
+#!/usr/bin/env python
+"""@package RegisterDEM
 
 @brief Register digital elevation model (DEM) data into metadata store for a project directory,
 copying the DEM file into the project directory in the process.  Will create a study area 

@@ -1,4 +1,4 @@
-"""!@package ecohydroworkflowlib.ssurgo.attributequery
+"""@package ecohydroworkflowlib.ssurgo.attributequery
     
 @brief Make tabular queries against USDA Soil Data Mart SOAP web service interface
 @note Requires python-httplib2 to be installed, else requests to soil data mart may timeout
@@ -47,7 +47,7 @@ attributeList = ['avgKsat', 'avgClay', 'avgSilt', 'avgSand', 'avgPorosity','pmgr
 attributeListNumeric = ['avgKsat', 'avgClay', 'avgSilt', 'avgSand', 'avgPorosity']
 
 def strListToString(strList):
-    """!Converts a Python list of string values into a string containing quoted, 
+    """ Converts a Python list of string values into a string containing quoted, 
         comma separated representation of the list.
         
         @param strList List of strings
@@ -67,7 +67,7 @@ def strListToString(strList):
     return returnStr
 
 def computeWeightedAverageKsatClaySandSilt(soilAttrTuple):
-    """!Computes weighted average for Ksat, %clay/silt/sand for a SSURGO mukey based on values
+    """ Computes weighted average for Ksat, %clay/silt/sand for a SSURGO mukey based on values
         for each component in the mukey; weights based on component.comppct_r.
     
         @param soilAttrTuple Tuple returned from getParentMatKsatTexturePercentClaySiltSandForComponentsInMUKEYs
@@ -166,7 +166,7 @@ def computeWeightedAverageKsatClaySandSilt(soilAttrTuple):
     return (avgSoilHeaders, avgSoilAttr)
 
 def joinSSURGOAttributesToFeaturesByMUKEY(gmlFile, typeName, ssurgoAttributes):
-    """!Join SSURGO tabular attributes to MapunitPoly or MapunitPolyExtended features based on
+    """ Join SSURGO tabular attributes to MapunitPoly or MapunitPolyExtended features based on
         MUKEY. Will write GML file and shapefile for features, and raster layers for each column
         vallue (see below).
     
@@ -220,7 +220,7 @@ def joinSSURGOAttributesToFeaturesByMUKEY(gmlFile, typeName, ssurgoAttributes):
     return etree.tostring(tree)
 
 def getParentMatKsatTexturePercentClaySiltSandForComponentsInMUKEYs(mukeyList):
-    """!Query USDA soil datamart tabular service for ksat, texture, % clay, % silt, % sand for all
+    """ Query USDA soil datamart tabular service for ksat, texture, % clay, % silt, % sand for all
         components in the specified map units.
     
         @param mukeyList List of strings representing the MUKEY of each map unit for which we would 

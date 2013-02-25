@@ -1,4 +1,5 @@
-"""!
+#!/usr/bin/env python
+"""@package GetCatchmentShapefileForStreamflowGage
 
 @brief Query NHDPlus2 database for shapefile of the drainage area of the given streamflow gage.
 @brief Resulting shapefile will use WGS84 (EPSG:4326) for its spatial reference. 

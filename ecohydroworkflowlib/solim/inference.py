@@ -1,4 +1,4 @@
-"""!@package ecohydroworkflowlib.solim.inference
+"""@package ecohydroworkflowlib.solim.inference
     
 @brief Infer soil properties from SSURGO and terrain data using SOLIM framework
 
@@ -37,7 +37,7 @@ import os, errno
 
 
 def inferSoilPropertiesForSSURGOAndTerrainData(config, outputDir, shpFilepath, demFilepath):
-    """!Infer soil properties from SSURGO and terrain data using SOLIM framework
+    """ Infer soil properties from SSURGO and terrain data using SOLIM framework
     
         @param config A Python ConfigParser containing the section 'SOLIM' and option 'PATH_OF_SOLIM'
         @param outputDir String representing the absolute/relative path of the directory into which shapefile should be written

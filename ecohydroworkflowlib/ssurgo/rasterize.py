@@ -1,4 +1,4 @@
-"""!@package ecohydroworkflowlib.ssurgo.rasterize
+"""@package ecohydroworkflowlib.ssurgo.rasterize
     
 @brief Rasterize SSURGO features
 
@@ -42,7 +42,7 @@ from ecohydroworkflowlib.spatialdata.utils import getMeterConversionFactorForLin
 
 def rasterizeSSURGOFeatures(config, outputDir, featureFilename, featureLayername, featureAttrList, \
                             getResolutionFromRasterFileNamed=None, rasterResolutionX=None, rasterResolutionY=None):
-    """!Create raster maps, in GeoTIFF format, for SSURGO attributes associated with SSURGO MapunitPoly/MapunitPolyExtended features
+    """ Create raster maps, in GeoTIFF format, for SSURGO attributes associated with SSURGO MapunitPoly/MapunitPolyExtended features
         
         @note Will silently exit if rasters already exist.
         @note If getResolutionFromRasterFileNamed as well as rasterResolutionX and rasterResolutionY are specified,

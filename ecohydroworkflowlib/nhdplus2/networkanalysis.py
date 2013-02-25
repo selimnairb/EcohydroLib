@@ -1,4 +1,4 @@
-"""!@package ecohydroworkflowlib.nhdplus2.networkanalysis
+"""@package ecohydroworkflowlib.nhdplus2.networkanalysis
     
 @brief Methods for querying the NHDPlus V2 data set. Requires that a NHDPlus V2 
 database be initialized from data archive files using NHDPlusSetup.py
@@ -50,7 +50,7 @@ EAST = 90
 
 
 def getNHDReachcodeAndMeasureForGageSourceFea(config, source_fea):
-    """!Get NHD Reachcode and measure along reach for a 
+    """ Get NHD Reachcode and measure along reach for a 
         streamflow gage identified by a source_fea (e.g. USGS Site Number)
     
         @param config A Python ConfigParser containing the following sections and options:
@@ -84,7 +84,7 @@ def getNHDReachcodeAndMeasureForGageSourceFea(config, source_fea):
 
 
 def getLocationForStreamGageByGageSourceFea(config, source_fea):
-    """!Get lat/lon, in WGS84 (EPSG:4326), from gage point layer (Gage_Loc) for
+    """ Get lat/lon, in WGS84 (EPSG:4326), from gage point layer (Gage_Loc) for
         gage identified by a source_fea (e.g. USGS Site Number)
     
         @param config A Python ConfigParser containing the following sections and options:
@@ -101,7 +101,7 @@ def getLocationForStreamGageByGageSourceFea(config, source_fea):
 
 
 def getLocationForStreamGageByReachcodeAndMeasure(config, reachcode, measure):
-    """!Get lat/lon, in WGS84 (EPSG:4326), from gage point layer (Gage_Loc) for
+    """ Get lat/lon, in WGS84 (EPSG:4326), from gage point layer (Gage_Loc) for
         gage identified by reachcode and measure
     
         @param config A Python ConfigParser containing the following sections and options:
@@ -121,7 +121,7 @@ def getLocationForStreamGageByReachcodeAndMeasure(config, reachcode, measure):
 
 
 def getLocationForStreamGage(config, whereFilter):
-    """!Get lat/lon, in WGS84 (EPSG:4326), from gage point layer (Gage_Loc) for
+    """ Get lat/lon, in WGS84 (EPSG:4326), from gage point layer (Gage_Loc) for
         gage identified by reachcode and measure
     
         @param config A Python ConfigParser containing the following sections and options:
@@ -163,7 +163,7 @@ def getLocationForStreamGage(config, whereFilter):
     
 
 def getComIdForStreamGage(conn, reachcode, measure):
-    """!Uses NHDFlowline and/or NHDReachCode_ComID table(s) to lookup the ComID associated with a stream gage
+    """ Uses NHDFlowline and/or NHDReachCode_ComID table(s) to lookup the ComID associated with a stream gage
         identified by reach code and measure.
     
         @param conn An sqlite3 connection to a database that has the NHDFlowline and NHDReachCode_Comid tables
@@ -194,7 +194,7 @@ AND g.ReachCode=? AND g.Measure=?""", (reachcode, measure))
 
 
 def getPlusFlowPredecessors(conn, comID):
-    """!Get the immediate predecessors of the NHDPlus2 PlusFlow feature of comID
+    """ Get the immediate predecessors of the NHDPlus2 PlusFlow feature of comID
     
         @param conn A connection an SQLite3 database
         @param comdID String representing the ComID of the reach whose immediate predecessor reaches are to be discovered
@@ -210,7 +210,7 @@ def getPlusFlowPredecessors(conn, comID):
 
 
 def getUpstreamReachesSQL(conn, comID, allUpstreamReaches):
-    """!Recursively searches PlusFlow table in an SQLite database for all stream reaches
+    """ Recursively searches PlusFlow table in an SQLite database for all stream reaches
         upstream of a given reach.
     
         @note This method has no return value. Upstream reaches discovered are appended to allUpstreamReaches list.
@@ -236,7 +236,7 @@ def getUpstreamReachesSQL(conn, comID, allUpstreamReaches):
     
         
 def getBoundingBoxForCatchmentsForGage(config, outputDir, reachcode, measure, deleteIntermediateFiles=True):
-    """!Get bounding box coordinates (in WGS 84) for the drainage area associated with a given NHD 
+    """ Get bounding box coordinates (in WGS 84) for the drainage area associated with a given NHD 
         (National Hydrography Dataset) streamflow gage identified by a reach code and measure.
         
         @param config A Python ConfigParser containing the following sections and options:
@@ -314,7 +314,7 @@ def getBoundingBoxForCatchmentsForGage(config, outputDir, reachcode, measure, de
 
 
 def getCatchmentShapefileForGage(config, outputDir, catchmentFilename, reachcode, measure, deleteIntermediateFiles=True):
-    """!Get shapefile (in WGS 84) for the drainage area associated with a given NHD 
+    """ Get shapefile (in WGS 84) for the drainage area associated with a given NHD 
         (National Hydrography Dataset) streamflow gage identified by a reach code and measure.
         
         @note No return value. catchmentFilename will be written to outputDir if successful

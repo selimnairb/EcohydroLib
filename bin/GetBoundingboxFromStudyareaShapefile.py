@@ -1,4 +1,5 @@
-"""!
+#!/usr/bin/env python
+"""@package GetBoundingboxFromStudyareaShapefile
 
 @brief Get bounding box for ESRI Shapefile projected in WGS84 (EPSG:4326)
 

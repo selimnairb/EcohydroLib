@@ -1,4 +1,4 @@
-"""!@package ecohydroworkflowlib.spatialdata.utils
+"""@package ecohydroworkflowlib.spatialdata.utils
     
 @brief Generic utilities for manipulating spatial data sets.
 @brief Builds a task-oriented API, for select operations, on top of
@@ -61,7 +61,7 @@ WGS84_EPSG_STR = "EPSG:4326"
 
 
 def getEPSGStringForUTMZone(zone, isNorth):
-    """!Get EPSG string, e.g. "EPSG:32618" for UTM zone (WGS84)
+    """ Get EPSG string, e.g. "EPSG:32618" for UTM zone (WGS84)
     
         @param zone Integer representing UTM zone
         @param isNorth True if north
@@ -76,7 +76,7 @@ def getEPSGStringForUTMZone(zone, isNorth):
 
 
 def getUTMZoneFromCoordinates(longitude, latitude):
-    """!Determine the UTM zone for coordinate pair
+    """ Determine the UTM zone for coordinate pair
     
         @param longitude Float representing WGS84 longitude
         @param latitude Float representing WGS84 latitude
@@ -91,7 +91,7 @@ def getUTMZoneFromCoordinates(longitude, latitude):
 
 
 def transformCoordinates(sourceX, sourceY, t_srs, s_srs="EPSG:4326"):
-    """!Transform a pair of X,Y coordinates from one reference system to another
+    """ Transform a pair of X,Y coordinates from one reference system to another
     
         @param sourceX A float representing the X coordinate
         @param sourceY A float representing the Y coordinate
@@ -107,7 +107,7 @@ def transformCoordinates(sourceX, sourceY, t_srs, s_srs="EPSG:4326"):
 
 
 def extractTileFromRaster(config, outputDir, inRasterFilename, outRasterFilename, bbox):
-    """!Extract a tile from a raster. Tile extent is defined by supplied bounding box 
+    """ Extract a tile from a raster. Tile extent is defined by supplied bounding box 
         with coordinates defined in WGS84 (EPSG:4326).
         
         @note Output raster will be in LZW-compressed GeoTIFF file.
@@ -156,7 +156,7 @@ def extractTileFromRaster(config, outputDir, inRasterFilename, outRasterFilename
 
 def resampleRaster(config, outputDir, inRasterFilepath, outRasterFilename, \
                 s_srs, t_srs, trX, trY, resampleMethod='bilinear'):
-    """!Resample raster from one spatial reference system and resolution to another.
+    """ Resample raster from one spatial reference system and resolution to another.
         
         @note Output raster will be in LZW-compressed GeoTIFF file.
         @note Will silently return if output raster already exists.
@@ -219,7 +219,7 @@ def resampleRaster(config, outputDir, inRasterFilepath, outRasterFilename, \
 
 
 def convertGMLToShapefile(config, outputDir, gmlFilepath, layerName, t_srs):
-    """!Convert a GML file to a shapefile.  Will silently exit if shapefile already exists
+    """ Convert a GML file to a shapefile.  Will silently exit if shapefile already exists
     
         @param config A Python ConfigParser containing the section 'GDAL/OGR' and option 'PATH_OF_OGR2OGR'
         @param outputDir String representing the absolute/relative path of the directory into which shapefile should be written
@@ -251,7 +251,7 @@ def convertGMLToShapefile(config, outputDir, gmlFilepath, layerName, t_srs):
 
 
 def deleteShapefile(shpfilePath):
-    """!Delete shapefile and its related files (.dbf, .prj, .shx)
+    """ Delete shapefile and its related files (.dbf, .prj, .shx)
         
         @param shpfilePath -- Path, including filename, of the shapefile to be deleted
     """
@@ -266,7 +266,7 @@ def deleteShapefile(shpfilePath):
 
 
 def getCoordinatesOfPointsFromShapefile(shpFilepath, layerName, pointIDAttr, pointIDs):
-    """!Get WGS84 coordinates of point features in shapefile
+    """ Get WGS84 coordinates of point features in shapefile
     
         @param shpFilepath String representing the path of the shapefile
         @param layerName String representing the name of the layer within the shapefile from 
@@ -339,7 +339,7 @@ def getCoordinatesOfPointsFromShapefile(shpFilepath, layerName, pointIDAttr, poi
 
 
 def deleteGeoTiff(geoTiffPath):
-    """!Delete GeoTIFF and its related files (.aux.xml)
+    """ Delete GeoTIFF and its related files (.aux.xml)
         
         @param geoTiffPath -- Path, including filename, of the GeoTIFF to be deleted
     """
@@ -354,7 +354,7 @@ def deleteGeoTiff(geoTiffPath):
 
 
 def isCoordinatePairInBoundingBox(bbox, coordinates):
-    """!Determine whether coordinate pair lies within bounding box
+    """ Determine whether coordinate pair lies within bounding box
     
         @param bbox A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
         @param coordinates List of tuples of floats of the form (longitude, latitude), in WGS84
@@ -375,7 +375,7 @@ def isCoordinatePairInBoundingBox(bbox, coordinates):
 
 
 def calculateBoundingBoxCenter(bbox):
-    """!Calculate the central point of the bounding box
+    """ Calculate the central point of the bounding box
     
         @param bbox A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
         
@@ -389,7 +389,7 @@ def calculateBoundingBoxCenter(bbox):
 
 
 def calculateBoundingBoxAreaSqMeters(bbox):
-    """!Calculate bbox area in square meters
+    """ Calculate bbox area in square meters
     
         @param bbox A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
         
@@ -408,7 +408,7 @@ def calculateBoundingBoxAreaSqMeters(bbox):
 
 
 def tileBoundingBox(bbox, threshold):
-    """!Break up bounding box into tiles if bounding box is larger than threshold. 
+    """ Break up bounding box into tiles if bounding box is larger than threshold. 
         Bounding box must be defined by WGS84 lat,lon coordinates
         
         @param bbox A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
@@ -445,7 +445,7 @@ def tileBoundingBox(bbox, threshold):
 
 
 def getBoundingBoxForShapefile(shapefileName, buffer=0.0):
-    """!Return the bounding box, in WGS84 (EPSG:4326) coordinates, for the ESRI shapefile.  
+    """ Return the bounding box, in WGS84 (EPSG:4326) coordinates, for the ESRI shapefile.  
         Assumes shapefile exists and is readable.
         Based on http://svn.osgeo.org/gdal/trunk/gdal/swig/python/samples/ogrinfo.py
    
@@ -500,7 +500,7 @@ def getBoundingBoxForShapefile(shapefileName, buffer=0.0):
 
 
 def bufferBoundingBox(bbox, buffer):
-    """!Buffer the bounding by a given percentage
+    """ Buffer the bounding by a given percentage
     
         @param bbox A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
         @param buffer Float >= 0.0 representing number of degrees by which to buffer the bounding box; 0.0 = no buffer, 
@@ -528,7 +528,7 @@ def bufferBoundingBox(bbox, buffer):
 
 
 def getMeterConversionFactorForLinearUnitOfGMLfile(gmlFilename):
-    """!Get conversion factor for converting a GML file's linear unit into meters
+    """ Get conversion factor for converting a GML file's linear unit into meters
     
         @param gmlFilename String representing the GML file
         
@@ -547,7 +547,7 @@ def getMeterConversionFactorForLinearUnitOfGMLfile(gmlFilename):
 
 
 def getMeterConversionFactorForLinearUnitOfShapefile(shpFilename):
-    """!Get conversion factor for converting a shapefile's linear unit into meters
+    """ Get conversion factor for converting a shapefile's linear unit into meters
     
         @param shpFilename String representing the name of the shapefile
         
@@ -566,7 +566,7 @@ def getMeterConversionFactorForLinearUnitOfShapefile(shpFilename):
 
 
 def getSpatialReferenceForRaster(filename):
-    """!Get pixel size and unit for DEM.  Uses GDAL library
+    """ Get pixel size and unit for DEM.  Uses GDAL library
         Code adapted from: http://svn.osgeo.org/gdal/trunk/gdal/swig/python/samples/gdalinfo.py
         
         @param filename String representing the DEM file to read pixel size and units
@@ -606,7 +606,7 @@ def getSpatialReferenceForRaster(filename):
 
 
 def getDimensionsForRaster(filename):
-    """!Get number of columns and rows for raster.  Uses GDAL library
+    """ Get number of columns and rows for raster.  Uses GDAL library
         Code adapted from: http://svn.osgeo.org/gdal/trunk/gdal/swig/python/samples/gdalinfo.py
         
         @param filename String representing the DEM file to read pixel size and units
@@ -633,7 +633,7 @@ def getDimensionsForRaster(filename):
 
 
 def getBoundingBoxForRaster(filename):
-    """!Return the bounding box, in WGS84 (EPSG:4326) coordinates, for the raster dateset.  
+    """ Return the bounding box, in WGS84 (EPSG:4326) coordinates, for the raster dateset.  
         Assumes raster exists and is readable.
         Code adapted from: http://svn.osgeo.org/gdal/trunk/gdal/swig/python/samples/gdalinfo.py
         
@@ -675,7 +675,7 @@ def getBoundingBoxForRaster(filename):
 
 
 def writeBboxPolygonToShapefile(bbox, outputDir, layerName):
-    """!Write bbox to a shapfile
+    """ Write bbox to a shapfile
     
         @param bbox A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
         @param outputDir String representing the absolute/relative path of the directory into which shapefile should be written
@@ -729,7 +729,7 @@ def writeBboxPolygonToShapefile(bbox, outputDir, layerName):
 
 
 def writeCoordinatePairsToPointShapefile(outputDir, layerName, pointIDAttr, pointIDs, coordinates):
-    """!Write coordinates as a point shapefile
+    """ Write coordinates as a point shapefile
     
         @param outputDir String representing the absolute/relative path of the directory into which shapefile should be written
         @param layerName String representing the name of the layer. Will be used as root of filename of output shapefile
@@ -795,7 +795,7 @@ def writeCoordinatePairsToPointShapefile(outputDir, layerName, pointIDAttr, poin
 
 
 def copyRasterToGeoTIFF(config, outputDir, inRasterPath, outRasterName):
-    """!Copy input raster from a location outside of outputDir to a GeoTIFF format raster stored in outputDir
+    """ Copy input raster from a location outside of outputDir to a GeoTIFF format raster stored in outputDir
     
         @param config A Python ConfigParser containing the section 'GDAL/OGR' and option 'PATH_OF_GDAL_TRANSLATE'
         @param outputDir String representing the absolute/relative path of the directory into which shapefile should be written
@@ -832,7 +832,7 @@ def copyRasterToGeoTIFF(config, outputDir, inRasterPath, outRasterName):
     
 
 def _transformPixelsToCoordinates(hDataset, hTransform, adfGeoTransform, x, y):
-    """!Adapted from http://svn.osgeo.org/gdal/trunk/gdal/swig/python/samples/gdalinfo.py
+    """ Adapted from http://svn.osgeo.org/gdal/trunk/gdal/swig/python/samples/gdalinfo.py
     
         @param hDataset A GDAL raster dataset object
         @param hTransform A GDAL transform object

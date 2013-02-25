@@ -1,4 +1,5 @@
-"""!
+#!/usr/bin/env python
+"""@package RegisterLandcover
 
 @brief Register landcover raster into metadata store for a project directory,
 copying the raster into the project directory in the process. 

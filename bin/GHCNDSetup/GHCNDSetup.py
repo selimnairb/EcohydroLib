@@ -1,4 +1,5 @@
-"""!
+#!/usr/bin/env python
+"""@package GHCNDSetup
     
 @brief Builds SQLite3/Spatialite database for Query NCDC Global Historical Climatology Network 
 station metadata downloaded from:

@@ -1,4 +1,5 @@
-"""!
+#!/usr/bin/env python
+"""@package GetDEMExplorerDEMForBoundingbox
 
 @brief Query GeoBrain WCS4DEM (http://geobrain.laits.gmu.edu/wcs4dem.htm) for digital elevation
 model (DEM) data. 

@@ -1,4 +1,4 @@
-"""!@package ecohydroworkflowlib.timeseriesdata.ghcndquery
+"""@package ecohydroworkflowlib.timeseriesdata.ghcndquery
     
 @brief Query NCDC Global Historical Climatology Network dataset for daily
 climate data
@@ -64,7 +64,7 @@ _BUFF_LEN = 4096 * 10
 
 
 def findStationNearestToCoordinates(config, longitude, latitude):
-    """!Determine identifier of station nearest to longitude, latitude coordinates.
+    """Determine identifier of station nearest to longitude, latitude coordinates.
     
         @param config ConfigParser containing the section 'GHCND' and option 
         'PATH_OF_STATION_DB'
@@ -96,7 +96,7 @@ def findStationNearestToCoordinates(config, longitude, latitude):
     
 
 def getClimateDataForStation(config, outputDir, outFilename, stationID, overwrite=True):
-    """!Fetch climate timeseries data for a GHCN daily station
+    """Fetch climate timeseries data for a GHCN daily station
     
         @param config A Python ConfigParser (not currently used)
         @param outputDir String representing the absolute/relative path of the directory into which output DEM should be written
