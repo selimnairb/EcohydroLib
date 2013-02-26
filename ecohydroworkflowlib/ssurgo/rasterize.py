@@ -36,6 +36,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import os.path, errno
 import osr
 
+
 from ecohydroworkflowlib.spatialdata.utils import getSpatialReferenceForRaster
 from ecohydroworkflowlib.spatialdata.utils import getMeterConversionFactorForLinearUnitOfShapefile
 from ecohydroworkflowlib.spatialdata.utils import getMeterConversionFactorForLinearUnitOfGMLfile
@@ -48,17 +49,17 @@ def rasterizeSSURGOFeatures(config, outputDir, featureFilename, featureLayername
         @note If getResolutionFromRasterFileNamed as well as rasterResolutionX and rasterResolutionY are specified,
         output raster resolution will be determined from the file named by getResolutionFromRasterFileNamed. 
         
-        @param config A Python ConfigParser containing the section 'GDAL/OGR' and option 'PATH_OF_GDAL_RASTERIZE'
+        @param config onfigParser containing the section 'GDAL/OGR' and option 'PATH_OF_GDAL_RASTERIZE'
         @param outputDir String representing the absolute/relative path of the directory into which output rasters should be written
         @param featureFilename String representing the absolute/relative path of the input feature in ESRI shapefile or OGC GML format
         @param featureLayername String representing the name of feature layer whose features are to be rasterize
-        @param featureAttrList A Python list containing the SSURGO attributes for which raster maps are to be created
+        @param featureAttrList List containing the SSURGO attributes for which raster maps are to be created
         @param getResolutionFromRasterFileNamed String representing the absolute path of an existing raster file from which the
             output raster resolution should be determined
         @param rasterResolutionX Float representing the X resolution of the output rasters
         @param rasterResolutionY Float representing the Y resolution of the output rasters
         
-        @return A dictionary containing the keys for each soil attribute and values of the names of the raster files generated for that attribute
+        @return Dictionary containing the keys for each soil attribute and values of the names of the raster files generated for that attribute
         
         @exception ConfigParser.NoSectionError
         @exception ConfigParser.NoOptionError

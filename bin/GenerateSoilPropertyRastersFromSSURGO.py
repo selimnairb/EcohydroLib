@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-"""@package GetSSURGOFeaturesForBoundingbox
+"""@package GenerateSoilPropertyRastersFromSSURGO
 
-@brief Query USDA soil datamart for SSURGO features and attributes
+@brief Rasterize soil attributes associated with SSURGO mapunit features
 
 This software is provided free of charge under the New BSD License. Please see
 the following license information:
@@ -38,23 +38,23 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Pre conditions
 --------------
 1. Configuration file must define the following sections and values:
-   'GDAL/OGR', 'PATH_OF_OGR2OGR'
+   'GDAL/OGR', 'PATH_OF_GDAL_RASTERIZE'
 
-2. The following metadata entry(ies) must be present in the study area section of the metadata associated with the project directory:
-   bbox_wgs84
+2. The following metadata entry(ies) must be present in the manifest section of the metadata associated with the project directory:
+   soil_features [the name of the vector file containing the soil features]
+
+3. The following metadata entry(ies) must be present in the study area section of the metadata associated with the project directory:
    dem_res_x
    dem_res_y
-   dem_srs
 
 Post conditions
 ---------------
 1. Will write the following entry(ies) to the manifest section of metadata associated with the project directory:
-   soil_features [the name of the vector file containing the soil features]
    soil_raster_<attr> [the name of the raster file for each soil property raster]
 
 Usage:
 @code
-GetSSURGOFeaturesForBoundingbox.py -p /path/to/project_dir
+GenerateSoilPropertyRastersFromSSURGO.py -p /path/to/project_dir
 @endcode
 
 @note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
@@ -67,9 +67,8 @@ import argparse
 import ConfigParser
 
 import ecohydroworkflowlib.metadata as metadata
-from ecohydroworkflowlib.spatialdata.utils import convertGMLToShapefile
-from ecohydroworkflowlib.ssurgo.featurequery import getMapunitFeaturesForBoundingBox
-   
+from ecohydroworkflowlib.ssurgo.rasterize import rasterizeSSURGOFeatures
+import ecohydroworkflowlib.ssurgo.attributequery     
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get SSURGO features for a bounding box')
@@ -93,9 +92,9 @@ if not os.access(configFile, os.R_OK):
 config = ConfigParser.RawConfigParser()
 config.read(configFile)
 
-if not config.has_option('GDAL/OGR', 'PATH_OF_OGR2OGR'):
+if not config.has_option('GDAL/OGR', 'PATH_OF_GDAL_RASTERIZE'):
     sys.exit("Config file %s does not define option %s in section %s" & \
-          (args.configfile, 'GDAL/OGR', 'PATH_OF_OGR2OGR'))
+          (args.configfile, 'GDAL/OGR', 'PATH_OF_GDAL_RASTERIZE'))
 
 if args.projectDir:
     projectDir = args.projectDir
@@ -108,19 +107,22 @@ if not os.access(projectDir, os.W_OK):
                   projectDir)
 projectDir = os.path.abspath(projectDir)
 
+# Get manifest entries
+manifest = metadata.readManifestEntries(projectDir)
+shpFilename = manifest['soil_features']
+layerName = os.path.splitext(shpFilename)[0]
+
 # Get study area parameters
 studyArea = metadata.readStudyAreaEntries(projectDir)
-bbox = studyArea['bbox_wgs84'].split()
-bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
 outputrasterresolutionX = studyArea['dem_res_x']
 outputrasterresolutionY = studyArea['dem_res_y']
-srs = studyArea['dem_srs']
 
-gmlFilename = getMapunitFeaturesForBoundingBox(projectDir, bbox, mapunitExtended=True, tileBbox=False)[0]
-    
-# Convert from gml to shp and then rasterize
-gmlFilepath = os.path.join(projectDir, gmlFilename)
-layerName = os.path.splitext(gmlFilename)[0]
-shpFilename = convertGMLToShapefile(config, projectDir, gmlFilepath, layerName, srs)
-metadata.writeManifestEntry(projectDir, "soil_features", shpFilename)
+# Truncate attributes to 10 characters because shapefiles rely on ancient technology
+attrList = [elem[:10] for elem in ecohydroworkflowlib.ssurgo.attributequery.attributeListNumeric] 
+rasterFiles = rasterizeSSURGOFeatures(config=config, outputDir=projectDir, featureFilename=shpFilename, featureLayername=layerName, \
+                                      featureAttrList=attrList, \
+                                      rasterResolutionX=outputrasterresolutionX, rasterResolutionY=outputrasterresolutionY)
+# Write metadata entries
+for attr in rasterFiles.keys():
+    metadata.writeManifestEntry(projectDir, "soil_raster_%s" % (attr,), rasterFiles[attr])
 

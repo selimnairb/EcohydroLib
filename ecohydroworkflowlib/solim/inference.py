@@ -36,17 +36,24 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import os, errno
 
 
-def inferSoilPropertiesForSSURGOAndTerrainData(config, outputDir, shpFilepath, demFilepath):
+ATTRIBUTES = ['avgSand','avgSilt','avgClay','avgKsat','avgPorosity']
+ATTRIBUTE_SEP = ','
+FILE_EXT = 'tif'
+
+def inferSoilPropertiesForSSURGOAndTerrainData(config, outputDir, shpFilepath, demFilepath, \
+                                               featureAttrList=ATTRIBUTES):
     """ Infer soil properties from SSURGO and terrain data using SOLIM framework
     
-        @param config A Python ConfigParser containing the section 'SOLIM' and option 'PATH_OF_SOLIM'
+        @param config ConfigParser containing the section 'SOLIM' and option 'PATH_OF_SOLIM'
         @param outputDir String representing the absolute/relative path of the directory into which shapefile should be written
         @param shpFilepath String representing the absolute path of the shapefile containing SSURGO features
+        @param featureAttrList List containing the SSURGO attributes for which soil property inference is to be performed
         @param demFilepath String representing the absolute path of the DEM terrain data
         
-        @return The return status of the SOLIM process
+        @return Dictionary containing the keys for each soil attribute and values of the names of the raster files generated for that attribute
         
         @exception IOError(errno.EACCES) if SOLIM binary is not executable
+        @exception Exception if SOLIM command fails
     """
     solimCmdPath = config.get('SOLIM', 'PATH_OF_SOLIM')
     if not os.access(solimCmdPath, os.X_OK):
@@ -70,9 +77,19 @@ def inferSoilPropertiesForSSURGOAndTerrainData(config, outputDir, shpFilepath, d
         raise IOError(errno.ENOENT, "Terrain DEM file %s does not exist" % (demFilepath,))
     demFilepath = os.path.abspath(demFilepath)
     
-    solimCommand = "%s %s MUKEY %s %s avgSand,avgSilt,avgClay,avgKsat,avgPorosity" % \
-        (solimCmdPath, shpFilepath, demFilepath, outputDir)
-    print solimCommand
+    solimCommand = "%s %s MUKEY %s %s %s" % \
+        (solimCmdPath, shpFilepath, demFilepath, outputDir, ATTRIBUTE_SEP.join(featureAttrList))
+    #print solimCommand
     returnCode = os.system(solimCommand)
+    if returnCode != 0:
+        raise Exception("SOLIM command %s failed, returning %d" % (solimCommand, returnCode) )
     
-    return returnCode
+    filesCreated = dict()
+    for attr in featureAttrList:
+        filename = attr + os.extsep + FILE_EXT
+        if not os.path.exists(os.path.join(outputDir, filename)):
+            raise Exception("SOLIM failed to create file %s in directory %s" % \
+                            (filename, outputDir) )
+        filesCreated[attr] = filename
+    
+    return filesCreated
