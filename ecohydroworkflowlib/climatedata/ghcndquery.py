@@ -34,14 +34,14 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 @code
-from ecohydroworkflowlib.timeseriesdata.ghcndquery import findStationNearestToCoordinates
+from ecohydroworkflowlib.climatedata.ghcndquery import findStationNearestToCoordinates
 import ConfigParser
 config = ConfigParser.RawConfigParser()
 config.read('./bin/macosx2.cfg')
 lon = -76.7443397486
 lat = 39.2955590994
 nearest = findStationNearestToCoordinates(config, lon, lat)
-from ecohydroworkflowlib.timeseriesdata.ghcndquery import getClimateDataForStation
+from ecohydroworkflowlib.climatedata.ghcndquery import getClimateDataForStation
 outputDir = '/tmp'
 outfileName = 'clim.txt'
 getClimateDataForStation(config, outputDir, outfileName, nearest[0])
@@ -75,6 +75,8 @@ def findStationNearestToCoordinates(config, longitude, latitude):
         None if no gage is found.
     """
     ghcnDB = config.get('GHCND', 'PATH_OF_STATION_DB')
+    print("GHCN DB: %s" % (ghcnDB,) )
+    print("Longitude %f, latitude %f" % (longitude, latitude) )
     
     conn = spatialite.connect(ghcnDB)
     cursor = conn.cursor()
@@ -82,8 +84,11 @@ def findStationNearestToCoordinates(config, longitude, latitude):
     # we are dealing with numeric values that we are converting to numeric types before building the query string.
     sql = u"SELECT id, AsText(coord), elevation_m, Distance(GeomFromText('POINT(%f %f)', %d), coord) as dist FROM ghcn_station order by dist asc" %\
     (float(longitude), float(latitude), _SRS)
+    print("Sql: %s" % (sql) )
     cursor.execute(sql)
     nearest = cursor.fetchone()
+    conn.close()
+    print("Nearest: %s" % (str(nearest),) )
     if nearest:
         # Unpack the coordinates
         pattern = re.compile("^POINT\((-?\d+\.\d+) (-?\d+\.\d+)\)$")

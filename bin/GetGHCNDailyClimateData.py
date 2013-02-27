@@ -1,8 +1,13 @@
 #!/usr/bin/env python
-"""@package GetDEMExplorerDEMForBoundingbox
+"""@package GetGHCNDailyClimateData
 
-@brief Query GeoBrain WCS4DEM (http://geobrain.laits.gmu.edu/wcs4dem.htm) for digital elevation
-model (DEM) data. 
+@brief Query NCDC archive for climate data for a single station in the Global 
+Historical Climatology Network
+(http://www1.ncdc.noaa.gov/pub/data/ghcn/daily/readme.txt). Will find the 
+nearest station to the centroid of the study area bounding box.  Requires that 
+the  GHCN station database be setup using GHCNDSetup.py. Database must be 
+stored in a location specified by a configuration file containing the section
+'GHCND', and value 'PATH_OF_STATION_DB'.
 
 This software is provided free of charge under the New BSD License. Please see
 the following license information:
@@ -39,7 +44,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Pre conditions
 --------------
 1. Configuration file must define the following sections and values:
-   'GDAL/OGR', 'PATH_OF_GDAL_WARP'
+   'GHCND', 'PATH_OF_STATION_DB'
 
 2. The following metadata entry(ies) must be present in the study area section of the metadata associated with the project directory:
    bbox_wgs84
@@ -47,25 +52,22 @@ Pre conditions
 Post conditions
 ---------------
 1. Will write the following entry(ies) to the manifest section of metadata associated with the project directory:
-   dem [the name of the DEM raster]  
+   ghcn_climate_data [the name of the GHCN data file]  
 
 2. Will write the following entry(ies) to the study area section of metadata associated with the project directory:
-   dem_res_x [X resolution of the DEM raster in units of the raster's projection]
-   dem_res_y [Y resolution of the DEM raster in units of the raster's projection]
-   dem_srs [spatial reference system of the DEM, in EPSG:<nnnn> format]
-   dem_columns [number of pixels in the X direction]
-   dem_rows [number of pixels in the Y direction]
+   ghcn_station_id
+   ghcn_station_longitude
+   ghcn_station_latitude
+   ghcn_station_elevation_m
+   ghcn_station_distance
 
 Usage:
 @code
-python ./GetDEMExplorerDEMForBoundingbox.py -p /path/to/project_dir -s 3 3  
+GetGHCNDailyClimateData.py -p /path/to/project_dir
 @endcode
 
 @note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
 or -i option must be specified. 
-
-@note If option -t is not specified, UTM projection (WGS 84 coordinate system) will be inferred
-from bounding box center.
 """
 import os
 import sys
@@ -74,27 +76,18 @@ import argparse
 import ConfigParser
 
 import ecohydroworkflowlib.metadata as metadata
-from ecohydroworkflowlib.wcs4dem.demquery import getDEMForBoundingBox
-from ecohydroworkflowlib.spatialdata.utils import resampleRaster
-from ecohydroworkflowlib.spatialdata.utils import getSpatialReferenceForRaster
-from ecohydroworkflowlib.spatialdata.utils import getDimensionsForRaster
-from ecohydroworkflowlib.spatialdata.utils import deleteGeoTiff
 from ecohydroworkflowlib.spatialdata.utils import calculateBoundingBoxCenter
-from ecohydroworkflowlib.spatialdata.utils import getUTMZoneFromCoordinates
-from ecohydroworkflowlib.spatialdata.utils import getEPSGStringForUTMZone
+from ecohydroworkflowlib.climatedata.ghcndquery import findStationNearestToCoordinates
+from ecohydroworkflowlib.climatedata.ghcndquery import getClimateDataForStation
 
 # Handle command line options
-parser = argparse.ArgumentParser(description='Get DEM raster (in GeoTIFF format) for a bounding box from GeoBrain WCS4DEM')
+parser = argparse.ArgumentParser(description='Query NCDC archive for climate data for a single station in the Global Historical Climatology Network')
 parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=False,
                     help='The directory to which metadata, intermediate, and final files should be saved')
 parser.add_argument('-f', '--outfile', dest='outfile', required=False,
-                    help='The name of the DEM file to be written.  File extension ".tif" will be added.')
-parser.add_argument('-s', '--demResolution', dest='demResolution', required=False, nargs=2, type=float,
-                    help='Two floating point numbers representing the desired X and Y output resolution of soil property raster maps; unit: meters')
-parser.add_argument('-t', '--t_srs', dest='t_srs', required=False, 
-                    help='Target spatial reference system of output, in EPSG:num format')
+                    help='The name of the file to write the climate data to.')
 args = parser.parse_args()
 
 configFile = None
@@ -111,9 +104,11 @@ if not os.access(configFile, os.R_OK):
 config = ConfigParser.RawConfigParser()
 config.read(configFile)
 
-if not config.has_option('GDAL/OGR', 'PATH_OF_GDAL_WARP'):
+print "Config file: %s" % (configFile,)
+
+if not config.has_option('GHCND', 'PATH_OF_STATION_DB'):
     sys.exit("Config file %s does not define option %s in section %s" % \
-          (configFile, 'PATH_OF_GDAL_WARP', 'GDAL/OGR'))
+          (configFile, 'PATH_OF_STATION_DB', 'GHCND'))
 
 if args.projectDir:
     projectDir = args.projectDir
@@ -129,57 +124,27 @@ projectDir = os.path.abspath(projectDir)
 if args.outfile:
     outfile = args.outfile
 else:
-    outfile = "DEM"
-
-demFilename = "%s.tif" % (outfile)
-# Overwrite DEM if already present
-demFilepath = os.path.join(projectDir, demFilename)
-if os.path.exists(demFilepath):
-    os.unlink(demFilepath)
+    outfile = "clim.txt"
 
 # Get study area parameters
 studyArea = metadata.readStudyAreaEntries(projectDir)
 bbox = studyArea['bbox_wgs84'].split()
 bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
 
-# Determine target spatial reference
-if args.t_srs:
-    t_srs = args.t_srs
-else:
-    # Default for UTM
-    (centerLon, centerLat) = calculateBoundingBoxCenter(bbox)
-    (utmZone, isNorth) = getUTMZoneFromCoordinates(centerLon, centerLat)
-    t_srs = getEPSGStringForUTMZone(utmZone, isNorth)
-
-# Get DEM from DEMExplorer
-tmpDEMFilename = "%s-TEMP.tif" % (outfile)
-returnCode = getDEMForBoundingBox(config, projectDir, tmpDEMFilename, bbox=bbox, srs=t_srs)
+# Get centroid of bounding box
+(longitude, latitude) = calculateBoundingBoxCenter(bbox)
+print("Longitude %f, latitude %f" % (longitude, latitude))
+# Find nearest GHCN station
+nearest = findStationNearestToCoordinates(config, longitude, latitude)
+print(nearest)
+# Get data for station
+returnCode = getClimateDataForStation(config, projectDir, outfile, nearest[0])
 assert(returnCode)
-tmpDEMFilepath = os.path.join(projectDir, tmpDEMFilename)
-
-if args.demResolution:
-    demResolutionX = args.demResolution[0]
-    demResolutionY = args.demResolution[1]
-else:
-    demSrs = getSpatialReferenceForRaster(tmpDEMFilepath)
-    demResolutionX = demSrs[0]
-    demResolutionY = demSrs[1]
-
-# Resample DEM to target srs and resolution
-resampleRaster(config, projectDir, tmpDEMFilepath, demFilename, \
-               s_srs=t_srs, t_srs=t_srs, \
-               trX=demResolutionX, trY=demResolutionY)
 
 # Write metadata
-metadata.writeManifestEntry(projectDir, "dem", demFilename)
-metadata.writeStudyAreaEntry(projectDir, "dem_res_x", demResolutionX)
-metadata.writeStudyAreaEntry(projectDir, "dem_res_y", demResolutionY)
-metadata.writeStudyAreaEntry(projectDir, "dem_srs", t_srs)
-
-# Get rows and columns for DEM
-(columns, rows) = getDimensionsForRaster(demFilepath)
-metadata.writeStudyAreaEntry(projectDir, "dem_columns", columns)
-metadata.writeStudyAreaEntry(projectDir, "dem_rows", rows)
-
-# Clean-up
-deleteGeoTiff(tmpDEMFilepath)
+metadata.writeManifestEntry(projectDir, "ghcn_climate_data", outfile)
+metadata.writeStudyAreaEntry(projectDir, "ghcn_station_id", nearest[0])
+metadata.writeStudyAreaEntry(projectDir, "ghcn_station_longitude", nearest[1])
+metadata.writeStudyAreaEntry(projectDir, "ghcn_station_latitude", nearest[2])
+metadata.writeStudyAreaEntry(projectDir, "ghcn_station_elevation_m", nearest[3])
+metadata.writeStudyAreaEntry(projectDir, "ghcn_station_distance", nearest[4])
