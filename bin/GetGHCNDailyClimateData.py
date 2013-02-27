@@ -104,8 +104,6 @@ if not os.access(configFile, os.R_OK):
 config = ConfigParser.RawConfigParser()
 config.read(configFile)
 
-print "Config file: %s" % (configFile,)
-
 if not config.has_option('GHCND', 'PATH_OF_STATION_DB'):
     sys.exit("Config file %s does not define option %s in section %s" % \
           (configFile, 'PATH_OF_STATION_DB', 'GHCND'))
@@ -133,10 +131,8 @@ bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[
 
 # Get centroid of bounding box
 (longitude, latitude) = calculateBoundingBoxCenter(bbox)
-print("Longitude %f, latitude %f" % (longitude, latitude))
 # Find nearest GHCN station
 nearest = findStationNearestToCoordinates(config, longitude, latitude)
-print(nearest)
 # Get data for station
 returnCode = getClimateDataForStation(config, projectDir, outfile, nearest[0])
 assert(returnCode)

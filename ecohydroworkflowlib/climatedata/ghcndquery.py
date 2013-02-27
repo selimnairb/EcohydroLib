@@ -3,7 +3,7 @@
 @brief Query NCDC Global Historical Climatology Network dataset for daily
 climate data
 
-@note Requires pyspatialite 2.6.2, spatialite 2.3.1; newer versions may break.
+@note Requires pyspatialite 3.0.1
 
 This software is provided free of charge under the New BSD License. Please see
 the following license information:
@@ -75,20 +75,16 @@ def findStationNearestToCoordinates(config, longitude, latitude):
         None if no gage is found.
     """
     ghcnDB = config.get('GHCND', 'PATH_OF_STATION_DB')
-    print("GHCN DB: %s" % (ghcnDB,) )
-    print("Longitude %f, latitude %f" % (longitude, latitude) )
     
     conn = spatialite.connect(ghcnDB)
     cursor = conn.cursor()
     # Spatialite/SQLite3 won't subsitute parameter strings within quotes, so we have to do it the unsafe way.  This should be okay as
     # we are dealing with numeric values that we are converting to numeric types before building the query string.
-    sql = u"SELECT id, AsText(coord), elevation_m, Distance(GeomFromText('POINT(%f %f)', %d), coord) as dist FROM ghcn_station order by dist asc" %\
+    sql = u"SELECT id, AsText(coord), elevation_m, Distance(GeomFromText('POINT(%f %f)', %d), coord) as dist FROM ghcn_station order by dist asc limit 1" %\
     (float(longitude), float(latitude), _SRS)
-    print("Sql: %s" % (sql) )
     cursor.execute(sql)
     nearest = cursor.fetchone()
     conn.close()
-    print("Nearest: %s" % (str(nearest),) )
     if nearest:
         # Unpack the coordinates
         pattern = re.compile("^POINT\((-?\d+\.\d+) (-?\d+\.\d+)\)$")
@@ -134,7 +130,6 @@ def getClimateDataForStation(config, outputDir, outFilename, stationID, overwrit
             raise IOError(errno.EEXIST, "File %s already exists" % outFilepath)
     
     url = URL_PROTO.format(station_id=stationID)
-    #print "GHCND URL: %s" % (url,)
     
     conn = httplib.HTTPConnection(HOST)
     conn.request('GET', url)

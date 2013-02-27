@@ -94,17 +94,7 @@ cursor = conn.cursor()
 
 # Setup spatial metadata
 sys.stdout.write("Initializing spatial database...")
-sqlFile = open(spatialiteInitPath, 'r')
-for command in sqlFile:
-    command = command.strip()
-    
-    if "BEGIN;" == command or "COMMIT;" == command or "VACUUM;" == command:
-        # Ignore commands related to transactions as we are in a cursor
-        continue
-
-    cursor.execute(command)
-sqlFile.close()
-
+cursor.execute("""SELECT InitSpatialMetaData()""")
 cursor.execute("""SELECT CheckSpatialMetaData()""")
 hasSpatial = cursor.fetchone()[0] == 1
 if not hasSpatial:
@@ -116,8 +106,7 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS ghcn_station
 name TEXT,
 elevation_m REAL)
 """)
-cursor.execute("""SELECT AddGeometryColumn('ghcn_station', 'coord', 4326, 'POINT', 2, 1)""")
-cursor.execute("""SELECT CreateSpatialIndex('ghcn_station', 'coord')""")
+cursor.execute("""SELECT AddGeometryColumn('ghcn_station', 'coord', 4326, 'POINT', 'XY', 1)""")
 sys.stdout.write("done\n")
 sys.stdout.flush()
 
@@ -149,6 +138,9 @@ while line:
     
     line = f.readline()
     
+conn.commit()
+# Index the data
+cursor.execute("""SELECT CreateSpatialIndex('ghcn_station', 'coord')""")
 conn.commit()
 cursor.close()
 conn.close()

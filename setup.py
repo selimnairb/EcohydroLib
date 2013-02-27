@@ -24,22 +24,27 @@ setup(name='ecohydroworkflowlib',
       packages=['ecohydroworkflowlib', 'ecohydroworkflowlib.tests', 
                 'ecohydroworkflowlib.nhdplus2', 'ecohydroworkflowlib.solim',
                 'ecohydroworkflowlib.spatialdata', 'ecohydroworkflowlib.ssurgo',
-                'ecohydroworkflowlib.wcs4dem'],
+                'ecohydroworkflowlib.wcs4dem', 'ecohydroworkflowlib.climatedata'],
       install_requires=[
         'GDAL',
-        'pyproj',
+        'pyproj==1.9.2',
         'numpy',
         'lxml',
         'PySimpleSOAP',
         'OWSLib',
-        'oset'
+        'oset',
+        'pyspatialite==3.0.1'
       ],
       scripts=['bin/NHDPlusV2Setup/NHDPlusV2Setup.py',
                'bin/GetBoundingboxFromStudyareaShapefile.py',
                'bin/GetCatchmentShapefileForStreamflowGage.py',
-               'bin/GetDEMForBoundingbox.py',
+               'bin/GetDEMExplorerDEMForBoundingbox.py',
                'bin/GetNHDStreamflowGageIdentifiersAndLocation.py',
                'bin/GetNLCDForBoundingbox.py',
-               'bin/GetSSURGOFeaturesForBoundingbox.py'
+               'bin/GetSSURGOFeaturesForBoundingbox.py',
+               'bin/GenerateSoilPropertyRastersFromSSURGO.py',
+               'bin/GenerateSoilPropertyRastersFromSOLIM.py',
+               'bin/GetGHCNDailyClimateData.py',
+               'bin/GetHYDRO1kDEMForBoundingbox.py'
       ],
       zip_safe=False)
