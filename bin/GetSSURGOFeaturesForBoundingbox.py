@@ -66,7 +66,7 @@ import errno
 import argparse
 import ConfigParser
 
-import ecohydroworkflowlib.metadata as metadata
+from ecohydroworkflowlib.metadata import GenericMetadata
 from ecohydroworkflowlib.spatialdata.utils import convertGMLToShapefile
 from ecohydroworkflowlib.ssurgo.featurequery import getMapunitFeaturesForBoundingBox
    
@@ -109,7 +109,7 @@ if not os.access(projectDir, os.W_OK):
 projectDir = os.path.abspath(projectDir)
 
 # Get study area parameters
-studyArea = metadata.readStudyAreaEntries(projectDir)
+studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
 bbox = studyArea['bbox_wgs84'].split()
 bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
 outputrasterresolutionX = studyArea['dem_res_x']
@@ -122,5 +122,5 @@ gmlFilename = getMapunitFeaturesForBoundingBox(projectDir, bbox, mapunitExtended
 gmlFilepath = os.path.join(projectDir, gmlFilename)
 layerName = os.path.splitext(gmlFilename)[0]
 shpFilename = convertGMLToShapefile(config, projectDir, gmlFilepath, layerName, srs)
-metadata.writeManifestEntry(projectDir, "soil_features", shpFilename)
+GenericMetadata.writeManifestEntry(projectDir, "soil_features", shpFilename)
 

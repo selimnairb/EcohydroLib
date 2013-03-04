@@ -69,7 +69,7 @@ import errno
 import argparse
 import ConfigParser
 
-import ecohydroworkflowlib.metadata as metadata
+from ecohydroworkflowlib.metadata import GenericMetadata
 from ecohydroworkflowlib.spatialdata.utils import copyRasterToGeoTIFF
 from ecohydroworkflowlib.spatialdata.utils import getDimensionsForRaster
 from ecohydroworkflowlib.spatialdata.utils import getSpatialReferenceForRaster
@@ -139,18 +139,18 @@ bbox = getBoundingBoxForRaster(demFilepath)
 shpFilename = writeBboxPolygonToShapefile(bbox, projectDir, "studyarea")
 
 # Write metadata
-metadata.writeStudyAreaEntry(projectDir, "bbox_wgs84", "%f %f %f %f" % (bbox['minX'], bbox['minY'], bbox['maxX'], bbox['maxY']))
-metadata.writeManifestEntry(projectDir, "study_area_shapefile", shpFilename)
-metadata.writeManifestEntry(projectDir, "dem", demFilename)
+GenericMetadata.writeStudyAreaEntry(projectDir, "bbox_wgs84", "%f %f %f %f" % (bbox['minX'], bbox['minY'], bbox['maxX'], bbox['maxY']))
+GenericMetadata.writeManifestEntry(projectDir, "study_area_shapefile", shpFilename)
+GenericMetadata.writeManifestEntry(projectDir, "dem", demFilename)
 
 # Get spatial metadata for DEM
 demSpatialMetadata = getSpatialReferenceForRaster(demFilepath)
-metadata.writeStudyAreaEntry(projectDir, "dem_res_x", demSpatialMetadata[0])
-metadata.writeStudyAreaEntry(projectDir, "dem_res_y", demSpatialMetadata[1])
-metadata.writeStudyAreaEntry(projectDir, "dem_srs", demSpatialMetadata[5])
+GenericMetadata.writeStudyAreaEntry(projectDir, "dem_res_x", demSpatialMetadata[0])
+GenericMetadata.writeStudyAreaEntry(projectDir, "dem_res_y", demSpatialMetadata[1])
+GenericMetadata.writeStudyAreaEntry(projectDir, "dem_srs", demSpatialMetadata[5])
 
 # Get rows and columns for DEM
 demFilepath = os.path.join(projectDir, demFilename)
 (columns, rows) = getDimensionsForRaster(demFilepath)
-metadata.writeStudyAreaEntry(projectDir, "dem_columns", columns)
-metadata.writeStudyAreaEntry(projectDir, "dem_rows", rows)
+GenericMetadata.writeStudyAreaEntry(projectDir, "dem_columns", columns)
+GenericMetadata.writeStudyAreaEntry(projectDir, "dem_rows", rows)

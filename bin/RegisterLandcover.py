@@ -72,7 +72,7 @@ import errno
 import argparse
 import ConfigParser
 
-import ecohydroworkflowlib.metadata as metadata
+from ecohydroworkflowlib.metadata import GenericMetadata
 from ecohydroworkflowlib.spatialdata.utils import copyRasterToGeoTIFF
 from ecohydroworkflowlib.spatialdata.utils import resampleRaster
 from ecohydroworkflowlib.spatialdata.utils import getDimensionsForRaster
@@ -141,7 +141,7 @@ if args.force:
     force = True
 
 # Get study area parameters
-studyArea = metadata.readStudyAreaEntries(projectDir)
+studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
 bbox = studyArea['bbox_wgs84'].split()
 bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
 demResolutionX = studyArea['dem_res_x']
@@ -182,5 +182,5 @@ if not force and ( (newLcMetadata[0] != demColumns) or (newLcMetadata[1] != demR
              (landcoverFilename, projectDir))
 
 # Write metadata
-metadata.writeManifestEntry(projectDir, "landcover", landcoverFilename)
-metadata.writeStudyAreaEntry(projectDir, "landcover_type", "custom")
+GenericMetadata.writeManifestEntry(projectDir, "landcover", landcoverFilename)
+GenericMetadata.writeStudyAreaEntry(projectDir, "landcover_type", "custom")

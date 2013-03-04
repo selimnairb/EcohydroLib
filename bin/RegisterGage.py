@@ -65,7 +65,7 @@ import errno
 import argparse
 import ConfigParser
 
-import ecohydroworkflowlib.metadata as metadata
+from ecohydroworkflowlib.metadata import GenericMetadata
 from ecohydroworkflowlib.spatialdata.utils import deleteShapefile
 from ecohydroworkflowlib.spatialdata.utils import getCoordinatesOfPointsFromShapefile
 from ecohydroworkflowlib.spatialdata.utils import writeCoordinatePairsToPointShapefile
@@ -126,7 +126,7 @@ else:
     outfile = "gage"
 
 # Get study area parameters
-studyArea = metadata.readStudyAreaEntries(projectDir)
+studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
 bbox = studyArea['bbox_wgs84'].split()
 bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
 
@@ -151,8 +151,8 @@ if not isCoordinatePairInBoundingBox(bbox, coordinates):
 shpFilename = writeCoordinatePairsToPointShapefile(projectDir, outfile, "gage_id", gageIDs, [coordinates])
 
 # Write metadata
-metadata.writeManifestEntry(projectDir, 'gage', shpFilename)
-metadata.writeStudyAreaEntry(projectDir, 'gage_id_attr', 'gage_id')
-metadata.writeStudyAreaEntry(projectDir, 'gage_id', args.idValue)
-metadata.writeStudyAreaEntry(projectDir, 'gage_lat_wgs84', gage_lat)
-metadata.writeStudyAreaEntry(projectDir, 'gage_lon_wgs84', gage_lon)
+GenericMetadata.writeManifestEntry(projectDir, 'gage', shpFilename)
+GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_id_attr', 'gage_id')
+GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_id', args.idValue)
+GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_lat_wgs84', gage_lat)
+GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_lon_wgs84', gage_lon)

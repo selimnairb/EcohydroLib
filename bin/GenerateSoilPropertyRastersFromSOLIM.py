@@ -68,7 +68,7 @@ import errno
 import argparse
 import ConfigParser
 
-import ecohydroworkflowlib.metadata as metadata
+from ecohydroworkflowlib.metadata import GenericMetadata
 import ecohydroworkflowlib.ssurgo.attributequery
 from ecohydroworkflowlib.solim.inference import inferSoilPropertiesForSSURGOAndTerrainData     
 
@@ -110,7 +110,7 @@ if not os.access(projectDir, os.W_OK):
 projectDir = os.path.abspath(projectDir)
 
 # Get manifest entries
-manifest = metadata.readManifestEntries(projectDir)
+manifest = GenericMetadata.readManifestEntries(projectDir)
 shpFilename = manifest['soil_features']
 shpFilepath = os.path.join(projectDir, shpFilename)
 demFilename = manifest['dem']
@@ -118,7 +118,7 @@ demFilepath = os.path.join(projectDir, demFilename)
 layerName = os.path.splitext(shpFilename)[0]
 
 # Get study area parameters
-studyArea = metadata.readStudyAreaEntries(projectDir)
+studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
 outputrasterresolutionX = studyArea['dem_res_x']
 outputrasterresolutionY = studyArea['dem_res_y']
 
@@ -129,5 +129,5 @@ rasterFiles = inferSoilPropertiesForSSURGOAndTerrainData(config=config, outputDi
                                                          featureAttrList=attrList)
 # Write metadata entries
 for attr in rasterFiles.keys():
-    metadata.writeManifestEntry(projectDir, "soil_raster_%s" % (attr,), rasterFiles[attr])
+    GenericMetadata.writeManifestEntry(projectDir, "soil_raster_%s" % (attr,), rasterFiles[attr])
 

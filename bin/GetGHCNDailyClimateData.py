@@ -54,7 +54,7 @@ Post conditions
 1. Will write the following entry(ies) to the manifest section of metadata associated with the project directory:
    ghcn_climate_data [the name of the GHCN data file]  
 
-2. Will write the following entry(ies) to the study area section of metadata associated with the project directory:
+2. Will write the following entry(ies) to the climate point section of metadata associated with the project directory:
    ghcn_station_id
    ghcn_station_longitude
    ghcn_station_latitude
@@ -75,7 +75,7 @@ import errno
 import argparse
 import ConfigParser
 
-import ecohydroworkflowlib.metadata as metadata
+from ecohydroworkflowlib.metadata import GenericMetadata
 from ecohydroworkflowlib.spatialdata.utils import calculateBoundingBoxCenter
 from ecohydroworkflowlib.climatedata.ghcndquery import findStationNearestToCoordinates
 from ecohydroworkflowlib.climatedata.ghcndquery import getClimateDataForStation
@@ -125,7 +125,7 @@ else:
     outfile = "clim.txt"
 
 # Get study area parameters
-studyArea = metadata.readStudyAreaEntries(projectDir)
+studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
 bbox = studyArea['bbox_wgs84'].split()
 bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
 
@@ -138,9 +138,9 @@ returnCode = getClimateDataForStation(config, projectDir, outfile, nearest[0])
 assert(returnCode)
 
 # Write metadata
-metadata.writeManifestEntry(projectDir, "ghcn_climate_data", outfile)
-metadata.writeStudyAreaEntry(projectDir, "ghcn_station_id", nearest[0])
-metadata.writeStudyAreaEntry(projectDir, "ghcn_station_longitude", nearest[1])
-metadata.writeStudyAreaEntry(projectDir, "ghcn_station_latitude", nearest[2])
-metadata.writeStudyAreaEntry(projectDir, "ghcn_station_elevation_m", nearest[3])
-metadata.writeStudyAreaEntry(projectDir, "ghcn_station_distance", nearest[4])
+GenericMetadata.writeClimatePointEntry(projectDir, "ghcn_climate_data", outfile)
+GenericMetadata.writeClimatePointEntry(projectDir, "ghcn_station_id", nearest[0])
+GenericMetadata.writeClimatePointEntry(projectDir, "ghcn_station_longitude", nearest[1])
+GenericMetadata.writeClimatePointEntry(projectDir, "ghcn_station_latitude", nearest[2])
+GenericMetadata.writeClimatePointEntry(projectDir, "ghcn_station_elevation_m", nearest[3])
+GenericMetadata.writeClimatePointEntry(projectDir, "ghcn_station_distance", nearest[4])

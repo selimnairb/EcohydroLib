@@ -57,7 +57,7 @@ Post conditions
 
 Usage:
 @code
-python ./GetNHDStreamflowGageIdentifiersAndLocation.py -p /path/to/project_dir -g 01589330
+GetNHDStreamflowGageIdentifiersAndLocation.py -p /path/to/project_dir -g 01589330
 @endcode
 
 @note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
@@ -69,7 +69,7 @@ import errno
 import argparse
 import ConfigParser
 
-import ecohydroworkflowlib.metadata as metadata
+from ecohydroworkflowlib.metadata import GenericMetadata
 from ecohydroworkflowlib.nhdplus2.networkanalysis import getNHDReachcodeAndMeasureForGageSourceFea
 from ecohydroworkflowlib.nhdplus2.networkanalysis import getLocationForStreamGageByGageSourceFea
 from ecohydroworkflowlib.spatialdata.utils import writeCoordinatePairsToPointShapefile
@@ -130,10 +130,10 @@ shpFilename = writeCoordinatePairsToPointShapefile(projectDir, "gage",
                                                    "gage_id", [args.gageid], [(gage_lon, gage_lat)])
 
 # Write results to metadata store
-metadata.writeManifestEntry(projectDir, 'gage', shpFilename)
-metadata.writeStudyAreaEntry(projectDir, 'gage_id_attr', 'gage_id')
-metadata.writeStudyAreaEntry(projectDir, 'gage_id', args.gageid)
-metadata.writeStudyAreaEntry(projectDir, 'nhd_gage_reachcode', reachcode)
-metadata.writeStudyAreaEntry(projectDir, 'nhd_gage_measure_pct', measure)
-metadata.writeStudyAreaEntry(projectDir, 'gage_lat_wgs84', gage_lat)
-metadata.writeStudyAreaEntry(projectDir, 'gage_lon_wgs84', gage_lon)
+GenericMetadata.writeManifestEntry(projectDir, 'gage', shpFilename)
+GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_id_attr', 'gage_id')
+GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_id', args.gageid)
+GenericMetadata.writeStudyAreaEntry(projectDir, 'nhd_gage_reachcode', reachcode)
+GenericMetadata.writeStudyAreaEntry(projectDir, 'nhd_gage_measure_pct', measure)
+GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_lat_wgs84', gage_lat)
+GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_lon_wgs84', gage_lon)

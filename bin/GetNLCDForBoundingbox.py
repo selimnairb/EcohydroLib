@@ -72,7 +72,7 @@ import errno
 import argparse
 import ConfigParser
 
-import ecohydroworkflowlib.metadata as metadata
+from ecohydroworkflowlib.metadata import GenericMetadata
 from ecohydroworkflowlib.spatialdata.utils import extractTileFromRaster
 from ecohydroworkflowlib.spatialdata.utils import resampleRaster
 from ecohydroworkflowlib.spatialdata.utils import deleteGeoTiff
@@ -127,7 +127,7 @@ if not os.access(nlcdRaster, os.R_OK):
 nlcdRaster = os.path.abspath(nlcdRaster)
 
 # Get study area parameters
-studyArea = metadata.readStudyAreaEntries(projectDir)
+studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
 bbox = studyArea['bbox_wgs84'].split()
 bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
 outputrasterresolutionX = studyArea['dem_res_x']
@@ -139,14 +139,14 @@ tmpTileFilename = "%s-TEMP.tif" % (outfile)
 extractTileFromRaster(config, projectDir, nlcdRaster, tmpTileFilename, bbox)
 
 tmpTileFilepath = os.path.join(projectDir, tmpTileFilename)
-# Resample DEM to target srs and resolution
+# Resample NLCD to target srs and resolution
 tileFilename = "%s.tif" % (outfile)
 resampleRaster(config, projectDir, tmpTileFilepath, tileFilename, \
             s_srs=None, t_srs=srs, \
             trX=outputrasterresolutionX, trY=outputrasterresolutionY, \
             resampleMethod='near')
-metadata.writeManifestEntry(projectDir, "landcover", tileFilename)
-metadata.writeStudyAreaEntry(projectDir, "landcover_type", "NLCD2006")
+GenericMetadata.writeManifestEntry(projectDir, "landcover", tileFilename)
+GenericMetadata.writeStudyAreaEntry(projectDir, "landcover_type", "NLCD2006")
 
 # Clean-up
 deleteGeoTiff(tmpTileFilepath)

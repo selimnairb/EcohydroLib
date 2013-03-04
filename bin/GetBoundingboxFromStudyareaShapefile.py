@@ -47,14 +47,14 @@ Post conditions:
 
 Usage:
 @code
-python ./GetBoundingboxFromStudyareaShapefile.py -p /path/to/project_dir
+GetBoundingboxFromStudyareaShapefile.py -p /path/to/project_dir
 @endcode
 """
 import os
 import errno
 import argparse
 
-import ecohydroworkflowlib.metadata as metadata
+from ecohydroworkflowlib.metadata import GenericMetadata
 from ecohydroworkflowlib.spatialdata.utils import getBoundingBoxForShapefile
 
 # Handle command line options
@@ -75,7 +75,7 @@ if args.buffer:
     buffer = float(args.buffer)
 
 # Get name of study area shapefile
-manifest = metadata.readManifestEntries(projectDir)
+manifest = GenericMetadata.readManifestEntries(projectDir)
 shapefileName = manifest['study_area_shapefile']
 
 shapefilePath = os.path.join(projectDir, shapefileName)
@@ -85,5 +85,5 @@ if not os.access(shapefilePath, os.R_OK):
 
 # Get bounding box, buffer by about 1 km
 bbox = getBoundingBoxForShapefile(shapefilePath, buffer=buffer)
-metadata.writeStudyAreaEntry(projectDir, "bbox_wgs84", "%f %f %f %f" % (bbox['minX'], bbox['minY'], bbox['maxX'], bbox['maxY']))
+GenericMetadata.writeStudyAreaEntry(projectDir, "bbox_wgs84", "%f %f %f %f" % (bbox['minX'], bbox['minY'], bbox['maxX'], bbox['maxY']))
 

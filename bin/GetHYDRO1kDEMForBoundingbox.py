@@ -73,7 +73,7 @@ import errno
 import argparse
 import ConfigParser
 
-import ecohydroworkflowlib.metadata as metadata
+from ecohydroworkflowlib.metadata import GenericMetadata
 from ecohydroworkflowlib.hydro1k import demtile
 #from ecohydroworkflowlib.hydro1k.demtile import getDEMForBoundingBox
 from ecohydroworkflowlib.spatialdata.utils import resampleRaster
@@ -139,7 +139,7 @@ if os.path.exists(demFilepath):
     deleteGeoTiff(demFilepath)
 
 # Get study area parameters
-studyArea = metadata.readStudyAreaEntries(projectDir)
+studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
 bbox = studyArea['bbox_wgs84'].split()
 bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
 
@@ -172,15 +172,15 @@ resampleRaster(config, projectDir, tmpDEMFilepath, demFilename, \
                trX=demResolutionX, trY=demResolutionY)
 
 # Write metadata
-metadata.writeManifestEntry(projectDir, "dem", demFilename)
-metadata.writeStudyAreaEntry(projectDir, "dem_res_x", demResolutionX)
-metadata.writeStudyAreaEntry(projectDir, "dem_res_y", demResolutionY)
-metadata.writeStudyAreaEntry(projectDir, "dem_srs", t_srs)
+GenericMetadata.writeManifestEntry(projectDir, "dem", demFilename)
+GenericMetadata.writeStudyAreaEntry(projectDir, "dem_res_x", demResolutionX)
+GenericMetadata.writeStudyAreaEntry(projectDir, "dem_res_y", demResolutionY)
+GenericMetadata.writeStudyAreaEntry(projectDir, "dem_srs", t_srs)
 
 # Get rows and columns for DEM
 (columns, rows) = getDimensionsForRaster(demFilepath)
-metadata.writeStudyAreaEntry(projectDir, "dem_columns", columns)
-metadata.writeStudyAreaEntry(projectDir, "dem_rows", rows)
+GenericMetadata.writeStudyAreaEntry(projectDir, "dem_columns", columns)
+GenericMetadata.writeStudyAreaEntry(projectDir, "dem_rows", rows)
 
 # Clean-up
 deleteGeoTiff(tmpDEMFilepath)

@@ -54,7 +54,7 @@ Post conditions
 
 Usage:
 @code
-python ./GetCatchmentShapefileForStreamflowGage.py -i macosx2.cfg -p /path/to/project_dir
+GetCatchmentShapefileForStreamflowGage.py -p /path/to/project_dir
 @endcode
 
 @note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
@@ -66,7 +66,7 @@ import errno
 import argparse
 import ConfigParser
 
-import ecohydroworkflowlib.metadata as metadata
+from ecohydroworkflowlib.metadata import GenericMetadata
 from ecohydroworkflowlib.nhdplus2.networkanalysis import getCatchmentShapefileForGage
 
 # Handle command line options
@@ -120,7 +120,7 @@ else:
     outfile = "catchment"
 
 # Get study area parameters
-studyArea = metadata.readStudyAreaEntries(projectDir)
+studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
 reachcode = studyArea['nhd_gage_reachcode']
 measure = studyArea['nhd_gage_measure_pct']
 
@@ -128,4 +128,4 @@ shapeFilename = "%s.shp" % (outfile)
 shapeFilepath = os.path.join(projectDir, shapeFilename)
 if not os.path.exists(shapeFilepath):
     getCatchmentShapefileForGage(config, projectDir, shapeFilename, reachcode, measure)
-    metadata.writeManifestEntry(projectDir, "study_area_shapefile", shapeFilename)
+    GenericMetadata.writeManifestEntry(projectDir, "study_area_shapefile", shapeFilename)

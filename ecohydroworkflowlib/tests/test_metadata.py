@@ -35,39 +35,58 @@
     
     Usage: 
     @code
-    python -m unittest test_manifest_and_studyarea
+    python -m unittest test_metadata
     @endcode
     
 """ 
 from unittest import TestCase
 import os
 
-import ecohydroworkflowlib.metadata as metadata
+from ecohydroworkflowlib.metadata import GenericMetadata
 
 class TestManifestAndStudyArea(TestCase):
     
     def setUp(self):
-        testMetadataPath = os.path.join("/tmp", metadata.METADATA_FILENAME)
+        testMetadataPath = os.path.join("/tmp", GenericMetadata.METADATA_FILENAME)
         if os.path.exists(testMetadataPath):
             os.unlink(testMetadataPath)
-        testMetadataPath = os.path.join("/tmp", metadata.METADATA_LOCKFILE)
+        testMetadataPath = os.path.join("/tmp", GenericMetadata.METADATA_LOCKFILE)
         if os.path.exists(testMetadataPath):
             os.unlink(testMetadataPath)
     
+    
     def test_empty_read(self):
-        manifest = metadata.readManifestEntries("/tmp")
+        manifest = GenericMetadata.readManifestEntries("/tmp")
         self.assertTrue(len(manifest) == 0)
         
-        studyArea = metadata.readStudyAreaEntries("/tmp")
+        studyArea = GenericMetadata.readStudyAreaEntries("/tmp")
         self.assertTrue(len(studyArea) == 0)
-    def test_write_and_read(self):
-        metadata.writeManifestEntry("/tmp", "hello", "world!")
-        metadata.writeManifestEntry("/tmp", "foo", "bar")
-        manifest= metadata.readManifestEntries("/tmp")
-        self.assertTrue(manifest["hello"] == "world!")
+    
+        climatePoint = GenericMetadata.readClimatePointEntries("/tmp")
+        self.assertTrue(len(climatePoint) == 0)
         
-        metadata.writeStudyAreaEntry("/tmp", "key1", "value_one")
-        metadata.writeStudyAreaEntry("/tmp", "key2", "value_two")
-        manifest= metadata.readStudyAreaEntries("/tmp")
+        climateGrid = GenericMetadata.readClimateGridEntries("/tmp")
+        self.assertTrue(len(climateGrid) == 0)
+        
+        
+    def test_write_and_read(self):
+        GenericMetadata.writeManifestEntry("/tmp", "key1", "value_one")
+        GenericMetadata.writeManifestEntry("/tmp", "key2", "value_two")
+        manifest = GenericMetadata.readManifestEntries("/tmp")
         self.assertTrue(manifest["key1"] == "value_one")
+        
+        GenericMetadata.writeStudyAreaEntry("/tmp", "key1", "value_one")
+        GenericMetadata.writeStudyAreaEntry("/tmp", "key2", "value_two")
+        studyArea = GenericMetadata.readStudyAreaEntries("/tmp")
+        self.assertTrue(studyArea["key1"] == "value_one")
+        
+        GenericMetadata.writeClimatePointEntry("/tmp", "key1", "value_one")
+        GenericMetadata.writeClimatePointEntry("/tmp", "key2", "value_two")
+        climatePoint = GenericMetadata.readClimatePointEntries("/tmp")
+        self.assertTrue(climatePoint["key1"] == "value_one")
+        
+        GenericMetadata.writeClimateGridEntry("/tmp", "key1", "value_one")
+        GenericMetadata.writeClimateGridEntry("/tmp", "key2", "value_two")
+        climateGrid = GenericMetadata.readClimateGridEntries("/tmp")
+        self.assertTrue(climateGrid["key1"] == "value_one")
         

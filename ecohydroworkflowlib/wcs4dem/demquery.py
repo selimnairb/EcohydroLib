@@ -38,6 +38,7 @@ import httplib
 
 from ecohydroworkflowlib.spatialdata.utils import deleteGeoTiff
 
+
 SUPPORTED_COVERAGE = ['SRTM_30m_USA', 'SRTM_90m_Global', 'GTOPO_30arc_Global']
 SUPPORTED_FORMATS = ['image/geotiff', 'image/netcdf', 'image/PNG', 'image/JPEG', 'image/JPEG2000', 'image/HDF4IMAGE']
 
