@@ -166,11 +166,12 @@ class GenericMetadata:
     KEY_SEP = '_'
     METADATA_FILENAME = 'metadata.txt'
     METADATA_LOCKFILE = 'metadata.txt.lock'
-    MANIFEST_SECTION = 'MANIFEST'
-    PROVENANCE_SECTION = 'PROVENANCE'
-    STUDY_AREA_SECTION = 'STUDY_AREA'
-    CLIMATE_POINT_SECTION = 'CLIMATE_POINT'
-    CLIMATE_GRID_SECTION = 'CLIMATE_GRID'
+    MANIFEST_SECTION = 'manifest'
+    PROVENANCE_SECTION = 'provenance'
+    HISTORY_SECTION = 'history'
+    STUDY_AREA_SECTION = 'study_area'
+    CLIMATE_POINT_SECTION = 'climate_point'
+    CLIMATE_GRID_SECTION = 'climate_grid'
     
 
     @staticmethod
