@@ -186,6 +186,7 @@ running the follow scripts in the following order:
 4. GetDEMExplorerDEMForBoundingbox.py or GetHYDRO1kDEMForBoundingbox.py
 5. GetNLCDForBoundingbox.py
 6. GetSSURGOFeaturesForBoundingbox.py
+7. GenerateSoilPropertyRastersFromSSURGO.py or GenerateSoilPropertyRastersFromSOLIM.py
 
 It is required that the first 4 steps be run in this order, the remaining workflow 
 components can be run in any order.  Other workflow components, e.g. to register a
