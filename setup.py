@@ -33,7 +33,8 @@ setup(name='ecohydroworkflowlib',
         'PySimpleSOAP',
         'OWSLib',
         'oset',
-        'pyspatialite==3.0.1'
+        'pyspatialite==3.0.1',
+        'httplib2'
       ],
       scripts=['bin/NHDPlusV2Setup/NHDPlusV2Setup.py',
                'bin/GetBoundingboxFromStudyareaShapefile.py',

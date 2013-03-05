@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">EcohydroWorkflowLib
-   &#160;<span id="projectnumber">0.93</span>
+   &#160;<span id="projectnumber">0.94</span>
    </div>
   </td>
  </tr>
@@ -108,9 +108,9 @@ Fig. 1 Ecohydrology model data preparation workflow software stack depicting Eco
 <h2>Required runtime software</h2>
 <ul>
 <li>GDAL/OGR binaries (throughout)</li>
-<li>Seven Zip binary (<a class="el" href="_n_h_d_plus_v2_setup_8py.html">NHDPlusV2Setup.py</a>)</li>
-<li>SQLite3 binary, with Spatialite (<a class="el" href="_n_h_d_plus_v2_setup_8py.html">NHDPlusV2Setup.py</a>)</li>
-<li>Unix find binary (<a class="el" href="_n_h_d_plus_v2_setup_8py.html">NHDPlusV2Setup.py</a>)</li>
+<li>Seven Zip binary (NHDPlusV2Setup.py)</li>
+<li>SQLite3 binary, with Spatialite (NHDPlusV2Setup.py)</li>
+<li>Unix find binary (NHDPlusV2Setup.py)</li>
 </ul>
 <h2>Required data</h2>
 <ul>
@@ -119,7 +119,7 @@ Fig. 1 Ecohydrology model data preparation workflow software stack depicting Eco
 <li>NHDPlus V2 dataset (<a href="http://www.horizon-systems.com/NHDPlus/NHDPlusV2_home.php">http://www.horizon-systems.com/NHDPlus/NHDPlusV2_home.php</a>)</li>
 </ul>
 <h2>NHDPlus V2 database setup</h2>
-<p>Before EcohydrologyWorkflowLib is able to extract study area ROI, it is necessary to download and build a custom SQLite3-based implementation of the NHDPlus V2 dataset. A script for building the dataset from downloaded NHDPlus V2 7z archives is provided in <a class="el" href="_n_h_d_plus_v2_setup_8py.html">bin/NHDPlusV2Setup/NHDPlusV2Setup.py</a>. The following NHDPlus V2 datasets are required:</p>
+<p>Before EcohydrologyWorkflowLib is able to extract study area ROI, it is necessary to download and build a custom SQLite3-based implementation of the NHDPlus V2 dataset. A script for building the dataset from downloaded NHDPlus V2 7z archives is provided in <a class="el" href="bin_2_n_h_d_plus_v2_setup_2_n_h_d_plus_v2_setup_8py.html">bin/NHDPlusV2Setup/NHDPlusV2Setup.py</a>. The following NHDPlus V2 datasets are required:</p>
 <ul>
 <li>NHDPlusV21_NationalData_GageInfo_02.7z</li>
 <li>NHDPlusV21_NationalData_GageLoc_01.7z</li>
@@ -128,16 +128,16 @@ Fig. 1 Ecohydrology model data preparation workflow software stack depicting Eco
 <li>NHDPlusV21_??_??_NHDPlusCatchment_??.7z</li>
 <li>NHDPlusV21_??_??_NHDSnapshot_??.7z</li>
 </ul>
-<p>Note that the NHDPlusAttributes, NHDPlusCatchment, and NHDPlusSnapshot data are released as regional subsets (due to the large size and complexity of the data). <a class="el" href="_n_h_d_plus_v2_setup_8py.html">NHDPlusV2Setup.py</a> can build its NHDPlus SQLite3 databases for any number of regions; all data for the desired number of regions will be combined into a single database.</p>
-<p>Once you've decided which NHDPlusV2 regions you wish to build a database for, simply download the relevant 7z archives from the NHDPlusV2 web site (see above), and store the archives in a single directory. <a class="el" href="_n_h_d_plus_v2_setup_8py.html">NHDPlusV2Setup.py</a> will unpack these archives into a specified output location and then will process the unarchived files into the following databases:</p>
+<p>Note that the NHDPlusAttributes, NHDPlusCatchment, and NHDPlusSnapshot data are released as regional subsets (due to the large size and complexity of the data). NHDPlusV2Setup.py can build its NHDPlus SQLite3 databases for any number of regions; all data for the desired number of regions will be combined into a single database.</p>
+<p>Once you've decided which NHDPlusV2 regions you wish to build a database for, simply download the relevant 7z archives from the NHDPlusV2 web site (see above), and store the archives in a single directory. NHDPlusV2Setup.py will unpack these archives into a specified output location and then will process the unarchived files into the following databases:</p>
 <ul>
 <li>Catchment.sqlite (a spatial dataset containing all catchment polygons in the selected NHD region(s);</li>
 <li>GageLoc.sqlite (a spatial dataset containing streamflow gage points for the national NHD dataset;</li>
 <li>NHDPlusDB.sqlite (a tabular dataset containing other NHD data needed by EcohydrologyWorkflowLib).</li>
 </ul>
-<p>For national NHD coverage, Catchment.sqlite is over 8 GB, and NHDPlusDB.sqlite is over 2 GB, so you will need a kernel and filesystem that has large file support to build and use these datasets. Also, it may take over an hour to create these datasets; 8 GB of memory or more is recommended to build the datasets efficiently. However, database setup is a one-time process, and you can use databases created on one machine on other machines, provided SQLite3 is installed. <a class="el" href="_n_h_d_plus_v2_setup_8py.html">NHDPlusV2Setup.py</a> creates each database with the indices needed by EcohydrologyWorkflowLib, so lookups are very fast.</p>
+<p>For national NHD coverage, Catchment.sqlite is over 8 GB, and NHDPlusDB.sqlite is over 2 GB, so you will need a kernel and filesystem that has large file support to build and use these datasets. Also, it may take over an hour to create these datasets; 8 GB of memory or more is recommended to build the datasets efficiently. However, database setup is a one-time process, and you can use databases created on one machine on other machines, provided SQLite3 is installed. NHDPlusV2Setup.py creates each database with the indices needed by EcohydrologyWorkflowLib, so lookups are very fast.</p>
 <h2>Configuration files</h2>
-<p>Many of the command line scripts (including <a class="el" href="_n_h_d_plus_v2_setup_8py.html">NHDPlusV2Setup.py</a>) require a configuration file to specify locations to executables and datasets required by the ecohydrology workflow libraries. The configuration file can be specified via the environmental variable ECOHYDROWORKFLOW_CFG or via command line option. Here is an example configuration file: </p>
+<p>Many of the command line scripts (including NHDPlusV2Setup.py) require a configuration file to specify locations to executables and datasets required by the ecohydrology workflow libraries. The configuration file can be specified via the environmental variable ECOHYDROWORKFLOW_CFG or via command line option. Here is an example configuration file: </p>
 <pre class="fragment">    [GDAL/OGR]
     PATH_OF_OGR2OGR = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/ogr2ogr
     PATH_OF_GDAL_RASTERIZE = /Library/Frameworks/GDAL.framework/Versions/Current/Programs/gdal_rasterize
@@ -165,12 +165,12 @@ Fig. 1 Ecohydrology model data preparation workflow software stack depicting Eco
 </pre><h2>How to use - Typical workflow</h2>
 <p>A workflow using data from large-scale spatial data infrastructure will consist of running the follow scripts in the following order:</p>
 <ol type="1">
-<li><a class="el" href="_get_n_h_d_streamflow_gage_identifiers_and_location_8py.html">GetNHDStreamflowGageIdentifiersAndLocation.py</a></li>
-<li><a class="el" href="_get_catchment_shapefile_for_streamflow_gage_8py.html">GetCatchmentShapefileForStreamflowGage.py</a></li>
-<li><a class="el" href="_get_boundingbox_from_studyarea_shapefile_8py.html">GetBoundingboxFromStudyAreaShapefile.py</a></li>
-<li><a class="el" href="_get_d_e_m_explorer_d_e_m_for_boundingbox_8py.html">GetDEMExplorerDEMForBoundingbox.py</a> or <a class="el" href="_get_h_y_d_r_o1k_d_e_m_for_boundingbox_8py.html">GetHYDRO1kDEMForBoundingbox.py</a></li>
-<li><a class="el" href="_get_n_l_c_d_for_boundingbox_8py.html">GetNLCDForBoundingbox.py</a></li>
-<li><a class="el" href="_get_s_s_u_r_g_o_features_for_boundingbox_8py.html">GetSSURGOFeaturesForBoundingbox.py</a></li>
+<li>GetNHDStreamflowGageIdentifiersAndLocation.py</li>
+<li>GetCatchmentShapefileForStreamflowGage.py</li>
+<li>GetBoundingboxFromStudyAreaShapefile.py</li>
+<li>GetDEMExplorerDEMForBoundingbox.py or GetHYDRO1kDEMForBoundingbox.py</li>
+<li>GetNLCDForBoundingbox.py</li>
+<li>GetSSURGOFeaturesForBoundingbox.py</li>
 </ol>
 <p>It is required that the first 4 steps be run in this order, the remaining workflow components can be run in any order. Other workflow components, e.g. to register a custom dataset, can be substituted for the latter 4 workflow components as well (as indicated above). See the documentation for each script to see invocations details.</p>
 <p>A workflow using custom local data sources will consist of running the follow scripts in the following order:</p>
@@ -178,12 +178,12 @@ Fig. 1 Ecohydrology model data preparation workflow software stack depicting Eco
 <li><a class="el" href="_register_d_e_m_8py.html">RegisterDEM.py</a></li>
 <li><a class="el" href="_register_gage_8py.html">RegisterGage.py</a></li>
 <li><a class="el" href="_register_landcover_8py.html">RegisterLandcover.py</a></li>
-<li><a class="el" href="_get_s_s_u_r_g_o_features_for_boundingbox_8py.html">GetSSURGOFeaturesForBoundingbox.py</a> </li>
+<li>GetSSURGOFeaturesForBoundingbox.py </li>
 </ol>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Feb 25 2013 14:34:46 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 5 2013 00:28:12 for EcohydroWorkflowLib by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3
 </small></address>

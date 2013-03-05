@@ -51,15 +51,8 @@ Pre conditions
 
 Post conditions
 ---------------
-1. Will write the following entry(ies) to the manifest section of metadata associated with the project directory:
-   ghcn_climate_data [the name of the GHCN data file]  
-
-2. Will write the following entry(ies) to the climate point section of metadata associated with the project directory:
-   ghcn_station_id
-   ghcn_station_longitude
-   ghcn_station_latitude
-   ghcn_station_elevation_m
-   ghcn_station_distance
+1. Will write a ClimatePointStation entry to the climate point section of metadata associated with the project directory:
+   
 
 Usage:
 @code
@@ -68,14 +61,18 @@ GetGHCNDailyClimateData.py -p /path/to/project_dir
 
 @note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
 or -i option must be specified. 
+
+@todo parse datafile to determine start date, start time, and variables
 """
 import os
 import sys
 import errno
 import argparse
 import ConfigParser
+from datetime import datetime
 
 from ecohydroworkflowlib.metadata import GenericMetadata
+from ecohydroworkflowlib.metadata import ClimatePointStation
 from ecohydroworkflowlib.spatialdata.utils import calculateBoundingBoxCenter
 from ecohydroworkflowlib.climatedata.ghcndquery import findStationNearestToCoordinates
 from ecohydroworkflowlib.climatedata.ghcndquery import getClimateDataForStation
@@ -138,9 +135,15 @@ returnCode = getClimateDataForStation(config, projectDir, outfile, nearest[0])
 assert(returnCode)
 
 # Write metadata
-GenericMetadata.writeClimatePointEntry(projectDir, "ghcn_climate_data", outfile)
-GenericMetadata.writeClimatePointEntry(projectDir, "ghcn_station_id", nearest[0])
-GenericMetadata.writeClimatePointEntry(projectDir, "ghcn_station_longitude", nearest[1])
-GenericMetadata.writeClimatePointEntry(projectDir, "ghcn_station_latitude", nearest[2])
-GenericMetadata.writeClimatePointEntry(projectDir, "ghcn_station_elevation_m", nearest[3])
-GenericMetadata.writeClimatePointEntry(projectDir, "ghcn_station_distance", nearest[4])
+station = ClimatePointStation()
+station.type = "GHCN"
+station.id = nearest[0]
+station.longitude = nearest[1]
+station.latitude = nearest[2]
+station.elevation = nearest[3]
+station.data = outfile
+station.startDate = datetime.strptime("200001", "%Y%m")
+station.endDate = datetime.strptime("200101", "%Y%m")
+station.variables = [ClimatePointStation.VAR_TMIN, \
+                    ClimatePointStation.VAR_TMAX]
+station.writeToMetadata(projectDir)

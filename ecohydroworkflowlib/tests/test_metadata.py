@@ -1,4 +1,4 @@
-"""@package ecohydroworkflowlib.tests.test_manifest_and_studyarea
+"""@package ecohydroworkflowlib.tests.test_metadata
     
     @brief Test methods for ecohydrologyworkflowlib.metadata
     
@@ -41,10 +41,12 @@
 """ 
 from unittest import TestCase
 import os
+from datetime import datetime
 
 from ecohydroworkflowlib.metadata import GenericMetadata
+from ecohydroworkflowlib.metadata import ClimatePointStation
 
-class TestManifestAndStudyArea(TestCase):
+class TestMetadata(TestCase):
     
     def setUp(self):
         testMetadataPath = os.path.join("/tmp", GenericMetadata.METADATA_FILENAME)
@@ -90,3 +92,59 @@ class TestManifestAndStudyArea(TestCase):
         climateGrid = GenericMetadata.readClimateGridEntries("/tmp")
         self.assertTrue(climateGrid["key1"] == "value_one")
         
+        
+    def test_write_climate_point1(self):
+        """ Test case where there is a single data file the station """
+        projectDir = "/tmp"
+        station = ClimatePointStation()
+        station.type = "GHCN"
+        station.id = "US1MDBL0027"
+        station.longitude = -76.716
+        station.latitude = 39.317
+        station.elevation = 128.0
+        station.data = "clim.txt"
+        station.startDate = datetime.strptime("201007", "%Y%m")
+        station.endDate = datetime.strptime("201110", "%Y%m")
+        station.variables = [ClimatePointStation.VAR_PRECIP, \
+                             ClimatePointStation.VAR_SNOW]
+        station.writeToMetadata(projectDir)
+        
+        climatePointStation = GenericMetadata.readClimatePointStations(projectDir)[0]  
+        self.assertTrue(station.type.lower() == climatePointStation.type)
+        self.assertTrue(station.id.lower() == climatePointStation.id)
+        self.assertTrue(station.longitude == climatePointStation.longitude)
+        self.assertTrue(station.latitude == climatePointStation.latitude)
+        self.assertTrue(station.elevation == climatePointStation.elevation)
+        self.assertTrue(station.data == climatePointStation.data)
+        self.assertTrue(station.startDate == climatePointStation.startDate)
+        self.assertTrue(station.endDate == climatePointStation.endDate)
+        self.assertTrue(station.variables == climatePointStation.variables)
+        
+    def test_write_climate_point2(self):
+        """ Test case where there are separate data files for each variable """
+        projectDir = "/tmp"
+        station = ClimatePointStation()
+        station.type = "GHCN"
+        station.id = "US1MDBL0027"
+        station.longitude = -76.716
+        station.latitude = 39.317
+        station.elevation = 128.0
+        station.startDate = datetime.strptime("201007", "%Y%m")
+        station.endDate = datetime.strptime("201110", "%Y%m")
+        station.variables = [ClimatePointStation.VAR_PRECIP, \
+                             ClimatePointStation.VAR_SNOW]
+        station.variablesData[ClimatePointStation.VAR_PRECIP] = ClimatePointStation.VAR_PRECIP + '.txt'
+        station.variablesData[ClimatePointStation.VAR_SNOW] = ClimatePointStation.VAR_SNOW + '.txt'
+        station.writeToMetadata(projectDir)
+        
+        climatePointStation = GenericMetadata.readClimatePointStations(projectDir)[0]        
+        self.assertTrue(station.type.lower() == climatePointStation.type)
+        self.assertTrue(station.id.lower() == climatePointStation.id)
+        self.assertTrue(station.longitude == climatePointStation.longitude)
+        self.assertTrue(station.latitude == climatePointStation.latitude)
+        self.assertTrue(station.elevation == climatePointStation.elevation)
+        self.assertTrue(station.startDate == climatePointStation.startDate)
+        self.assertTrue(station.endDate == climatePointStation.endDate)
+        self.assertTrue(station.variables == climatePointStation.variables)
+        self.assertTrue(station.variablesData[ClimatePointStation.VAR_PRECIP] == climatePointStation.variablesData[ClimatePointStation.VAR_PRECIP])
+        self.assertTrue(station.variablesData[ClimatePointStation.VAR_SNOW] == climatePointStation.variablesData[ClimatePointStation.VAR_SNOW])
