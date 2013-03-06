@@ -80,13 +80,25 @@ YET IMPLEMENTED).
 
 Installation
 ------------
-Using Python PyPi:
+Using easy_install:
 
 easy_install --script-dir /path/to/install/scripts ecohydroworkflowlib
+
+Using pip:
+
+pip install ecohydroworkflowlib
+
 
 It is recommended that you install the workflow scripts in a location distinct from
 where the Python package will be installed.  This is accomplished by specifying the
 --script-dir option to easy install (see above).  
+
+Note, pyspatialite 3.0.1, a required package, currently fails to build under 
+easy_install/pip.  The workaround, for now, is to:
+- Manually download pyspatialite here: https://pypi.python.org/pypi/pyspatialite/3.0.1
+- Apply the following patch to pyspatialite's setup.py: https://code.google.com/p/pyspatialite/issues/detail?id=9
+- Install pyspatialite
+- Install ecohydroworkflowlib as described above
 
 
 Required runtime software
