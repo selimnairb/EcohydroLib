@@ -143,6 +143,13 @@ provided SQLite3 is installed.  NHDPlusV2Setup.py creates each database with the
 needed by EcohydrologyWorkflowLib, so lookups are very fast.
 
 
+HYDRO1k North America
+---------------------
+To use HYDRO1k basin shapefile, you must first uncompress na_bas.e00.gz to na_bas.e00.
+Then you must convert the e00 (Arc interchange file) to a shapefile using a tool such 
+as ArcGIS.
+
+
 Configuration files
 -------------------
 Many of the command line scripts (including NHDPlusV2Setup.py) require a configuration 
@@ -176,14 +183,14 @@ ECOHYDROWORKFLOW_CFG or via command line option. Here is an example configuratio
 		PATH_OF_SQLITE = /opt/local/bin/sqlite3 
 
 
-How to use - Typical workflow
--------------------------------
+How to use - Typical workflows
+------------------------------
 A workflow using data from large-scale spatial data infrastructure will consist of 
 running the follow scripts in the following order:
 1. GetNHDStreamflowGageIdentifiersAndLocation.py
 2. GetCatchmentShapefileForStreamflowGage.py
 3. GetBoundingboxFromStudyAreaShapefile.py
-4. GetDEMExplorerDEMForBoundingbox.py or GetHYDRO1kDEMForBoundingbox.py
+4. GetDEMExplorerDEMForBoundingbox.py
 5. GetNLCDForBoundingbox.py
 6. GetSSURGOFeaturesForBoundingbox.py
 7. GenerateSoilPropertyRastersFromSSURGO.py or GenerateSoilPropertyRastersFromSOLIM.py
@@ -192,6 +199,16 @@ It is required that the first 4 steps be run in this order, the remaining workfl
 components can be run in any order.  Other workflow components, e.g. to register a
 custom dataset, can be substituted for the latter 4 workflow components as well (as
 indicated above).  See the documentation for each script to see invocations details.
+
+
+A workflow collecting data appropriate for large-scale land surface process models
+may consist of running the following scripts in the following order:
+1. GetCatchmentShapefileForHYDRO1kBasins.py
+2. GetBoundingboxFromStudyAreaShapefile.py
+3. GetHYDRO1kDEMForBoundingbox.py
+4. GetNLDASLandcoverForBoundingbox.py (not yet implemented)
+5. GetNLDASSoilsDataForBoundingbox.py (not yet implemented)
+
 
 A workflow using custom local data sources will consist of  running the follow scripts 
 in the following order:

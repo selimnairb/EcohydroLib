@@ -58,7 +58,7 @@ Post conditions
 
 Usage:
 @code
-python ./GetHYDRO1kDEMForBoundingbox.py -p /path/to/project_dir -s 3 3
+GetHYDRO1kDEMForBoundingbox.py -p /path/to/project_dir -s 3 3
 @endcode
 
 @note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',

@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-"""@package GetCatchmentShapefileForStreamflowGage
+"""@package GetCatchmentShapefileForHYDRO1kBasins
 
-@brief Query NHDPlus2 database for shapefile of the drainage area of the given streamflow gage.
-@brief Resulting shapefile will use WGS84 (EPSG:4326) for its spatial reference. 
+@brief Extract tile for HYDRO1k digital elevation model (DEM) stored locally
 
 This software is provided free of charge under the New BSD License. Please see
 the following license information:
@@ -34,19 +33,15 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 @author Brian Miles <brian_miles@unc.edu>
-
-
+  
+  
 Pre conditions
 --------------
 1. Configuration file must define the following sections and values:
    'GDAL/OGR', 'PATH_OF_OGR2OGR'
-   'NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'
-   'NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT'
-
-2. The following metadata entry(ies) must be present in the study area section of the metadata associated with the project directory:
-   nhd_gage_reachcode
-   nhd_gage_measure_pct 
-
+   'HYDRO1k', 'PATH_OF_HYDRO1K_BAS'
+   'HYDRO1k', 'HYDRO1k_BAS_LAYER_NAME'
+   
 Post conditions
 ---------------
 1. Will write the following entry(ies) to the manifest section of metadata associated with the project directory:
@@ -54,7 +49,7 @@ Post conditions
 
 Usage:
 @code
-GetCatchmentShapefileForStreamflowGage.py -p /path/to/project_dir
+GetCatchmentShapefileForHYDRO1kBasins.py -p /path/to/project_dir -b <basin1> <basin2> ... <basinN>
 @endcode
 
 @note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
@@ -67,7 +62,7 @@ import argparse
 import ConfigParser
 
 from ecohydroworkflowlib.metadata import GenericMetadata
-from ecohydroworkflowlib.nhdplus2.networkanalysis import getCatchmentShapefileForGage
+from ecohydroworkflowlib.hydro1k.basins import getCatchmentShapefileForHYDRO1kBasins
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get shapefile for the drainage area of an NHDPlus2 streamflow gage')
@@ -77,6 +72,8 @@ parser.add_argument('-p', '--projectDir', dest='projectDir', required=False,
                     help='The directory to which metadata, intermediate, and final files should be saved')
 parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the catchment shapefile to be written.  File extension ".shp" will be added.  If a file of this name exists, program will silently exit.')
+parser.add_argument('-b', '--basins', dest='basins', nargs='+', required=True,
+                    help='HYDRO1k basins to extract')
 args = parser.parse_args()
 
 configFile = None
@@ -96,13 +93,13 @@ config.read(configFile)
 if not config.has_option('GDAL/OGR', 'PATH_OF_OGR2OGR'):
     sys.exit("Config file %s does not define option %s in section %s" % \
           (args.configfile, 'GDAL/OGR', 'PATH_OF_OGR2OGR'))
-if not config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'):
+if not config.has_option('HYDRO1k', 'PATH_OF_HYDRO1K_BAS'):
     sys.exit("Config file %s does not define option %s in section %s" % \
-          (args.configfile, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'))
-if not config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT'):
+          (args.configfile, 'HYDRO1k', 'PATH_OF_HYDRO1K_BAS'))
+if not config.has_option('HYDRO1k', 'HYDRO1k_BAS_LAYER_NAME'):
     sys.exit("Config file %s does not define option %s in section %s" % \
-          (args.configfile, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT'))  
-
+          (args.configfile, 'HYDRO1k', 'HYDRO1k_BAS_LAYER_NAME'))
+  
 if args.projectDir:
     projectDir = args.projectDir
 else:
@@ -119,13 +116,8 @@ if args.outfile:
 else:
     outfile = "catchment"
 
-# Get study area parameters
-studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
-reachcode = studyArea['nhd_gage_reachcode']
-measure = studyArea['nhd_gage_measure_pct']
-
 shapeFilename = "%s.shp" % (outfile)
 shapeFilepath = os.path.join(projectDir, shapeFilename)
 if not os.path.exists(shapeFilepath):
-    getCatchmentShapefileForGage(config, projectDir, shapeFilename, reachcode, measure)
+    getCatchmentShapefileForHYDRO1kBasins(config, projectDir, shapeFilename, args.basins)
     GenericMetadata.writeManifestEntry(projectDir, "study_area_shapefile", shapeFilename)

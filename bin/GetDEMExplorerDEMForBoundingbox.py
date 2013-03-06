@@ -58,7 +58,7 @@ Post conditions
 
 Usage:
 @code
-python ./GetDEMExplorerDEMForBoundingbox.py -p /path/to/project_dir -s 3 3  
+GetDEMExplorerDEMForBoundingbox.py -p /path/to/project_dir -s 3 3  
 @endcode
 
 @note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',

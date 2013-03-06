@@ -63,6 +63,56 @@ _SRS = int(4326)
 _BUFF_LEN = 4096 * 10
 
 
+def findStationsWithinBoundingBox(config, bbox):
+    """ Find stations that lie within a bounding box
+    
+        @param config ConfigParser containing the section 'GHCND' and option 
+        'PATH_OF_STATION_DB'
+        @param bbox A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
+        
+        @return A list of strings representing the IDs of GHCN stations within the bounding box
+        
+        @code
+        import os
+        import ConfigParser
+        from ecohydroworkflowlib.climatedata.ghcndquery import findStationsWithinBoundingBox
+        minX = -76.777163
+        minY = 39.273610
+        maxX = -76.674123
+        maxY = 39.348549
+        bbox = dict({'minX': minX, 'minY': minY, 'maxX': maxX, 'maxY': maxY, 'srs': 'EPSG:4326'})
+    
+        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
+        config = ConfigParser.RawConfigParser()
+        config.read(configFile)
+        
+        findStationsWithinBoundingBox(config,bbox)
+        @endcode 
+    """
+    stations = []
+    pattern = re.compile("^POINT\((-?\d+\.\d+) (-?\d+\.\d+)\)$")
+    
+    ghcnDB = config.get('GHCND', 'PATH_OF_STATION_DB')
+    
+    conn = spatialite.connect(ghcnDB)
+    cursor = conn.cursor()
+    # Spatialite/SQLite3 won't subsitute parameter strings within quotes, so we have to do it the unsafe way.  This should be okay as
+    # we are dealing with numeric values that we are converting to numeric types before building the query string.
+    sql = u"SELECT id,AsText(coord),elevation_m,name FROM ghcn_station WHERE Within(coord, BuildMbr(%f,%f,%f,%f));" %\
+    (bbox['minX'], bbox['minY'], bbox['maxX'], bbox['maxY'])
+    cursor.execute(sql)
+    results = cursor.fetchall()
+    conn.close()
+    for result in results:
+        # Unpack the coordinates
+        match = pattern.match(result[1])
+        assert(match)
+        lon = float(match.group(1))
+        lat = float(match.group(2))
+        stations.append([result[0], lat, lon, result[2], result[3]])
+    return stations
+
+
 def findStationNearestToCoordinates(config, longitude, latitude):
     """Determine identifier of station nearest to longitude, latitude coordinates.
     
