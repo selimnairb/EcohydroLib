@@ -176,6 +176,11 @@ ECOHYDROWORKFLOW_CFG or via command line option. Here is an example configuratio
 		
 		[HYDRO1k]
 		PATH_OF_HYDRO1K_DEM = /Users/<username>/Research/data/GIS/HYDRO1k/na/na_dem.bil
+		PATH_OF_HYDRO1K_BAS = /Users/<username>/Research/data/GIS/HYDRO1k/na/na_bas_polygon.shp
+		HYDRO1k_BAS_LAYER_NAME = na_bas_polygon
+		
+		[GHCND]
+		PATH_OF_STATION_DB = /Users/miles/Research/data/obs/NCDC/GHCND/GHCND.spatialite
 		
 		[UTIL]
 		PATH_OF_FIND = /usr/bin/find
@@ -208,6 +213,7 @@ may consist of running the following scripts in the following order:
 3. GetHYDRO1kDEMForBoundingbox.py
 4. GetNLDASLandcoverForBoundingbox.py (not yet implemented)
 5. GetNLDASSoilsDataForBoundingbox.py (not yet implemented)
+6. GetGHCNDailyClimateData.py (will only download data for the nearest met. station)
 
 
 A workflow using custom local data sources will consist of  running the follow scripts 
