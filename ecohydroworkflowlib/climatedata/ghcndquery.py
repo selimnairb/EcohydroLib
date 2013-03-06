@@ -75,13 +75,12 @@ def findStationsWithinBoundingBox(config, bbox):
         @code
         import os
         import ConfigParser
+        from ecohydroworkflowlib.metadata import GenericMetadata
         from ecohydroworkflowlib.climatedata.ghcndquery import findStationsWithinBoundingBox
-        minX = -76.777163
-        minY = 39.273610
-        maxX = -76.674123
-        maxY = 39.348549
-        bbox = dict({'minX': minX, 'minY': minY, 'maxX': maxX, 'maxY': maxY, 'srs': 'EPSG:4326'})
-    
+        studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
+        bbox = studyArea['bbox_wgs84'].split()
+        bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
+            
         configFile = os.environ['ECOHYDROWORKFLOW_CFG']
         config = ConfigParser.RawConfigParser()
         config.read(configFile)
