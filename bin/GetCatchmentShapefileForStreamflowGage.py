@@ -39,7 +39,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Pre conditions
 --------------
 1. Configuration file must define the following sections and values:
-   'GDAL/OGR', 'PATH_OF_OGR2OGR'
    'NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'
    'NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT'
 
@@ -67,7 +66,7 @@ import argparse
 import ConfigParser
 
 from ecohydroworkflowlib.metadata import GenericMetadata
-from ecohydroworkflowlib.nhdplus2.networkanalysis import getCatchmentShapefileForGage
+from ecohydroworkflowlib.nhdplus2.networkanalysis import getCatchmentShapefileForGageOGR
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get shapefile for the drainage area of an NHDPlus2 streamflow gage')
@@ -93,9 +92,9 @@ if not os.access(configFile, os.R_OK):
 config = ConfigParser.RawConfigParser()
 config.read(configFile)
 
-if not config.has_option('GDAL/OGR', 'PATH_OF_OGR2OGR'):
-    sys.exit("Config file %s does not define option %s in section %s" % \
-          (args.configfile, 'GDAL/OGR', 'PATH_OF_OGR2OGR'))
+#if not config.has_option('GDAL/OGR', 'PATH_OF_OGR2OGR'):
+#    sys.exit("Config file %s does not define option %s in section %s" % \
+#          (args.configfile, 'GDAL/OGR', 'PATH_OF_OGR2OGR'))
 if not config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'):
     sys.exit("Config file %s does not define option %s in section %s" % \
           (args.configfile, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'))
@@ -127,5 +126,6 @@ measure = studyArea['nhd_gage_measure_pct']
 shapeFilename = "%s.shp" % (outfile)
 shapeFilepath = os.path.join(projectDir, shapeFilename)
 if not os.path.exists(shapeFilepath):
-    getCatchmentShapefileForGage(config, projectDir, shapeFilename, reachcode, measure)
+    #getCatchmentShapefileForGage(config, projectDir, shapeFilename, reachcode, measure)
+    getCatchmentShapefileForGageOGR(config, projectDir, shapeFilename, reachcode, measure)
     GenericMetadata.writeManifestEntry(projectDir, "study_area_shapefile", shapeFilename)
