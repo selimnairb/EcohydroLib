@@ -446,8 +446,8 @@ def getCatchmentShapefileForGageOGR(config, outputDir, catchmentFilename, reachc
     #sys.stderr.write("Gage with reachcode %s, measure %f has ComID %d" % (reachcode, measure, comID))
     
     # Get upstream reaches
-    upstream_reaches = []
-    getUpstreamReachesSQL(conn, comID, upstream_reaches)
+    reaches = [comID]
+    getUpstreamReachesSQL(conn, comID, reaches)
     #sys.stderr.write("Upstream reaches: ")
     #sys.stderr.write(upstream_reaches)
     conn.close()
@@ -476,49 +476,33 @@ def getCatchmentShapefileForGageOGR(config, outputDir, catchmentFilename, reachc
         i = i + 1
 
     # Copy features
-    numReaches = len(upstream_reaches)
-    if numReaches <= UPSTREAM_SEARCH_THRESHOLD:
-        whereFilter = "featureid=%s" % (comID,)
-        for reach in upstream_reaches:
-            whereFilter = whereFilter + " OR featureid=%s" % (reach,) # NHDPlusV2
+    numReaches = len(reaches)
+    # Copy features in batches of UPSTREAM_SEARCH_THRESHOLD to overcome limit in 
+    #   OGR driver for input layer
+    start = 0
+    end = UPSTREAM_SEARCH_THRESHOLD
+    while end < numReaches:
+        whereFilter = "featureid=%s" % (reaches[start],)
+        for reach in reaches[start+1:end]:
+            whereFilter = whereFilter + " OR featureid=%s" % (reach,)
+        # Copy features
+        assert(poLayer.SetAttributeFilter(whereFilter) == 0)
+        inFeature = poLayer.GetNextFeature()
+        while inFeature:
+            poOLayer.CreateFeature(inFeature)
+            inFeature.Destroy()
+            inFeature = poLayer.GetNextFeature()
+        start = end
+        end = end + UPSTREAM_SEARCH_THRESHOLD
+    # Copy remaining features
+    whereFilter = "featureid=%s" % (reaches[start],)
+    for reach in reaches[start+1:end]:
+        whereFilter = whereFilter + " OR featureid=%s" % (reach,)
+    # Copy features
+    assert(poLayer.SetAttributeFilter(whereFilter) == 0)
+    inFeature = poLayer.GetNextFeature()
+    while inFeature:
+        poOLayer.CreateFeature(inFeature)
+        inFeature.Destroy()
+        inFeature = poLayer.GetNextFeature()
         
-        # Copy features
-        assert(poLayer.SetAttributeFilter(whereFilter) == 0)
-        inFeature = poLayer.GetNextFeature()
-        while inFeature:
-            poOLayer.CreateFeature(inFeature)
-            inFeature.Destroy()
-            inFeature = poLayer.GetNextFeature()
-    else:
-        # Copy features in batches of UPSTREAM_SEARCH_THRESHOLD to overcome limit in 
-        #   OGR driver for input layer
-        start = 0
-        end = UPSTREAM_SEARCH_THRESHOLD
-        #print numReaches
-        while end < numReaches:
-            #print "start: %s, end: %s" % (start, end)
-            whereFilter = "featureid=%s" % (comID,)
-            for reach in upstream_reaches[start:end]:
-                whereFilter = whereFilter + " OR featureid=%s" % (reach,) # NHDPlusV2
-            # Copy features
-            assert(poLayer.SetAttributeFilter(whereFilter) == 0)
-            inFeature = poLayer.GetNextFeature()
-            while inFeature:
-                poOLayer.CreateFeature(inFeature)
-                inFeature.Destroy()
-                inFeature = poLayer.GetNextFeature()
-            start = end
-            end = end + UPSTREAM_SEARCH_THRESHOLD
-        # Copy remaining features
-        #print "start: %s, end: %s" % (start, end)
-        whereFilter = "featureid=%s" % (comID,)
-        for reach in upstream_reaches[start:end]:
-            whereFilter = whereFilter + " OR featureid=%s" % (reach,) # NHDPlusV2
-        # Copy features
-        assert(poLayer.SetAttributeFilter(whereFilter) == 0)
-        inFeature = poLayer.GetNextFeature()
-        while inFeature:
-            poOLayer.CreateFeature(inFeature)
-            inFeature.Destroy()
-            inFeature = poLayer.GetNextFeature()
-            
