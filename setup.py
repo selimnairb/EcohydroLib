@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='ecohydroworkflowlib',
-      version='0.95',
+      version='0.951',
       description='Libraries and command-line scripts for performing ecohydrology data preparation workflows.',
       long_description=readme(),
       classifiers=[
@@ -24,7 +24,8 @@ setup(name='ecohydroworkflowlib',
       packages=['ecohydroworkflowlib', 'ecohydroworkflowlib.tests', 
                 'ecohydroworkflowlib.nhdplus2', 'ecohydroworkflowlib.solim',
                 'ecohydroworkflowlib.spatialdata', 'ecohydroworkflowlib.ssurgo',
-                'ecohydroworkflowlib.wcs4dem', 'ecohydroworkflowlib.climatedata'],
+                'ecohydroworkflowlib.wcs4dem', 'ecohydroworkflowlib.climatedata',
+                'ecohydroworkflowlib.hydro1k'],
       install_requires=[
         'GDAL',
         'pyproj==1.9.2',
@@ -37,15 +38,17 @@ setup(name='ecohydroworkflowlib',
         'httplib2'
       ],
       scripts=['bin/NHDPlusV2Setup/NHDPlusV2Setup.py',
-               'bin/GetBoundingboxFromStudyareaShapefile.py',
-               'bin/GetCatchmentShapefileForStreamflowGage.py',
-               'bin/GetDEMExplorerDEMForBoundingbox.py',
-               'bin/GetNHDStreamflowGageIdentifiersAndLocation.py',
-               'bin/GetNLCDForBoundingbox.py',
-               'bin/GetSSURGOFeaturesForBoundingbox.py',
+               'bin/GHCNDSetup/GHCNDSetup.py',
                'bin/GenerateSoilPropertyRastersFromSSURGO.py',
                'bin/GenerateSoilPropertyRastersFromSOLIM.py',
+               'bin/GetBoundingboxFromStudyareaShapefile.py',
+               'bin/GetCatchmentShapefileForHYDRO1kBasins.py',
+               'bin/GetCatchmentShapefileForStreamflowGage.py',
+               'bin/GetDEMExplorerDEMForBoundingbox.py',
                'bin/GetGHCNDailyClimateData.py',
-               'bin/GetHYDRO1kDEMForBoundingbox.py'
+               'bin/GetHYDRO1kDEMForBoundingbox.py',
+               'bin/GetNHDStreamflowGageIdentifiersAndLocation.py',
+               'bin/GetNLCDForBoundingbox.py',
+               'bin/GetSSURGOFeaturesForBoundingbox.py'
       ],
       zip_safe=False)

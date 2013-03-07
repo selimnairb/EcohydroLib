@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 """@package GHCNDSetup
     
-@brief Builds SQLite3/Spatialite database for Query NCDC Global Historical Climatology Network 
-station metadata downloaded from:
-http://www1.ncdc.noaa.gov/pub/data/ghcn/daily/ghcnd-stations.txt
+@brief Builds SQLite3/Spatialite database needed for querying NCDC Global Historical Climatology Network 
+station metadata downloaded from http://www1.ncdc.noaa.gov/pub/data/ghcn/daily/ghcnd-stations.txt.
+This database is indexed to allow fast spatial queries of station information. 
 
-@note Requires pyspatialite 2.6.2, spatialite 2.3.1; newer versions may break.
+@note Requires pyspatialite 3.0.1.
 
 This software is provided free of charge under the New BSD License. Please see
 the following license information:
@@ -40,12 +40,11 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Usage:
 @code
-python2.7 ./GHCNDSetup.py -o <output_dir>
+GHCNDSetup.py -o <output_dir>
 @endcode
 """
 import os, sys, errno
 import argparse
-import ConfigParser
 import urllib
 import re
 from pyspatialite import dbapi2 as spatialite
@@ -58,26 +57,16 @@ DB_NAME = 'GHCND.spatialite'
 URL = 'http://www1.ncdc.noaa.gov/pub/data/ghcn/daily/ghcnd-stations.txt'
 
 parser = argparse.ArgumentParser(description='Build database of GHCN station metadata')
-parser.add_argument('-i', '--configfile', dest='configfile', required=True,
-                    help='The configuration file')
 parser.add_argument('-o', '--output', dest='outputDir', required=True,
                     help='Directory to which database named "GHCND.sqlite" should be placed')
 parser.add_argument('-u', '--url', dest='url', required=False,
                     help='Override station metadata URL')
 args = parser.parse_args()
 
-config = ConfigParser.RawConfigParser()
-config.read(args.configfile)
-
-if not config.has_option('SPATIALITE', 'PATH_OF_INIT'):
-    sys.exit("Config file %s does not define option %s in section %s" & \
-          (args.configfile, 'SPATIALITE', 'PATH_OF_INIT'))
-
 if not os.access(args.outputDir, os.W_OK):
     raise IOError(errno.EACCES, "Not allowed to write to output directory %s" %
                   args.outputDir)
 
-spatialiteInitPath = config.get('SPATIALITE', 'PATH_OF_INIT')
 ghcnDB = os.path.join(args.outputDir, DB_NAME)
 
 url = URL

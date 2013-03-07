@@ -103,10 +103,17 @@ easy_install/pip.  The workaround, for now, is to:
 
 Required runtime software
 -------------------------
-- GDAL/OGR binaries (throughout)
-- Seven Zip binary (NHDPlusV2Setup.py)
-- SQLite3 binary, with Spatialite (NHDPlusV2Setup.py)
-- Unix find binary (NHDPlusV2Setup.py)
+Libraries (with headers):
+- libxml2
+- libxslt
+- libproj
+- libgeos
+
+Binaries:
+- GDAL/OGR (throughout)
+- Seven Zip (NHDPlusV2Setup.py)
+- SQLite3, with Spatialite (NHDPlusV2Setup.py)
+- Unix find (NHDPlusV2Setup.py)
 
 
 Required data
@@ -146,13 +153,16 @@ NHD dataset;
 - NHDPlusDB.sqlite (a tabular dataset containing other NHD data needed by 
 EcohydrologyWorkflowLib).
 
+Make sure to edit your configuration file to include the absolute paths of these files
+(see below).
+
 For national NHD coverage, Catchment.sqlite is over 8 GB, and NHDPlusDB.sqlite is over 
 2 GB, so you will need a kernel and filesystem that has large file support to build and 
 use these datasets.  Also, it may take over an hour to create these datasets; 8 GB of
 memory or more is recommended to build the datasets efficiently.  However, database setup 
 is a one-time process, and you can use databases created on one machine on other machines,
 provided SQLite3 is installed.  NHDPlusV2Setup.py creates each database with the indices 
-needed by EcohydrologyWorkflowLib, so lookups are very fast.
+needed by EcohydrologyWorkflowLib, so lookups are very fast.  
 
 
 HYDRO1k North America
@@ -160,6 +170,16 @@ HYDRO1k North America
 To use HYDRO1k basin shapefile, you must first uncompress na_bas.e00.gz to na_bas.e00.
 Then you must convert the e00 (Arc interchange file) to a shapefile using a tool such 
 as ArcGIS.
+
+
+GHCN Climate Data
+-----------------
+To download NCDC Global Historical Climatology Network (GHCN) dataset for daily
+climate data, you must first create the spatialite database that EcohydrologyWorkflowLib
+uses to find climate stations using spatial queries.  This database is created using
+bin/GHCNDSetup/GHCNDSetup.py.  The output from the script will be a spatialite database.
+Make sure to edit your configuration file and set PATH_OF_STATION_DB to the absolute path 
+of this spatialite database (see below). 
 
 
 Configuration files
@@ -198,6 +218,9 @@ ECOHYDROWORKFLOW_CFG or via command line option. Here is an example configuratio
 		PATH_OF_FIND = /usr/bin/find
 		PATH_OF_SEVEN_ZIP = /opt/local/bin/7z
 		PATH_OF_SQLITE = /opt/local/bin/sqlite3 
+		
+If you create your initial configuration file by copying and pasting from this documentation,
+make sure to remove any leading spaces from each line of the file.
 
 
 How to use - Typical workflows

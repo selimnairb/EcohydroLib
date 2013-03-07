@@ -1,4 +1,4 @@
-"""@package ecohydroworkflowlib.timeseriesdata.ghcndquery
+"""@package ecohydroworkflowlib.climatedata.ghcndquery
     
 @brief Query NCDC Global Historical Climatology Network dataset for daily
 climate data
@@ -33,20 +33,6 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-@code
-from ecohydroworkflowlib.climatedata.ghcndquery import findStationNearestToCoordinates
-import ConfigParser
-config = ConfigParser.RawConfigParser()
-config.read('./bin/macosx2.cfg')
-lon = -76.7443397486
-lat = 39.2955590994
-nearest = findStationNearestToCoordinates(config, lon, lat)
-from ecohydroworkflowlib.climatedata.ghcndquery import getClimateDataForStation
-outputDir = '/tmp'
-outfileName = 'clim.txt'
-getClimateDataForStation(config, outputDir, outfileName, nearest[0])
-@endcode
-
 @author Brian Miles <brian_miles@unc.edu>
 """
 import os, errno
@@ -70,7 +56,8 @@ def findStationsWithinBoundingBox(config, bbox):
         'PATH_OF_STATION_DB'
         @param bbox A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
         
-        @return A list of strings representing the IDs of GHCN stations within the bounding box
+        @return A list of GHCN station attributes for each station within the bounding box:
+        [id, lat, lon, elevation, name]
         
         @code
         import os
@@ -85,7 +72,7 @@ def findStationsWithinBoundingBox(config, bbox):
         config = ConfigParser.RawConfigParser()
         config.read(configFile)
         
-        findStationsWithinBoundingBox(config,bbox)
+        stations = findStationsWithinBoundingBox(config,bbox)
         @endcode 
     """
     stations = []
@@ -122,6 +109,20 @@ def findStationNearestToCoordinates(config, longitude, latitude):
         
         @return Tuple of the form (station_id, longitude, latitude, elevation_meters, distance),
         None if no gage is found.
+        
+        @code
+        from ecohydroworkflowlib.climatedata.ghcndquery import findStationNearestToCoordinates
+        import ConfigParser
+        config = ConfigParser.RawConfigParser()
+        config.read('./bin/macosx2.cfg')
+        lon = -76.7443397486
+        lat = 39.2955590994
+        nearest = findStationNearestToCoordinates(config, lon, lat)
+        from ecohydroworkflowlib.climatedata.ghcndquery import getClimateDataForStation
+        outputDir = '/tmp'
+        outfileName = 'clim.txt'
+        getClimateDataForStation(config, outputDir, outfileName, nearest[0])
+        @endcode
     """
     ghcnDB = config.get('GHCND', 'PATH_OF_STATION_DB')
     
