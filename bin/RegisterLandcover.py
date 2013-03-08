@@ -83,7 +83,7 @@ from ecohydroworkflowlib.spatialdata.utils import getSpatialReferenceForRaster
 parser = argparse.ArgumentParser(description='Register landcover dataset with project')
 parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
-parser.add_argument('-p', '--projectDir', dest='projectDir', required=False,
+parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory to which metadata, intermediate, and final files should be saved')
 parser.add_argument('-l', '--landcoverfile', dest='landcoverfile', required=True,
                     help='The name of the DEM file to be registered.')

@@ -76,7 +76,7 @@ from ecohydroworkflowlib.solim.inference import inferSoilPropertiesForSSURGOAndT
 parser = argparse.ArgumentParser(description='Get SSURGO features for a bounding box')
 parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
-parser.add_argument('-p', '--projectDir', dest='projectDir', required=False,
+parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory to which metadata, intermediate, and final files should be saved')
 args = parser.parse_args()
 

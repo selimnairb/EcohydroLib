@@ -81,7 +81,7 @@ from ecohydroworkflowlib.spatialdata.utils import deleteGeoTiff
 parser = argparse.ArgumentParser(description='Get NLCD data (in GeoTIFF format) for a bounding box from a local copy of the entire NLCD 2006 dataset.')
 parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
-parser.add_argument('-p', '--projectDir', dest='projectDir', required=False,
+parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory to which metadata, intermediate, and final files should be saved')
 parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the DEM file to be written.  File extension ".tif" will be added.')

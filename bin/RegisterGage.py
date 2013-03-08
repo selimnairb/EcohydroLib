@@ -76,7 +76,7 @@ from ecohydroworkflowlib.spatialdata.utils import isCoordinatePairInBoundingBox
 parser = argparse.ArgumentParser(description='Register streamflow gage shapefile with project')
 parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
-parser.add_argument('-p', '--projectDir', dest='projectDir', required=False,
+parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory to which metadata, intermediate, and final files should be saved')
 parser.add_argument('-g', '--gageFile', dest='gageFile', required=True,
                     help='The name of the gage shapefile to be registered.')

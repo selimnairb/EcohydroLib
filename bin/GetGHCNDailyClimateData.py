@@ -81,7 +81,7 @@ from ecohydroworkflowlib.climatedata.ghcndquery import getClimateDataForStation
 parser = argparse.ArgumentParser(description='Query NCDC archive for climate data for a single station in the Global Historical Climatology Network')
 parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
-parser.add_argument('-p', '--projectDir', dest='projectDir', required=False,
+parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory to which metadata, intermediate, and final files should be saved')
 parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the file to write the climate data to.')

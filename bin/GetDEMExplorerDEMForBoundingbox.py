@@ -87,7 +87,7 @@ from ecohydroworkflowlib.spatialdata.utils import getEPSGStringForUTMZone
 parser = argparse.ArgumentParser(description='Get DEM raster (in GeoTIFF format) for a bounding box from GeoBrain WCS4DEM')
 parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
-parser.add_argument('-p', '--projectDir', dest='projectDir', required=False,
+parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory to which metadata, intermediate, and final files should be saved')
 parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the DEM file to be written.  File extension ".tif" will be added.')

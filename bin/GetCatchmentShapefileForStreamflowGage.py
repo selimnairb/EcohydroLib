@@ -72,7 +72,7 @@ from ecohydroworkflowlib.nhdplus2.networkanalysis import getCatchmentShapefileFo
 parser = argparse.ArgumentParser(description='Get shapefile for the drainage area of an NHDPlus2 streamflow gage')
 parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
-parser.add_argument('-p', '--projectDir', dest='projectDir', required=False,
+parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory to which metadata, intermediate, and final files should be saved')
 parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the catchment shapefile to be written.  File extension ".shp" will be added.  If a file of this name exists, program will silently exit.')
