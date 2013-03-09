@@ -1,4 +1,4 @@
-EcohydrologyWorkflowLib			{#index}
+EcohydroWorkflowLib			{#index}
 =======================
 
 This software is provided free of charge under the New BSD License. Please see
@@ -247,7 +247,7 @@ may consist of running the following scripts in the following order:
 3. GetHYDRO1kDEMForBoundingbox.py
 4. GetNLDASLandcoverForBoundingbox.py (not yet implemented)
 5. GetNLDASSoilsDataForBoundingbox.py (not yet implemented)
-6. GetGHCNDailyClimateData.py (will only download data for the nearest met. station)
+6. GetGHCNDailyClimateDataForBoundingboxCentroid.py OR GetGHCNDailyClimateDataForStationsInBoundingbox.py
 
 
 A workflow using custom local data sources will consist of  running the follow scripts 

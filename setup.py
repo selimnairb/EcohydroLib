@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='ecohydroworkflowlib',
-      version='0.951',
+      version='0.96',
       description='Libraries and command-line scripts for performing ecohydrology data preparation workflows.',
       long_description=readme(),
       classifiers=[
@@ -45,7 +45,8 @@ setup(name='ecohydroworkflowlib',
                'bin/GetCatchmentShapefileForHYDRO1kBasins.py',
                'bin/GetCatchmentShapefileForStreamflowGage.py',
                'bin/GetDEMExplorerDEMForBoundingbox.py',
-               'bin/GetGHCNDailyClimateData.py',
+               'bin/GetGHCNDailyClimateDataForBoundingboxCentroid.py',
+               'bin/GetGHCNDailyClimateDataForStationsInBoundingbox.py',
                'bin/GetHYDRO1kDEMForBoundingbox.py',
                'bin/GetNHDStreamflowGageIdentifiersAndLocation.py',
                'bin/GetNLCDForBoundingbox.py',
