@@ -57,6 +57,7 @@ class ClimatePointStation:
         self.longitude = None
         self.latitude = None
         self.elevation = None
+        self.name = None
         self.startDate = None
         self.endDate = None
         self.variables = []
@@ -91,6 +92,8 @@ class ClimatePointStation:
             GenericMetadata.writeClimatePointEntry(projectDir, latitude, self.latitude)
             elevation = keyProto + "elevation"
             GenericMetadata.writeClimatePointEntry(projectDir, elevation, self.elevation)
+            name = keyProto + "name"
+            GenericMetadata.writeClimatePointEntry(projectDir, name, self.name)
             if self.startDate:
                 startDate = keyProto + "startdate"
                 GenericMetadata.writeClimatePointEntry(projectDir, startDate, self.startDate.strftime(ClimatePointStation.FMT_DATE))
@@ -135,6 +138,8 @@ class ClimatePointStation:
         newInstance.latitude = float(climate[latitude])
         elevation = keyProto + "elevation"
         newInstance.elevation = float(climate[elevation])
+        name = keyProto + "name"
+        newInstance.name = climate[name]
         startDate = keyProto + "startdate"
         newInstance.startDate = datetime.strptime(climate[startDate], ClimatePointStation.FMT_DATE)
         endDate = keyProto + "enddate"

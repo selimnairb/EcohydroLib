@@ -146,6 +146,7 @@ for station in stations:
     newStation.longitude = station[1]
     newStation.latitude = station[2]
     newStation.elevation = station[3]
+    newStation.name = station[4]
     newStation.data = outFile
     #newStation.startDate = datetime.strptime("200001", "%Y%m")
     #newStation.endDate = datetime.strptime("200101", "%Y%m")

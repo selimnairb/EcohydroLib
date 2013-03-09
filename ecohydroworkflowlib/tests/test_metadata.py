@@ -102,6 +102,7 @@ class TestMetadata(TestCase):
         station.longitude = -76.716
         station.latitude = 39.317
         station.elevation = 128.0
+        station.name = "My station name"
         station.data = "clim.txt"
         station.startDate = datetime.strptime("201007", "%Y%m")
         station.endDate = datetime.strptime("201110", "%Y%m")
@@ -115,6 +116,7 @@ class TestMetadata(TestCase):
         self.assertTrue(station.longitude == climatePointStation.longitude)
         self.assertTrue(station.latitude == climatePointStation.latitude)
         self.assertTrue(station.elevation == climatePointStation.elevation)
+        self.assertTrue(station.name == climatePointStation.name)
         self.assertTrue(station.data == climatePointStation.data)
         self.assertTrue(station.startDate == climatePointStation.startDate)
         self.assertTrue(station.endDate == climatePointStation.endDate)
@@ -129,6 +131,7 @@ class TestMetadata(TestCase):
         station.longitude = -76.716
         station.latitude = 39.317
         station.elevation = 128.0
+        station.name = "My station name"
         station.startDate = datetime.strptime("201007", "%Y%m")
         station.endDate = datetime.strptime("201110", "%Y%m")
         station.variables = [ClimatePointStation.VAR_PRECIP, \
@@ -143,6 +146,7 @@ class TestMetadata(TestCase):
         self.assertTrue(station.longitude == climatePointStation.longitude)
         self.assertTrue(station.latitude == climatePointStation.latitude)
         self.assertTrue(station.elevation == climatePointStation.elevation)
+        self.assertTrue(station.name == climatePointStation.name)
         self.assertTrue(station.startDate == climatePointStation.startDate)
         self.assertTrue(station.endDate == climatePointStation.endDate)
         self.assertTrue(station.variables == climatePointStation.variables)

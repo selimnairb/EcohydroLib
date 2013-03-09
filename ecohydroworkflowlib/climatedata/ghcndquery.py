@@ -107,7 +107,7 @@ def findStationNearestToCoordinates(config, longitude, latitude):
         @param longitude Float representing WGS84 longitude
         @param latitude Float representing WGS84 latitude
         
-        @return Tuple of the form (station_id, longitude, latitude, elevation_meters, distance),
+        @return Tuple of the form (station_id, longitude, latitude, elevation_meters, name, distance),
         None if no gage is found.
         
         @code
@@ -130,7 +130,7 @@ def findStationNearestToCoordinates(config, longitude, latitude):
     cursor = conn.cursor()
     # Spatialite/SQLite3 won't subsitute parameter strings within quotes, so we have to do it the unsafe way.  This should be okay as
     # we are dealing with numeric values that we are converting to numeric types before building the query string.
-    sql = u"SELECT id, AsText(coord), elevation_m, Distance(GeomFromText('POINT(%f %f)', %d), coord) as dist FROM ghcn_station order by dist asc limit 1" %\
+    sql = u"SELECT id,AsText(coord),elevation_m,name,Distance(GeomFromText('POINT(%f %f)', %d), coord) as dist FROM ghcn_station order by dist asc limit 1" %\
     (float(longitude), float(latitude), _SRS)
     cursor.execute(sql)
     nearest = cursor.fetchone()
@@ -142,7 +142,7 @@ def findStationNearestToCoordinates(config, longitude, latitude):
         assert(match)
         lon = float(match.group(1))
         lat = float(match.group(2))
-        return (nearest[0], lon, lat, nearest[2], nearest[3])
+        return (nearest[0], lon, lat, nearest[2], nearest[3], nearest[4])
     return None
     
 

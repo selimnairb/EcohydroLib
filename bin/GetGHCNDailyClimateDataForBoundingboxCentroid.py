@@ -146,6 +146,7 @@ station.id = nearest[0]
 station.longitude = nearest[1]
 station.latitude = nearest[2]
 station.elevation = nearest[3]
+station.name = nearest[4]
 station.data = outFile
 #station.startDate = datetime.strptime("200001", "%Y%m")
 #station.endDate = datetime.strptime("200101", "%Y%m")
