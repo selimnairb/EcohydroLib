@@ -62,6 +62,8 @@ python ./RegisterDEM.py -p /path/to/project_dir -d /demfile/to/register
 
 @note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
 or -i option must be specified. 
+
+@todo Add targer SRS, if present, call GDAL warp instead of just copying the file
 """
 import os
 import sys

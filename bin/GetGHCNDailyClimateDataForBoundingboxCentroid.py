@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""@package GetGHCNDailyClimateData
+"""@package GetGHCNDailyClimateDataForBoundingboxCentroid
 
 @brief Query NCDC archive for climate data for a single station in the Global 
 Historical Climatology Network
@@ -56,7 +56,7 @@ Post conditions
 
 Usage:
 @code
-GetGHCNDailyClimateData.py -p /path/to/project_dir
+GetGHCNDailyClimateDataForBoundingboxCentroid.py -p /path/to/project_dir
 @endcode
 
 @note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
@@ -83,8 +83,8 @@ parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory to which metadata, intermediate, and final files should be saved')
-parser.add_argument('-f', '--outfile', dest='outfile', required=False,
-                    help='The name of the file to write the climate data to.')
+parser.add_argument('-d', '--outdir', dest='outdir', required=False,
+                    help='The name of the subdirectory within the project directory to write the climate data to.')
 args = parser.parse_args()
 
 configFile = None
@@ -116,10 +116,18 @@ if not os.access(projectDir, os.W_OK):
                   projectDir)
 projectDir = os.path.abspath(projectDir)
 
-if args.outfile:
-    outfile = args.outfile
+if args.outdir:
+    outDir = args.outdir
 else:
-    outfile = "clim.txt"
+    outDir = 'clim'
+outDirPath = os.path.join(projectDir, outDir)
+if not os.path.exists(outDirPath):
+    os.mkdir(outDirPath)
+
+#if args.outfile:
+#    outfile = args.outfile
+#else:
+#    outfile = "clim.txt"
 
 # Get study area parameters
 studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
@@ -131,7 +139,8 @@ bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[
 # Find nearest GHCN station
 nearest = findStationNearestToCoordinates(config, longitude, latitude)
 # Get data for station
-returnCode = getClimateDataForStation(config, projectDir, outfile, nearest[0])
+outFile = os.path.join(outDir, nearest[0])
+returnCode = getClimateDataForStation(config, projectDir, outFile, nearest[0])
 assert(returnCode)
 
 # Write metadata
@@ -141,9 +150,9 @@ station.id = nearest[0]
 station.longitude = nearest[1]
 station.latitude = nearest[2]
 station.elevation = nearest[3]
-station.data = outfile
-station.startDate = datetime.strptime("200001", "%Y%m")
-station.endDate = datetime.strptime("200101", "%Y%m")
-station.variables = [ClimatePointStation.VAR_TMIN, \
-                    ClimatePointStation.VAR_TMAX]
+station.data = outFile
+#station.startDate = datetime.strptime("200001", "%Y%m")
+#station.endDate = datetime.strptime("200101", "%Y%m")
+#station.variables = [ClimatePointStation.VAR_TMIN, \
+#                    ClimatePointStation.VAR_TMAX]
 station.writeToMetadata(projectDir)

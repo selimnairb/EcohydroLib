@@ -70,42 +70,46 @@ class ClimatePointStation:
             @param projectDir Path of the project whose metadata store is to be written to
         """
         fqId = self.type + GenericMetadata.KEY_SEP + self.id
+        fqId = fqId.lower()
 
         climatePoints = GenericMetadata.readClimatePointEntries(projectDir)
         try:
             stations = climatePoints['stations'].split(GenericMetadata.VALUE_DELIM)
         except KeyError:
             stations = []
-        # Add station to list of stations if need be
+        # Write station metadata if need be
         if fqId not in stations:
             fqId = fqId.lower()
             stations.append(fqId)
             stationsStr = GenericMetadata.VALUE_DELIM.join(stations)
             GenericMetadata.writeClimatePointEntry(projectDir, "stations", stationsStr)
-        # Write attributes for station
-        keyProto = "station" + GenericMetadata.KEY_SEP + fqId + GenericMetadata.KEY_SEP 
-        longitude = keyProto + "longitude"
-        GenericMetadata.writeClimatePointEntry(projectDir, longitude, self.longitude)
-        latitude = keyProto + "latitude"
-        GenericMetadata.writeClimatePointEntry(projectDir, latitude, self.latitude)
-        elevation = keyProto + "elevation"
-        GenericMetadata.writeClimatePointEntry(projectDir, elevation, self.elevation)
-        startDate = keyProto + "startdate"
-        GenericMetadata.writeClimatePointEntry(projectDir, startDate, self.startDate.strftime(ClimatePointStation.FMT_DATE))
-        endDate = keyProto + "enddate"
-        GenericMetadata.writeClimatePointEntry(projectDir, endDate, self.endDate.strftime(ClimatePointStation.FMT_DATE))
-        variablesKey = keyProto + "variables"
-        variablesValue = GenericMetadata.VALUE_DELIM.join(self.variables)
-        GenericMetadata.writeClimatePointEntry(projectDir, variablesKey, variablesValue)
-        if self.data != None:
-            data = keyProto + "data"
-            GenericMetadata.writeClimatePointEntry(projectDir, data, self.data)
-        else:
-            # Try to write data entries for each variable separately
-            vars = self.variablesData.keys()
-            for var in vars:
-                varKey = keyProto + var + GenericMetadata.KEY_SEP + "data"
-                GenericMetadata.writeClimatePointEntry(projectDir, varKey, self.variablesData[var])
+            # Write attributes for station
+            keyProto = "station" + GenericMetadata.KEY_SEP + fqId + GenericMetadata.KEY_SEP 
+            longitude = keyProto + "longitude"
+            GenericMetadata.writeClimatePointEntry(projectDir, longitude, self.longitude)
+            latitude = keyProto + "latitude"
+            GenericMetadata.writeClimatePointEntry(projectDir, latitude, self.latitude)
+            elevation = keyProto + "elevation"
+            GenericMetadata.writeClimatePointEntry(projectDir, elevation, self.elevation)
+            if self.startDate:
+                startDate = keyProto + "startdate"
+                GenericMetadata.writeClimatePointEntry(projectDir, startDate, self.startDate.strftime(ClimatePointStation.FMT_DATE))
+            if self.endDate:
+                endDate = keyProto + "enddate"
+                GenericMetadata.writeClimatePointEntry(projectDir, endDate, self.endDate.strftime(ClimatePointStation.FMT_DATE))
+            if self.variables:
+                variablesKey = keyProto + "variables"
+                variablesValue = GenericMetadata.VALUE_DELIM.join(self.variables)
+                GenericMetadata.writeClimatePointEntry(projectDir, variablesKey, variablesValue)
+            if self.data != None:
+                data = keyProto + "data"
+                GenericMetadata.writeClimatePointEntry(projectDir, data, self.data)
+            elif self.variablesData:
+                # Try to write data entries for each variable separately
+                vars = self.variablesData.keys()
+                for var in vars:
+                    varKey = keyProto + var + GenericMetadata.KEY_SEP + "data"
+                    GenericMetadata.writeClimatePointEntry(projectDir, varKey, self.variablesData[var])
     
     
     @classmethod
