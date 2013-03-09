@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-"""@package GetGHCNDailyClimateDataForBoundingboxCentroid
+"""@package GetGHCNDailyClimateDataForStationsInBoundingbox
 
-@brief Query NCDC archive for climate data for a single station in the Global 
+@brief Query NCDC archive for climate data for all stations in the Global 
 Historical Climatology Network
-(http://www1.ncdc.noaa.gov/pub/data/ghcn/daily/readme.txt). Will find the 
-nearest station to the centroid of the study area bounding box.  Requires that 
+(http://www1.ncdc.noaa.gov/pub/data/ghcn/daily/readme.txt) that fall within a
+bounding box. Will find all stations within the study area bounding box.  Requires that 
 the  GHCN station database be setup using GHCNDSetup.py. Database must be 
 stored in a location specified by a configuration file containing the section
 'GHCND', and value 'PATH_OF_STATION_DB'.
@@ -51,13 +51,13 @@ Pre conditions
 
 Post conditions
 ---------------
-1. Will write a ClimatePointStation entry to the climate point section of metadata associated with the project directory:
-
+1. Will write ClimatePointStation entries to the climate point section of metadata associated with the project directory:
+   
 2. Will save climate data files to outdir
 
 Usage:
 @code
-GetGHCNDailyClimateDataForBoundingboxCentroid.py -p /path/to/project_dir
+GetGHCNDailyClimateDataForStationsInBoundingbox.py -p /path/to/project_dir
 @endcode
 
 @note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
@@ -74,12 +74,12 @@ from datetime import datetime
 
 from ecohydroworkflowlib.metadata import GenericMetadata
 from ecohydroworkflowlib.metadata import ClimatePointStation
-from ecohydroworkflowlib.spatialdata.utils import calculateBoundingBoxCenter
-from ecohydroworkflowlib.climatedata.ghcndquery import findStationNearestToCoordinates
+#from ecohydroworkflowlib.spatialdata.utils import calculateBoundingBoxCenter
+from ecohydroworkflowlib.climatedata.ghcndquery import findStationsWithinBoundingBox
 from ecohydroworkflowlib.climatedata.ghcndquery import getClimateDataForStation
 
 # Handle command line options
-parser = argparse.ArgumentParser(description='Query NCDC archive for climate data for a single station in the Global Historical Climatology Network')
+parser = argparse.ArgumentParser(description='Query NCDC archive for climate data for all Global Historical Climatology Network stations in the study area bounding box.')
 parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
@@ -130,25 +130,25 @@ studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
 bbox = studyArea['bbox_wgs84'].split()
 bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
 
-# Get centroid of bounding box
-(longitude, latitude) = calculateBoundingBoxCenter(bbox)
-# Find nearest GHCN station
-nearest = findStationNearestToCoordinates(config, longitude, latitude)
-# Get data for station
-outFile = os.path.join(outDir, nearest[0])
-returnCode = getClimateDataForStation(config, projectDir, outFile, nearest[0])
-assert(returnCode)
-
-# Write metadata
-station = ClimatePointStation()
-station.type = "GHCN"
-station.id = nearest[0]
-station.longitude = nearest[1]
-station.latitude = nearest[2]
-station.elevation = nearest[3]
-station.data = outFile
-#station.startDate = datetime.strptime("200001", "%Y%m")
-#station.endDate = datetime.strptime("200101", "%Y%m")
-#station.variables = [ClimatePointStation.VAR_TMIN, \
-#                    ClimatePointStation.VAR_TMAX]
-station.writeToMetadata(projectDir)
+# Find all GHCN stations within bounding box
+stations = findStationsWithinBoundingBox(config, bbox)
+print "Found %d stations in bounding box, downloading data..." % (len(stations))
+# Get data for each station
+for station in stations:
+    outFile = os.path.join(outDir, station[0])
+    returnCode = getClimateDataForStation(config, projectDir, outFile, station[0])
+    assert(returnCode)
+    
+    # Write metadata
+    newStation = ClimatePointStation()
+    newStation.type = "GHCN"
+    newStation.id = station[0]
+    newStation.longitude = station[1]
+    newStation.latitude = station[2]
+    newStation.elevation = station[3]
+    newStation.data = outFile
+    #newStation.startDate = datetime.strptime("200001", "%Y%m")
+    #newStation.endDate = datetime.strptime("200101", "%Y%m")
+    #newStation.variables = [ClimatePointStation.VAR_TMIN, \
+    #                    ClimatePointStation.VAR_TMAX]
+    newStation.writeToMetadata(projectDir)
