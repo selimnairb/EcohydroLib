@@ -123,6 +123,59 @@ class TestMetadata(TestCase):
         self.assertTrue(station.endDate == climatePointStation.endDate)
         self.assertTrue(station.variables == climatePointStation.variables)
         
+    def test_write_climate_point1_overwrite(self):
+        """ Test case where there is a single data file the station, the entry is overwritten """
+        projectDir = "/tmp"
+        station = ClimatePointStation()
+        station.type = "GHCN"
+        station.id = "US1MDBL0027"
+        station.longitude = -76.716
+        station.latitude = 39.317
+        station.elevation = 128.0
+        station.name = "My station name"
+        station.data = "clim.txt"
+        station.startDate = datetime.strptime("201007", "%Y%m")
+        station.endDate = datetime.strptime("201110", "%Y%m")
+        station.variables = [ClimatePointStation.VAR_PRECIP, \
+                             ClimatePointStation.VAR_SNOW]
+        station.writeToMetadata(projectDir)
+        
+        climatePointStation = GenericMetadata.readClimatePointStations(projectDir)[0]  
+        self.assertTrue(station.type.lower() == climatePointStation.type)
+        self.assertTrue(station.id.lower() == climatePointStation.id)
+        self.assertTrue(station.longitude == climatePointStation.longitude)
+        self.assertTrue(station.latitude == climatePointStation.latitude)
+        self.assertTrue(station.elevation == climatePointStation.elevation)
+        self.assertTrue(station.name == climatePointStation.name)
+        self.assertTrue(station.data == climatePointStation.data)
+        self.assertTrue(station.startDate == climatePointStation.startDate)
+        self.assertTrue(station.endDate == climatePointStation.endDate)
+        self.assertTrue(station.variables == climatePointStation.variables)
+        
+        station.longitude = -76.716
+        station.latitude = 39.317
+        station.elevation = 128.0
+        station.name = "My (longer) station name"
+        station.data = "clim.dat"
+        station.startDate = datetime.strptime("201006", "%Y%m")
+        station.endDate = datetime.strptime("201310", "%Y%m")
+        station.variables = [ClimatePointStation.VAR_PRECIP, \
+                             ClimatePointStation.VAR_SNOW]
+        station.writeToMetadata(projectDir)
+        
+        climatePointStation = GenericMetadata.readClimatePointStations(projectDir)[0]  
+        self.assertTrue(station.type.lower() == climatePointStation.type)
+        self.assertTrue(station.id.lower() == climatePointStation.id)
+        self.assertTrue(station.longitude == climatePointStation.longitude)
+        self.assertTrue(station.latitude == climatePointStation.latitude)
+        self.assertTrue(station.elevation == climatePointStation.elevation)
+        self.assertTrue(station.name == climatePointStation.name)
+        self.assertTrue(station.data == climatePointStation.data)
+        self.assertTrue(station.startDate == climatePointStation.startDate)
+        self.assertTrue(station.endDate == climatePointStation.endDate)
+        self.assertTrue(station.variables == climatePointStation.variables)
+        
+        
     def test_write_climate_point2(self):
         """ Test case where there are separate data files for each variable """
         projectDir = "/tmp"
@@ -155,6 +208,7 @@ class TestMetadata(TestCase):
         self.assertTrue(station.variablesData[ClimatePointStation.VAR_SNOW] == climatePointStation.variablesData[ClimatePointStation.VAR_SNOW])
         
     def test_provenance(self):
+        """ Test case writing provenance metadata """
         projectDir = "/tmp"
         asset = AssetProvenance()
         asset.section = GenericMetadata.MANIFEST_SECTION
@@ -174,3 +228,42 @@ class TestMetadata(TestCase):
         self.assertTrue(asset.dcDate == assetProvenance.dcDate)
         self.assertTrue(asset.dcPublisher == assetProvenance.dcPublisher)
         self.assertTrue(asset.dcDescription == assetProvenance.dcDescription)
+        
+    def test_provenance_overwrite(self):
+        """ Test case writing provenance metadata, with overwrite """
+        projectDir = "/tmp"
+        asset = AssetProvenance()
+        asset.section = GenericMetadata.MANIFEST_SECTION
+        asset.name = "dem"
+        asset.dcSource = "http://www.demexplorer.com/..."
+        asset.dcTitle = "Study area DEM"
+        asset.dcDate = datetime.strptime("201303", "%Y%m")
+        asset.dcPublisher = "USGS"
+        asset.dcDescription = "RegisterDEM.py ..."
+        asset.writeToMetadata(projectDir)
+        
+        assetProvenance = GenericMetadata.readAssetProvenanceObjects(projectDir)[0]
+        self.assertTrue(asset.section == assetProvenance.section)
+        self.assertTrue(asset.name == assetProvenance.name)
+        self.assertTrue(asset.dcSource == assetProvenance.dcSource)
+        self.assertTrue(asset.dcTitle == assetProvenance.dcTitle)
+        self.assertTrue(asset.dcDate == assetProvenance.dcDate)
+        self.assertTrue(asset.dcPublisher == assetProvenance.dcPublisher)
+        self.assertTrue(asset.dcDescription == assetProvenance.dcDescription)
+        
+        asset.dcSource = "http://a.different.url/..."
+        asset.dcTitle = "A different study area DEM"
+        asset.dcDate = datetime.strptime("201304", "%Y%m")
+        asset.dcPublisher = "NASA"
+        asset.dcDescription = "GetDEMExplorerDEM.py ..."
+        asset.writeToMetadata(projectDir)
+        
+        assetProvenance = GenericMetadata.readAssetProvenanceObjects(projectDir)[0]
+        self.assertTrue(asset.section == assetProvenance.section)
+        self.assertTrue(asset.name == assetProvenance.name)
+        self.assertTrue(asset.dcSource == assetProvenance.dcSource)
+        self.assertTrue(asset.dcTitle == assetProvenance.dcTitle)
+        self.assertTrue(asset.dcDate == assetProvenance.dcDate)
+        self.assertTrue(asset.dcPublisher == assetProvenance.dcPublisher)
+        self.assertTrue(asset.dcDescription == assetProvenance.dcDescription)
+        

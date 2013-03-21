@@ -102,40 +102,40 @@ class ClimatePointStation(MetadataEntity):
             stations = climatePoints['stations'].split(GenericMetadata.VALUE_DELIM)
         except KeyError:
             stations = []
-        # Write station metadata if need be
+        # Write station metadata (overwrite if already present)
         if fqId not in stations:
             stations.append(fqId)
             stationsStr = GenericMetadata.VALUE_DELIM.join(stations)
             GenericMetadata.writeClimatePointEntry(projectDir, "stations", stationsStr)
-            # Write attributes for station
-            keyProto = "station" + GenericMetadata.KEY_SEP + fqId + GenericMetadata.KEY_SEP 
-            longitude = keyProto + "longitude"
-            GenericMetadata.writeClimatePointEntry(projectDir, longitude, self.longitude)
-            latitude = keyProto + "latitude"
-            GenericMetadata.writeClimatePointEntry(projectDir, latitude, self.latitude)
-            elevation = keyProto + "elevation"
-            GenericMetadata.writeClimatePointEntry(projectDir, elevation, self.elevation)
-            name = keyProto + "name"
-            GenericMetadata.writeClimatePointEntry(projectDir, name, self.name)
-            if self.startDate:
-                startDate = keyProto + "startdate"
-                GenericMetadata.writeClimatePointEntry(projectDir, startDate, self.startDate.strftime(ClimatePointStation.FMT_DATE))
-            if self.endDate:
-                endDate = keyProto + "enddate"
-                GenericMetadata.writeClimatePointEntry(projectDir, endDate, self.endDate.strftime(ClimatePointStation.FMT_DATE))
-            if self.variables:
-                variablesKey = keyProto + "variables"
-                variablesValue = GenericMetadata.VALUE_DELIM.join(self.variables)
-                GenericMetadata.writeClimatePointEntry(projectDir, variablesKey, variablesValue)
-            if self.data != None:
-                data = keyProto + "data"
-                GenericMetadata.writeClimatePointEntry(projectDir, data, self.data)
-            elif self.variablesData:
-                # Try to write data entries for each variable separately
-                vars = self.variablesData.keys()
-                for var in vars:
-                    varKey = keyProto + var + GenericMetadata.KEY_SEP + "data"
-                    GenericMetadata.writeClimatePointEntry(projectDir, varKey, self.variablesData[var])
+        # Write attributes for station
+        keyProto = "station" + GenericMetadata.KEY_SEP + fqId + GenericMetadata.KEY_SEP 
+        longitude = keyProto + "longitude"
+        GenericMetadata.writeClimatePointEntry(projectDir, longitude, self.longitude)
+        latitude = keyProto + "latitude"
+        GenericMetadata.writeClimatePointEntry(projectDir, latitude, self.latitude)
+        elevation = keyProto + "elevation"
+        GenericMetadata.writeClimatePointEntry(projectDir, elevation, self.elevation)
+        name = keyProto + "name"
+        GenericMetadata.writeClimatePointEntry(projectDir, name, self.name)
+        if self.startDate:
+            startDate = keyProto + "startdate"
+            GenericMetadata.writeClimatePointEntry(projectDir, startDate, self.startDate.strftime(ClimatePointStation.FMT_DATE))
+        if self.endDate:
+            endDate = keyProto + "enddate"
+            GenericMetadata.writeClimatePointEntry(projectDir, endDate, self.endDate.strftime(ClimatePointStation.FMT_DATE))
+        if self.variables:
+            variablesKey = keyProto + "variables"
+            variablesValue = GenericMetadata.VALUE_DELIM.join(self.variables)
+            GenericMetadata.writeClimatePointEntry(projectDir, variablesKey, variablesValue)
+        if self.data != None:
+            data = keyProto + "data"
+            GenericMetadata.writeClimatePointEntry(projectDir, data, self.data)
+        elif self.variablesData:
+            # Try to write data entries for each variable separately
+            vars = self.variablesData.keys()
+            for var in vars:
+                varKey = keyProto + var + GenericMetadata.KEY_SEP + "data"
+                GenericMetadata.writeClimatePointEntry(projectDir, varKey, self.variablesData[var])
     
     @classmethod
     def readFromMetadata(cls, projectDir, fqId):
@@ -210,24 +210,24 @@ class AssetProvenance(MetadataEntity):
             entities = provenanceEntries['entities'].split(GenericMetadata.VALUE_DELIM)
         except KeyError:
             entities = []
-        # Write entity metadata if need be
+        # Write entity metadata (overwrite if already present)
         if fqId not in entities:
             entities.append(fqId)
             entitiesStr = GenericMetadata.VALUE_DELIM.join(entities)
             GenericMetadata.writeProvenanceEntry(projectDir, "entities", entitiesStr)
-            # Write attributes for entity
-            keyProto = fqId + GenericMetadata.KEY_SEP
-            dcSource = keyProto + "dc.source"
-            GenericMetadata.writeProvenanceEntry(projectDir, dcSource, self.dcSource)
-            dcTitle = keyProto + "dc.title"
-            GenericMetadata.writeProvenanceEntry(projectDir, dcTitle, self.dcTitle)
-            if self.dcDate:
-                dcDate = keyProto + "dc.date"
-                GenericMetadata.writeProvenanceEntry(projectDir, dcDate, self.dcDate.strftime(AssetProvenance.FMT_DATE))
-            dcPublisher = keyProto + "dc.publisher"
-            GenericMetadata.writeProvenanceEntry(projectDir, dcPublisher, self.dcPublisher)
-            dcDescription = keyProto + "dc.description"
-            GenericMetadata.writeProvenanceEntry(projectDir, dcDescription, self.dcDescription)
+        # Write attributes for entity
+        keyProto = fqId + GenericMetadata.KEY_SEP
+        dcSource = keyProto + "dc.source"
+        GenericMetadata.writeProvenanceEntry(projectDir, dcSource, self.dcSource)
+        dcTitle = keyProto + "dc.title"
+        GenericMetadata.writeProvenanceEntry(projectDir, dcTitle, self.dcTitle)
+        if self.dcDate:
+            dcDate = keyProto + "dc.date"
+            GenericMetadata.writeProvenanceEntry(projectDir, dcDate, self.dcDate.strftime(AssetProvenance.FMT_DATE))
+        dcPublisher = keyProto + "dc.publisher"
+        GenericMetadata.writeProvenanceEntry(projectDir, dcPublisher, self.dcPublisher)
+        dcDescription = keyProto + "dc.description"
+        GenericMetadata.writeProvenanceEntry(projectDir, dcDescription, self.dcDescription)
     
     @classmethod
     def readFromMetadata(cls, projectDir, fqId):
@@ -500,6 +500,7 @@ class GenericMetadata:
             @return A dictionary of key/value pairs from the provenance section of the project metadata
         """
         return GenericMetadata._readEntriesForSection(projectDir, GenericMetadata.PROVENANCE_SECTION)
+
 
     @staticmethod
     def readAssetProvenanceObjects(projectDir):
