@@ -277,6 +277,7 @@ class GenericMetadata:
     MANIFEST_SECTION = 'manifest'
     PROVENANCE_SECTION = 'provenance'
     HISTORY_SECTION = 'history'
+    HISTORY_PROTO = "processing%sstep%s" % (KEY_SEP, KEY_SEP)
     STUDY_AREA_SECTION = 'study_area'
     CLIMATE_POINT_SECTION = 'climate_point'
     CLIMATE_GRID_SECTION = 'climate_grid'
@@ -474,9 +475,12 @@ class GenericMetadata:
         """
         stationObjects = []
         climatePoints = GenericMetadata.readClimatePointEntries(projectDir)
-        stations = [climatePoints['stations']]
-        for station in stations:
-            stationObjects.append(ClimatePointStation.readFromMetadata(projectDir, station))
+        try:
+            stations = [climatePoints['stations']]
+            for station in stations:
+                stationObjects.append(ClimatePointStation.readFromMetadata(projectDir, station))
+        except KeyError:
+            pass
         return stationObjects
     
     
@@ -513,7 +517,41 @@ class GenericMetadata:
         """
         assetProvenanceObjects = []
         provenance = GenericMetadata.readProvenanceEntries(projectDir)
-        assets = [provenance['entities']]
-        for asset in assets:
-            assetProvenanceObjects.append(AssetProvenance.readFromMetadata(projectDir, asset))
+        try:
+            assets = [provenance['entities']]
+            for asset in assets:
+                assetProvenanceObjects.append(AssetProvenance.readFromMetadata(projectDir, asset))
+        except KeyError:
+            pass
         return assetProvenanceObjects
+    
+    
+    @staticmethod
+    def getProcessingHistoryList(projectDir):
+        steps = []
+        history = GenericMetadata._readEntriesForSection(projectDir, GenericMetadata.HISTORY_SECTION)
+        try:
+            idx = int(history['numsteps']) + 1
+            for i in xrange(1, idx):
+                key = GenericMetadata.HISTORY_PROTO + str(i)
+                steps.append(history[key])
+        except KeyError:
+            pass
+        
+        return steps
+    
+    @staticmethod
+    def appendProcessingHistoryItem(projectDir, item):
+        history = GenericMetadata._readEntriesForSection(projectDir, GenericMetadata.HISTORY_SECTION)
+        try:
+            idx = int(history['numsteps'])
+        except KeyError:
+            idx = 0
+        idx += 1
+        
+        idxStr = str(idx)
+        key = GenericMetadata.HISTORY_PROTO + idxStr
+        GenericMetadata._writeEntryToSection(projectDir, GenericMetadata.HISTORY_SECTION, key, item)
+        GenericMetadata._writeEntryToSection(projectDir, GenericMetadata.HISTORY_SECTION, 'numsteps', idxStr)
+        
+        

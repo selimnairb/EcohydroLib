@@ -267,3 +267,22 @@ class TestMetadata(TestCase):
         self.assertTrue(asset.dcPublisher == assetProvenance.dcPublisher)
         self.assertTrue(asset.dcDescription == assetProvenance.dcDescription)
         
+        
+    def test_processing_history(self):
+        """ Test processing history metadata """
+        projectDir = "/tmp"
+        
+        step1 = "mkdir foo; cd foo"
+        step2 = "touch README.txt"
+        step3 = "git init"
+        
+        GenericMetadata.appendProcessingHistoryItem(projectDir, step1)
+        GenericMetadata.appendProcessingHistoryItem(projectDir, step2)
+        GenericMetadata.appendProcessingHistoryItem(projectDir, step3)
+        
+        history = GenericMetadata.getProcessingHistoryList(projectDir)
+        self.assertTrue(len(history) == 3, "Expected history length to be 3, but it is %d" % (len(history),) )
+        self.assertTrue(history[0] == step1)
+        self.assertTrue(history[1] == step2)
+        self.assertTrue(history[2] == step3)
+        
