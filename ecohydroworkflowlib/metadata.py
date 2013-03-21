@@ -40,7 +40,31 @@ import ConfigParser
 from datetime import datetime
 
 
-class ClimatePointStation:
+class MetadataEntity:
+    """ Abstract class for encoding structured data to be written to a metadata store
+    """
+    def writeToMetadata(self, projectDir):
+        """ Write structured entity to metadata store for a given project directory
+        
+            @param projectDir Path of the project whose metadata store is to be written to
+        """
+        pass
+    
+    @classmethod
+    def readFromMetadata(cls, projectDir, fqId):
+        """ Read structured entity from metadata store for a given project directory
+        
+            @param projectDir String representing the path of the project whose metadata store is to be read from
+            @param fqId String representing the fully qualified ID of the entity
+            
+            Implementations should return an instance of themselves containing data read from the metadata store
+            
+            @raise KeyError if entity is not in metadata
+        """
+        pass
+
+
+class ClimatePointStation(MetadataEntity):
     
     FMT_DATE = '%Y-%m-%d %H:%M:%S'
     VAR_PRECIP = 'prcp'
@@ -80,7 +104,6 @@ class ClimatePointStation:
             stations = []
         # Write station metadata if need be
         if fqId not in stations:
-            fqId = fqId.lower()
             stations.append(fqId)
             stationsStr = GenericMetadata.VALUE_DELIM.join(stations)
             GenericMetadata.writeClimatePointEntry(projectDir, "stations", stationsStr)
@@ -113,7 +136,6 @@ class ClimatePointStation:
                 for var in vars:
                     varKey = keyProto + var + GenericMetadata.KEY_SEP + "data"
                     GenericMetadata.writeClimatePointEntry(projectDir, varKey, self.variablesData[var])
-    
     
     @classmethod
     def readFromMetadata(cls, projectDir, fqId):
@@ -160,6 +182,83 @@ class ClimatePointStation:
         
         return newInstance
 
+
+class AssetProvenance(MetadataEntity):
+    
+    FMT_DATE = '%Y-%m-%d %H:%M:%S'
+    
+    def __init__(self):
+        self.section = None
+        self.name = None
+        self.dcSource = None
+        self.dcTitle = None
+        self.dcDate = None
+        self.dcPublisher = None
+        self.dcDescription = None
+        
+    def writeToMetadata(self, projectDir):
+        """ Write AssetProvenance data to provenance section of metadata for
+            a given project directory
+        
+            @param projectDir Path of the project whose metadata store is to be written to
+        """
+        fqId = self.section + GenericMetadata.KEY_SEP + self.name
+        fqId = fqId.lower()
+        
+        provenanceEntries = GenericMetadata.readProvenanceEntries(projectDir)
+        try:
+            entities = provenanceEntries['entities'].split(GenericMetadata.VALUE_DELIM)
+        except KeyError:
+            entities = []
+        # Write entity metadata if need be
+        if fqId not in entities:
+            entities.append(fqId)
+            entitiesStr = GenericMetadata.VALUE_DELIM.join(entities)
+            GenericMetadata.writeProvenanceEntry(projectDir, "entities", entitiesStr)
+            # Write attributes for entity
+            keyProto = fqId + GenericMetadata.KEY_SEP
+            dcSource = keyProto + "dc.source"
+            GenericMetadata.writeProvenanceEntry(projectDir, dcSource, self.dcSource)
+            dcTitle = keyProto + "dc.title"
+            GenericMetadata.writeProvenanceEntry(projectDir, dcTitle, self.dcTitle)
+            if self.dcDate:
+                dcDate = keyProto + "dc.date"
+                GenericMetadata.writeProvenanceEntry(projectDir, dcDate, self.dcDate.strftime(AssetProvenance.FMT_DATE))
+            dcPublisher = keyProto + "dc.publisher"
+            GenericMetadata.writeProvenanceEntry(projectDir, dcPublisher, self.dcPublisher)
+            dcDescription = keyProto + "dc.description"
+            GenericMetadata.writeProvenanceEntry(projectDir, dcDescription, self.dcDescription)
+    
+    @classmethod
+    def readFromMetadata(cls, projectDir, fqId):
+        """ Read AssetProvenance data from provenance section of metadata for
+            a given project directory
+        
+            @param projectDir String representing the path of the project whose metadata store is to be read from
+            @param fqId String representing the fully qualified ID of the asset: <section>_<name>
+            
+            @return A new AssetProvenance instance with data populated from metadata
+            
+            @raise KeyError if required field is not in metadata
+        """
+        newInstance = AssetProvenance()
+        (newInstance.section, newInstance.name) = fqId.split(GenericMetadata.KEY_SEP)
+        
+        provenance = GenericMetadata.readProvenanceEntries(projectDir)
+        keyProto = fqId + GenericMetadata.KEY_SEP
+        dcSource = keyProto + "dc.source"
+        newInstance.dcSource = provenance[dcSource]
+        dcTitle = keyProto + "dc.title"
+        newInstance.dcTitle = provenance[dcTitle]
+        dcDate = keyProto + "dc.date"
+        newInstance.dcDate = datetime.strptime(provenance[dcDate], AssetProvenance.FMT_DATE)
+        dcPublisher = keyProto + "dc.publisher"
+        newInstance.dcPublisher = provenance[dcPublisher]
+        dcDescription = keyProto + "dc.description"
+        newInstance.dcDescription = provenance[dcDescription]
+        
+        return newInstance
+    
 
 class GenericMetadata:
     """ Handles metadata persistance.
@@ -290,6 +389,21 @@ class GenericMetadata:
         GenericMetadata._writeEntryToSection(projectDir, GenericMetadata.CLIMATE_GRID_SECTION, key, value)
     
     
+    @staticmethod 
+    def writeProvenanceEntry(projectDir, key, value):
+        """ Write a provenance entry to the metadata store for a given project.
+            
+            @note Will overwrite a the value for a key that already exists
+        
+            @param projectDir Path of the project whose metadata store is to be written to
+            @param key The key to be written to the provenance section of the project metadata
+            @param value The value to be written for key stored in the provenance section of the project metadata
+            
+            @exception IOError(errno.EACCES) if the metadata store for the project is not writable
+        """
+        GenericMetadata._writeEntryToSection(projectDir, GenericMetadata.PROVENANCE_SECTION, key, value)
+    
+    
     @staticmethod
     def _readEntriesForSection(projectDir, section):
         """ Read all entries for the given section from the metadata store for a given project
@@ -372,7 +486,33 @@ class GenericMetadata:
         
             @param projectDir Absolute path of the project whose metadata are to be read
             
-            @return A dictionary of key/value pairs from the grid climate  section of the project metadata
+            @return A dictionary of key/value pairs from the grid climate section of the project metadata
         """
         return GenericMetadata._readEntriesForSection(projectDir, GenericMetadata.CLIMATE_GRID_SECTION)
 
+
+    @staticmethod
+    def readProvenanceEntries(projectDir):
+        """ Read all provenance entries from the metadata store for a given project
+        
+            @param projectDir Absolute path of the project whose metadata are to be read
+            
+            @return A dictionary of key/value pairs from the provenance section of the project metadata
+        """
+        return GenericMetadata._readEntriesForSection(projectDir, GenericMetadata.PROVENANCE_SECTION)
+
+    @staticmethod
+    def readAssetProvenanceObjects(projectDir):
+        """ Read all asset provenance objects from metadata and store in AssetProvenance
+            instances.
+            
+            @param projectDir Absolute path of the project whose metadata are to be read
+            
+            @return A list of AssetProvenance objects
+        """
+        assetProvenanceObjects = []
+        provenance = GenericMetadata.readProvenanceEntries(projectDir)
+        assets = [provenance['entities']]
+        for asset in assets:
+            assetProvenanceObjects.append(AssetProvenance.readFromMetadata(projectDir, asset))
+        return assetProvenanceObjects
