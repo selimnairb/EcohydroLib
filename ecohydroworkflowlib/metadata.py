@@ -190,9 +190,10 @@ class AssetProvenance(MetadataEntity):
     
     FMT_DATE = '%Y-%m-%d %H:%M:%S'
     
-    def __init__(self):
-        self.section = None
+    def __init__(self, section=None):
+        self.section = section
         self.name = None
+        self.dcIdentifier = None
         self.dcSource = None
         self.dcTitle = None
         self.dcDate = None
@@ -204,10 +205,15 @@ class AssetProvenance(MetadataEntity):
             a given project directory
         
             @param projectDir Path of the project whose metadata store is to be written to
+            @exception Exception if section is not a valid GenericMetadata section
         """
         fqId = self.section + GenericMetadata.KEY_SEP + self.name
         fqId = fqId.lower()
         
+        # Write self to the appropriate section
+        GenericMetadata.writeEntryToSection(projectDir, self.section, self.name, self.dcIdentifier)
+        
+        # Write to provenance section
         provenanceEntries = GenericMetadata.readProvenanceEntries(projectDir)
         try:
             entities = provenanceEntries['entities'].split(GenericMetadata.VALUE_DELIM)
@@ -222,6 +228,8 @@ class AssetProvenance(MetadataEntity):
             keys.append('entities'); values.append(entitiesStr)
         # Write attributes for entity
         keyProto = fqId + GenericMetadata.KEY_SEP
+        dcIdentifier = keyProto + 'dc.identifier'
+        keys.append(dcIdentifier); values.append(self.dcIdentifier)
         dcSource = keyProto + 'dc.source'
         keys.append(dcSource); values.append(self.dcSource)
         dcTitle = keyProto + 'dc.title'
@@ -252,6 +260,8 @@ class AssetProvenance(MetadataEntity):
         
         provenance = GenericMetadata.readProvenanceEntries(projectDir)
         keyProto = fqId + GenericMetadata.KEY_SEP
+        dcIdentifier = keyProto + 'dc.identifier'
+        newInstance.dcIdentifier = provenance[dcIdentifier]
         dcSource = keyProto + 'dc.source'
         newInstance.dcSource = provenance[dcSource]
         dcTitle = keyProto + 'dc.title'
@@ -280,17 +290,20 @@ class GenericMetadata:
     KEY_SEP = '_'
     METADATA_FILENAME = 'metadata.txt'
     METADATA_LOCKFILE = 'metadata.txt.lock'
+    
     MANIFEST_SECTION = 'manifest'
     PROVENANCE_SECTION = 'provenance'
     HISTORY_SECTION = 'history'
-    HISTORY_PROTO = "processing%sstep%s" % (KEY_SEP, KEY_SEP)
     STUDY_AREA_SECTION = 'study_area'
     CLIMATE_POINT_SECTION = 'climate_point'
     CLIMATE_GRID_SECTION = 'climate_grid'
+    SECTIONS = [MANIFEST_SECTION, PROVENANCE_SECTION, HISTORY_SECTION,\
+                STUDY_AREA_SECTION, CLIMATE_POINT_SECTION, CLIMATE_GRID_SECTION]
     
+    HISTORY_PROTO = "processing%sstep%s" % (KEY_SEP, KEY_SEP)
 
     @staticmethod
-    def _writeEntryToSection(projectDir, section, key, value):
+    def writeEntryToSection(projectDir, section, key, value):
         """ Write an entry in the given section to the metadata store for a given project. 
         
             @note Will overwrite the value for a key that already exists
@@ -301,7 +314,10 @@ class GenericMetadata:
             @param value The value to be written for key stored in the given section of the project metadata
             
             @exception IOError(errno.EACCES) if the metadata store for the project is not writable
+            @exception Exception if section is not a valid GenericMetadata section
         """
+        if section not in GenericMetadata.SECTIONS:
+            raise Exception( "%s is an unknown section" % (section,) )
         lockFilepath = os.path.join(projectDir, GenericMetadata.METADATA_LOCKFILE)
         metadataFilepath = os.path.join(projectDir, GenericMetadata.METADATA_FILENAME)
         if os.path.exists(metadataFilepath):
@@ -401,7 +417,7 @@ class GenericMetadata:
             
             @exception IOError(errno.EACCES) if the metadata store for the project is not writable
         """
-        GenericMetadata._writeEntryToSection(projectDir, GenericMetadata.MANIFEST_SECTION, key, value)
+        GenericMetadata.writeEntryToSection(projectDir, GenericMetadata.MANIFEST_SECTION, key, value)
      
         
     @staticmethod 
@@ -416,7 +432,7 @@ class GenericMetadata:
             
             @exception IOError(errno.EACCES) if the metadata store for the project is not writable
         """
-        GenericMetadata._writeEntryToSection(projectDir, GenericMetadata.STUDY_AREA_SECTION, key, value)
+        GenericMetadata.writeEntryToSection(projectDir, GenericMetadata.STUDY_AREA_SECTION, key, value)
     
     
     @staticmethod 
@@ -431,7 +447,7 @@ class GenericMetadata:
             
             @exception IOError(errno.EACCES) if the metadata store for the project is not writable
         """
-        GenericMetadata._writeEntryToSection(projectDir, GenericMetadata.CLIMATE_POINT_SECTION, key, value)
+        GenericMetadata.writeEntryToSection(projectDir, GenericMetadata.CLIMATE_POINT_SECTION, key, value)
         
         
     @staticmethod 
@@ -462,7 +478,7 @@ class GenericMetadata:
             
             @exception IOError(errno.EACCES) if the metadata store for the project is not writable
         """
-        GenericMetadata._writeEntryToSection(projectDir, GenericMetadata.CLIMATE_GRID_SECTION, key, value)
+        GenericMetadata.writeEntryToSection(projectDir, GenericMetadata.CLIMATE_GRID_SECTION, key, value)
         
         
     @staticmethod 
@@ -493,7 +509,7 @@ class GenericMetadata:
             
             @exception IOError(errno.EACCES) if the metadata store for the project is not writable
         """
-        GenericMetadata._writeEntryToSection(projectDir, GenericMetadata.PROVENANCE_SECTION, key, value)
+        GenericMetadata.writeEntryToSection(projectDir, GenericMetadata.PROVENANCE_SECTION, key, value)
     
     @staticmethod 
     def writeProvenanceEntries(projectDir, keys, values):

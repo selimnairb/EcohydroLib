@@ -213,6 +213,7 @@ class TestMetadata(TestCase):
         asset = AssetProvenance()
         asset.section = GenericMetadata.MANIFEST_SECTION
         asset.name = "dem"
+        asset.dcIdentifier = "dem.tif"
         asset.dcSource = "http://www.demexplorer.com/..."
         asset.dcTitle = "Study area DEM"
         asset.dcDate = datetime.strptime("201303", "%Y%m")
@@ -223,6 +224,7 @@ class TestMetadata(TestCase):
         assetProvenance = GenericMetadata.readAssetProvenanceObjects(projectDir)[0]
         self.assertTrue(asset.section == assetProvenance.section)
         self.assertTrue(asset.name == assetProvenance.name)
+        self.assertTrue(asset.dcIdentifier == assetProvenance.dcIdentifier)
         self.assertTrue(asset.dcSource == assetProvenance.dcSource)
         self.assertTrue(asset.dcTitle == assetProvenance.dcTitle)
         self.assertTrue(asset.dcDate == assetProvenance.dcDate)
@@ -235,6 +237,7 @@ class TestMetadata(TestCase):
         asset = AssetProvenance()
         asset.section = GenericMetadata.MANIFEST_SECTION
         asset.name = "dem"
+        asset.dcIdentifier = "dem.tif"
         asset.dcSource = "http://www.demexplorer.com/..."
         asset.dcTitle = "Study area DEM"
         asset.dcDate = datetime.strptime("201303", "%Y%m")
@@ -245,12 +248,14 @@ class TestMetadata(TestCase):
         assetProvenance = GenericMetadata.readAssetProvenanceObjects(projectDir)[0]
         self.assertTrue(asset.section == assetProvenance.section)
         self.assertTrue(asset.name == assetProvenance.name)
+        self.assertTrue(asset.dcIdentifier == assetProvenance.dcIdentifier)
         self.assertTrue(asset.dcSource == assetProvenance.dcSource)
         self.assertTrue(asset.dcTitle == assetProvenance.dcTitle)
         self.assertTrue(asset.dcDate == assetProvenance.dcDate)
         self.assertTrue(asset.dcPublisher == assetProvenance.dcPublisher)
         self.assertTrue(asset.dcDescription == assetProvenance.dcDescription)
         
+        asset.dcIdentifier = 'foo.img'
         asset.dcSource = "http://a.different.url/..."
         asset.dcTitle = "A different study area DEM"
         asset.dcDate = datetime.strptime("201304", "%Y%m")
@@ -261,6 +266,7 @@ class TestMetadata(TestCase):
         assetProvenance = GenericMetadata.readAssetProvenanceObjects(projectDir)[0]
         self.assertTrue(asset.section == assetProvenance.section)
         self.assertTrue(asset.name == assetProvenance.name)
+        self.assertTrue(asset.dcIdentifier == assetProvenance.dcIdentifier)
         self.assertTrue(asset.dcSource == assetProvenance.dcSource)
         self.assertTrue(asset.dcTitle == assetProvenance.dcTitle)
         self.assertTrue(asset.dcDate == assetProvenance.dcDate)

@@ -68,8 +68,10 @@ import sys
 import errno
 import argparse
 import ConfigParser
+from datetime import datetime
 
 from ecohydroworkflowlib.metadata import GenericMetadata
+from ecohydroworkflowlib.metadata import AssetProvenance
 from ecohydroworkflowlib.nhdplus2.networkanalysis import getNHDReachcodeAndMeasureForGageSourceFea
 from ecohydroworkflowlib.nhdplus2.networkanalysis import getLocationForStreamGageByGageSourceFea
 from ecohydroworkflowlib.spatialdata.utils import writeCoordinatePairsToPointShapefile
@@ -83,6 +85,7 @@ parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
 parser.add_argument('-g', '--gageid', dest='gageid', required=True,
                     help='An integer representing the USGS site identifier')
 args = parser.parse_args()
+cmdline = " ".join(sys.argv[:])
 
 configFile = None
 if args.configfile:
@@ -129,11 +132,24 @@ else:
 shpFilename = writeCoordinatePairsToPointShapefile(projectDir, "gage", 
                                                    "gage_id", [args.gageid], [(gage_lon, gage_lat)])
 
-# Write results to metadata store
-GenericMetadata.writeManifestEntry(projectDir, 'gage', shpFilename)
+# Write study area metadata
 GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_id_attr', 'gage_id')
 GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_id', args.gageid)
 GenericMetadata.writeStudyAreaEntry(projectDir, 'nhd_gage_reachcode', reachcode)
 GenericMetadata.writeStudyAreaEntry(projectDir, 'nhd_gage_measure_pct', measure)
 GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_lat_wgs84', gage_lat)
 GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_lon_wgs84', gage_lon)
+
+# Write provenance
+asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
+asset.name = 'gage'
+asset.dcIdentifier = shpFilename
+asset.dcSource = 'NHDPlusV2'
+asset.dcTitle = 'Streamflow gage'
+asset.dcDate = datetime.now()
+asset.dcPublisher = 'USGS'
+asset.dcDescription = cmdline
+asset.writeToMetadata(projectDir)
+
+# Write processing history
+GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)
