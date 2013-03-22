@@ -103,39 +103,42 @@ class ClimatePointStation(MetadataEntity):
         except KeyError:
             stations = []
         # Write station metadata (overwrite if already present)
+        keys = []
+        values = []
         if fqId not in stations:
             stations.append(fqId)
             stationsStr = GenericMetadata.VALUE_DELIM.join(stations)
-            GenericMetadata.writeClimatePointEntry(projectDir, "stations", stationsStr)
+            keys.append('stations'); values.append(stationsStr)
         # Write attributes for station
-        keyProto = "station" + GenericMetadata.KEY_SEP + fqId + GenericMetadata.KEY_SEP 
-        longitude = keyProto + "longitude"
-        GenericMetadata.writeClimatePointEntry(projectDir, longitude, self.longitude)
-        latitude = keyProto + "latitude"
-        GenericMetadata.writeClimatePointEntry(projectDir, latitude, self.latitude)
-        elevation = keyProto + "elevation"
-        GenericMetadata.writeClimatePointEntry(projectDir, elevation, self.elevation)
-        name = keyProto + "name"
-        GenericMetadata.writeClimatePointEntry(projectDir, name, self.name)
+        keyProto = 'station' + GenericMetadata.KEY_SEP + fqId + GenericMetadata.KEY_SEP 
+        longitude = keyProto + 'longitude'
+        keys.append(longitude); values.append(self.longitude)
+        latitude = keyProto + 'latitude'
+        keys.append(latitude); values.append(self.latitude)
+        elevation = keyProto + 'elevation'
+        keys.append(elevation); values.append(self.elevation)
+        name = keyProto + 'name'
+        keys.append(name); values.append(self.name)
         if self.startDate:
-            startDate = keyProto + "startdate"
-            GenericMetadata.writeClimatePointEntry(projectDir, startDate, self.startDate.strftime(ClimatePointStation.FMT_DATE))
+            startDate = keyProto + 'startdate'
+            keys.append(startDate); values.append(self.startDate.strftime(ClimatePointStation.FMT_DATE))
         if self.endDate:
-            endDate = keyProto + "enddate"
-            GenericMetadata.writeClimatePointEntry(projectDir, endDate, self.endDate.strftime(ClimatePointStation.FMT_DATE))
+            endDate = keyProto + 'enddate'
+            keys.append(endDate); values.append(self.endDate.strftime(ClimatePointStation.FMT_DATE))
         if self.variables:
-            variablesKey = keyProto + "variables"
+            variablesKey = keyProto + 'variables'
             variablesValue = GenericMetadata.VALUE_DELIM.join(self.variables)
-            GenericMetadata.writeClimatePointEntry(projectDir, variablesKey, variablesValue)
+            keys.append(variablesKey); values.append(variablesValue)
         if self.data != None:
-            data = keyProto + "data"
-            GenericMetadata.writeClimatePointEntry(projectDir, data, self.data)
+            data = keyProto + 'data'
+            keys.append(data); values.append(self.data)
         elif self.variablesData:
             # Try to write data entries for each variable separately
             vars = self.variablesData.keys()
             for var in vars:
-                varKey = keyProto + var + GenericMetadata.KEY_SEP + "data"
-                GenericMetadata.writeClimatePointEntry(projectDir, varKey, self.variablesData[var])
+                varKey = keyProto + var + GenericMetadata.KEY_SEP + 'data'
+                keys.append(varKey); values.append(self.variablesData[var])
+        GenericMetadata.writeClimatePointEntries(projectDir, keys, values)
     
     @classmethod
     def readFromMetadata(cls, projectDir, fqId):
@@ -153,29 +156,29 @@ class ClimatePointStation(MetadataEntity):
         (newInstance.type, newInstance.id) = fqId.split(GenericMetadata.KEY_SEP)
         
         climate = GenericMetadata.readClimatePointEntries(projectDir)
-        keyProto = "station" + GenericMetadata.KEY_SEP + fqId + GenericMetadata.KEY_SEP
-        longitude = keyProto + "longitude"
+        keyProto = 'station' + GenericMetadata.KEY_SEP + fqId + GenericMetadata.KEY_SEP
+        longitude = keyProto + 'longitude'
         newInstance.longitude = float(climate[longitude])
-        latitude = keyProto + "latitude"
+        latitude = keyProto + 'latitude'
         newInstance.latitude = float(climate[latitude])
-        elevation = keyProto + "elevation"
+        elevation = keyProto + 'elevation'
         newInstance.elevation = float(climate[elevation])
-        name = keyProto + "name"
+        name = keyProto + 'name'
         newInstance.name = climate[name]
-        startDate = keyProto + "startdate"
+        startDate = keyProto + 'startdate'
         newInstance.startDate = datetime.strptime(climate[startDate], ClimatePointStation.FMT_DATE)
-        endDate = keyProto + "enddate"
+        endDate = keyProto + 'enddate'
         newInstance.endDate = datetime.strptime(climate[endDate], ClimatePointStation.FMT_DATE)
-        variablesKey = keyProto + "variables"
+        variablesKey = keyProto + 'variables'
         newInstance.variables = climate[variablesKey].split(GenericMetadata.VALUE_DELIM)
         try:
-            data = keyProto + "data"
+            data = keyProto + 'data'
             newInstance.data = climate[data]
         except KeyError:
             pass
         try:
             for var in newInstance.variables:
-                varKey = keyProto + var + GenericMetadata.KEY_SEP + "data"
+                varKey = keyProto + var + GenericMetadata.KEY_SEP + 'data'
                 newInstance.variablesData[var] = climate[varKey]
         except KeyError:
             pass
@@ -211,23 +214,26 @@ class AssetProvenance(MetadataEntity):
         except KeyError:
             entities = []
         # Write entity metadata (overwrite if already present)
+        keys = []
+        values = []
         if fqId not in entities:
             entities.append(fqId)
             entitiesStr = GenericMetadata.VALUE_DELIM.join(entities)
-            GenericMetadata.writeProvenanceEntry(projectDir, "entities", entitiesStr)
+            keys.append('entities'); values.append(entitiesStr)
         # Write attributes for entity
         keyProto = fqId + GenericMetadata.KEY_SEP
-        dcSource = keyProto + "dc.source"
-        GenericMetadata.writeProvenanceEntry(projectDir, dcSource, self.dcSource)
-        dcTitle = keyProto + "dc.title"
-        GenericMetadata.writeProvenanceEntry(projectDir, dcTitle, self.dcTitle)
+        dcSource = keyProto + 'dc.source'
+        keys.append(dcSource); values.append(self.dcSource)
+        dcTitle = keyProto + 'dc.title'
+        keys.append(dcTitle); values.append(self.dcTitle)
         if self.dcDate:
-            dcDate = keyProto + "dc.date"
-            GenericMetadata.writeProvenanceEntry(projectDir, dcDate, self.dcDate.strftime(AssetProvenance.FMT_DATE))
-        dcPublisher = keyProto + "dc.publisher"
-        GenericMetadata.writeProvenanceEntry(projectDir, dcPublisher, self.dcPublisher)
-        dcDescription = keyProto + "dc.description"
-        GenericMetadata.writeProvenanceEntry(projectDir, dcDescription, self.dcDescription)
+            dcDate = keyProto + 'dc.date'
+            keys.append(dcDate); values.append(self.dcDate.strftime(AssetProvenance.FMT_DATE))
+        dcPublisher = keyProto + 'dc.publisher'
+        keys.append(dcPublisher); values.append(self.dcPublisher)
+        dcDescription = keyProto + 'dc.description'
+        keys.append(dcDescription); values.append(self.dcDescription)
+        GenericMetadata.writeProvenanceEntries(projectDir, keys, values)
     
     @classmethod
     def readFromMetadata(cls, projectDir, fqId):
@@ -246,15 +252,15 @@ class AssetProvenance(MetadataEntity):
         
         provenance = GenericMetadata.readProvenanceEntries(projectDir)
         keyProto = fqId + GenericMetadata.KEY_SEP
-        dcSource = keyProto + "dc.source"
+        dcSource = keyProto + 'dc.source'
         newInstance.dcSource = provenance[dcSource]
-        dcTitle = keyProto + "dc.title"
+        dcTitle = keyProto + 'dc.title'
         newInstance.dcTitle = provenance[dcTitle]
-        dcDate = keyProto + "dc.date"
+        dcDate = keyProto + 'dc.date'
         newInstance.dcDate = datetime.strptime(provenance[dcDate], AssetProvenance.FMT_DATE)
-        dcPublisher = keyProto + "dc.publisher"
+        dcPublisher = keyProto + 'dc.publisher'
         newInstance.dcPublisher = provenance[dcPublisher]
-        dcDescription = keyProto + "dc.description"
+        dcDescription = keyProto + 'dc.description'
         newInstance.dcDescription = provenance[dcDescription]
         
         return newInstance
@@ -287,7 +293,7 @@ class GenericMetadata:
     def _writeEntryToSection(projectDir, section, key, value):
         """ Write an entry in the given section to the metadata store for a given project. 
         
-            @note Will overwrite a the value for a key that already exists
+            @note Will overwrite the value for a key that already exists
             
             @param projectDir Path of the project whose metadata store is to be written to
             @param section The section the key is to be written to
@@ -328,13 +334,66 @@ class GenericMetadata:
         
         # Remove lock file
         os.unlink(lockFilepath)
+        
+        
+    @staticmethod
+    def _writeEntriesToSection(projectDir, section, keys, values):
+        """ Write entries in the given section to the metadata store for a given project. 
+        
+            @note Will overwrite the value for each key that already exists
+            
+            @param projectDir Path of the project whose metadata store is to be written to
+            @param section The section the keys are to be written to
+            @param keys List of keys to be written to the given section of the project metadata
+            @param values List of values to be written for key stored in the given section of the project metadata
+            
+            @exception IOError(errno.EACCES) if the metadata store for the project is not writable
+            @exception Exception if len(keys) != len(values)
+        """
+        numKeys = len(keys)
+        if numKeys != len(values):
+            raise Exception( "%d keys specified for %d values" % (numKeys, len(values)) )
+        
+        lockFilepath = os.path.join(projectDir, GenericMetadata.METADATA_LOCKFILE)
+        metadataFilepath = os.path.join(projectDir, GenericMetadata.METADATA_FILENAME)
+        if os.path.exists(metadataFilepath):
+            if not os.access(metadataFilepath, os.W_OK):
+                raise IOError(errno.EACCES, "Unable to write to metadata store for project %s" % \
+                              (projectDir,))
+        else:
+            if not os.access(projectDir, os.W_OK):
+                raise IOError(errno.EACCES, "Unable to write to metadata store for project %s" % \
+                              (projectDir,))
+            # Create metadata file as it does not exist
+            metadataFD = open(metadataFilepath, 'w')
+            metadataFD.close()
+        
+        # Wait for lockfile to be relinquished
+        while os.path.exists(lockFilepath):
+            time.sleep(5)
+        # Write lock file
+        open(lockFilepath, 'w').close()
+        
+        # Read metadata store
+        config = ConfigParser.RawConfigParser()
+        config.read(metadataFilepath)
+        # Write new entries
+        if not config.has_section(section):
+            config.add_section(section)
+        for i in xrange(numKeys):
+            config.set(section, keys[i], values[i])
+        # Write metadata store
+        config.write(open(metadataFilepath, 'w'))
+        
+        # Remove lock file
+        os.unlink(lockFilepath)
     
     
     @staticmethod
     def writeManifestEntry(projectDir, key, value):
         """ Write a manifest entry to the metadata store for a given project.
             
-            @note Will overwrite a the value for a key that already exists
+            @note Will overwrite the value for a key that already exists
         
             @param projectDir Path of the project whose metadata store is to be written to
             @param key The key to be written to the manifest section of the project metadata
@@ -349,7 +408,7 @@ class GenericMetadata:
     def writeStudyAreaEntry(projectDir, key, value):
         """ Write a study area entry to the metadata store for a given project.
             
-            @note Will overwrite a the value for a key that already exists
+            @note Will overwrite the value for a key that already exists
         
             @param projectDir Path of the project whose metadata store is to be written to
             @param key The key to be written to the study area section of the project metadata
@@ -364,7 +423,7 @@ class GenericMetadata:
     def writeClimatePointEntry(projectDir, key, value):
         """ Write a point climate entry to the metadata store for a given project.
             
-            @note Will overwrite a the value for a key that already exists
+            @note Will overwrite the value for a key that already exists
         
             @param projectDir Path of the project whose metadata store is to be written to
             @param key The key to be written to the point climate section of the project metadata
@@ -373,13 +432,29 @@ class GenericMetadata:
             @exception IOError(errno.EACCES) if the metadata store for the project is not writable
         """
         GenericMetadata._writeEntryToSection(projectDir, GenericMetadata.CLIMATE_POINT_SECTION, key, value)
+        
+        
+    @staticmethod 
+    def writeClimatePointEntries(projectDir, keys, values):
+        """ Write a point climate entries to the metadata store for a given project.
+            
+            @note Will overwrite the value for keys that already exist
+        
+            @param projectDir Path of the project whose metadata store is to be written to
+            @param keys List of keys to be written to the point climate section of the project metadata
+            @param values List of values to be written for keys stored in the point climate section of the project metadata
+            
+            @exception IOError(errno.EACCES) if the metadata store for the project is not writable
+            @exception Exception if len(keys) != len(values)
+        """
+        GenericMetadata._writeEntriesToSection(projectDir, GenericMetadata.CLIMATE_POINT_SECTION, keys, values)
     
     
     @staticmethod 
     def writeClimateGridEntry(projectDir, key, value):
         """ Write a grid climate entry to the metadata store for a given project.
             
-            @note Will overwrite a the value for a key that already exists
+            @note Will overwrite the value for a key that already exists
         
             @param projectDir Path of the project whose metadata store is to be written to
             @param key The key to be written to the grid climate  section of the project metadata
@@ -388,6 +463,22 @@ class GenericMetadata:
             @exception IOError(errno.EACCES) if the metadata store for the project is not writable
         """
         GenericMetadata._writeEntryToSection(projectDir, GenericMetadata.CLIMATE_GRID_SECTION, key, value)
+        
+        
+    @staticmethod 
+    def writeClimateGridEntries(projectDir, keys, values):
+        """ Write grid climate entries to the metadata store for a given project.
+            
+            @note Will overwrite the value for keys that already exist
+        
+            @param projectDir Path of the project whose metadata store is to be written to
+            @param key List of keys to be written to the grid climate  section of the project metadata
+            @param value List of values to be written for keys stored in the grid climate  section of the project metadata
+            
+            @exception IOError(errno.EACCES) if the metadata store for the project is not writable
+            @exception Exception if len(keys) != len(values)
+        """
+        GenericMetadata._writeEntriesToSection(projectDir, GenericMetadata.CLIMATE_GRID_SECTION, keys, values)
     
     
     @staticmethod 
@@ -403,6 +494,21 @@ class GenericMetadata:
             @exception IOError(errno.EACCES) if the metadata store for the project is not writable
         """
         GenericMetadata._writeEntryToSection(projectDir, GenericMetadata.PROVENANCE_SECTION, key, value)
+    
+    @staticmethod 
+    def writeProvenanceEntries(projectDir, keys, values):
+        """ Write provenance entries to the metadata store for a given project.
+            
+            @note Will overwrite the values of keys that already exist
+        
+            @param projectDir Path of the project whose metadata store is to be written to
+            @param keys The keys to be written to the provenance section of the project metadata
+            @param values The values to be written for keys stored in the provenance section of the project metadata
+            
+            @exception IOError(errno.EACCES) if the metadata store for the project is not writable
+            @exception Exception if len(keys) != len(values)
+        """
+        GenericMetadata._writeEntriesToSection(projectDir, GenericMetadata.PROVENANCE_SECTION, keys, values)
     
     
     @staticmethod
@@ -551,7 +657,6 @@ class GenericMetadata:
         
         idxStr = str(idx)
         key = GenericMetadata.HISTORY_PROTO + idxStr
-        GenericMetadata._writeEntryToSection(projectDir, GenericMetadata.HISTORY_SECTION, key, item)
-        GenericMetadata._writeEntryToSection(projectDir, GenericMetadata.HISTORY_SECTION, 'numsteps', idxStr)
+        GenericMetadata._writeEntriesToSection(projectDir, GenericMetadata.HISTORY_SECTION, [key, 'numsteps'], [item, idxStr])
         
         
