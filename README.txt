@@ -102,10 +102,7 @@ from USDA) or from third-party data centers (GeoBrain's DEM Explorer).
 However it is also possible for the user to upload their own custom
 data for a given datatype (e.g. local LIDAR-based DEM).
 
-![Fig. 1 Ecohydrology model data preparation workflow software stack
- depicting EcohydroWorkflowLib's role as an intermediary between raw
- data, derived data subsets, and specific ecohydrology
- models](RHESSysWorkflowImpl-20130318.png)
+![Fig. 1 Ecohydrology model data preparation workflow software stack depicting EcohydroWorkflowLib's role as an intermediary between raw data, derived data subsets, and specific ecohydrology models](RHESSysWorkflowImpl-20130318.png)
 
 
 Installation
