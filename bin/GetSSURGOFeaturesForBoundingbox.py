@@ -67,8 +67,10 @@ import argparse
 import ConfigParser
 
 from ecohydroworkflowlib.metadata import GenericMetadata
+from ecohydroworkflowlib.metadata import AssetProvenance
 from ecohydroworkflowlib.spatialdata.utils import convertGMLToShapefile
 from ecohydroworkflowlib.ssurgo.featurequery import getMapunitFeaturesForBoundingBox
+from ecohydroworkflowlib.ssurgo import featurequery
    
 
 # Handle command line options
@@ -78,6 +80,7 @@ parser.add_argument('-i', '--configfile', dest='configfile', required=False,
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory to which metadata, intermediate, and final files should be saved')
 args = parser.parse_args()
+cmdline = " ".join(sys.argv[:])
 
 configFile = None
 if args.configfile:
@@ -122,5 +125,17 @@ gmlFilename = getMapunitFeaturesForBoundingBox(projectDir, bbox, mapunitExtended
 gmlFilepath = os.path.join(projectDir, gmlFilename)
 layerName = os.path.splitext(gmlFilename)[0]
 shpFilename = convertGMLToShapefile(config, projectDir, gmlFilepath, layerName, srs)
-GenericMetadata.writeManifestEntry(projectDir, "soil_features", shpFilename)
 
+# Write provenance
+asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
+asset.name = 'soil_features'
+asset.dcIdentifier = shpFilename
+asset.dcSource = featurequery.WFS_URL
+asset.dcTitle = 'SSURGO soils data'
+asset.dcPublisher = 'USDA'
+asset.dcDescription = cmdline
+asset.writeToMetadata(projectDir)
+#GenericMetadata.writeManifestEntry(projectDir, "soil_features", shpFilename)
+
+# Write processing history
+GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)

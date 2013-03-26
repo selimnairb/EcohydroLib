@@ -50,6 +50,7 @@ from saxhandlers import SSURGOFeatureHandler
 MAX_SSURGO_EXTENT = 10000000000 # 10,100,000,000 sq. meters
 MAX_SSURGO_EXTENT = MAX_SSURGO_EXTENT / 10
 
+WFS_URL = 'http://SDMDataAccess.nrcs.usda.gov/Spatial/SDMWGS84Geographic.wfs'
 
 def getMapunitFeaturesForBoundingBox(outputDir, bbox, \
                                      mapunitExtended=False, tileBbox=False):
@@ -103,7 +104,7 @@ def getMapunitFeaturesForBoundingBox(outputDir, bbox, \
         if not os.path.exists(gmlFilepath):
             sys.stderr.write("Fetching SSURGO data for sub bboxTile %s\n" % bboxLabel)
         
-            wfs = WebFeatureService('http://SDMDataAccess.nrcs.usda.gov/Spatial/SDMWGS84Geographic.wfs', version='1.0.0')
+            wfs = WebFeatureService(WFS_URL, version='1.0.0')
             filter = "<Filter><BBOX><PropertyName>Geometry</PropertyName> <Box srsName='EPSG:4326'><coordinates>%f,%f %f,%f</coordinates> </Box></BBOX></Filter>" % (minX, minY, maxX, maxY)
             gml = wfs.getfeature(typename=(typeName,), filter=filter, propertyname=None)
     

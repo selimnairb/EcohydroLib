@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""@package GetCatchmentShapefileForStreamflowGage
+"""@package GetCatchmentShapefileForNHDStreamflowGage
 
 @brief Query NHDPlus2 database for shapefile of the drainage area of the given streamflow gage.
 @brief Resulting shapefile will use WGS84 (EPSG:4326) for its spatial reference. 
@@ -53,7 +53,7 @@ Post conditions
 
 Usage:
 @code
-GetCatchmentShapefileForStreamflowGage.py -p /path/to/project_dir
+GetCatchmentShapefileForNHDStreamflowGage.py -p /path/to/project_dir
 @endcode
 
 @note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
@@ -66,6 +66,7 @@ import argparse
 import ConfigParser
 
 from ecohydroworkflowlib.metadata import GenericMetadata
+from ecohydroworkflowlib.metadata import AssetProvenance
 from ecohydroworkflowlib.nhdplus2.networkanalysis import getCatchmentShapefileForGageOGR
 
 # Handle command line options
@@ -77,6 +78,7 @@ parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
 parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the catchment shapefile to be written.  File extension ".shp" will be added.  If a file of this name exists, program will silently exit.')
 args = parser.parse_args()
+cmdline = " ".join(sys.argv[:])
 
 configFile = None
 if args.configfile:
@@ -92,9 +94,6 @@ if not os.access(configFile, os.R_OK):
 config = ConfigParser.RawConfigParser()
 config.read(configFile)
 
-#if not config.has_option('GDAL/OGR', 'PATH_OF_OGR2OGR'):
-#    sys.exit("Config file %s does not define option %s in section %s" % \
-#          (args.configfile, 'GDAL/OGR', 'PATH_OF_OGR2OGR'))
 if not config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'):
     sys.exit("Config file %s does not define option %s in section %s" % \
           (args.configfile, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'))
@@ -118,6 +117,11 @@ if args.outfile:
 else:
     outfile = "catchment"
 
+# Get provenance data for gage
+gageProvenance = [i for i in GenericMetadata.readAssetProvenanceObjects(projectDir) if i.name == 'gage'][0]
+if gageProvenance is None:
+    sys.exit("Unable to load gage provenance information from metadata")
+
 # Get study area parameters
 studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
 reachcode = studyArea['nhd_gage_reachcode']
@@ -128,4 +132,16 @@ shapeFilepath = os.path.join(projectDir, shapeFilename)
 if not os.path.exists(shapeFilepath):
     #getCatchmentShapefileForGage(config, projectDir, shapeFilename, reachcode, measure)
     getCatchmentShapefileForGageOGR(config, projectDir, shapeFilename, reachcode, measure)
-    GenericMetadata.writeManifestEntry(projectDir, "study_area_shapefile", shapeFilename)
+    
+    # Write provenance
+    asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
+    asset.name = 'study_area_shapefile'
+    asset.dcIdentifier = shapeFilename
+    asset.dcSource = gageProvenance.dcSource # Take from gage
+    asset.dcTitle = 'Study area shapefile'
+    asset.dcPublisher = gageProvenance.dcPublisher
+    asset.dcDescription = cmdline
+    asset.writeToMetadata(projectDir)
+
+    # Write processing history
+    GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)

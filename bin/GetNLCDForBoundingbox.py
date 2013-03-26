@@ -73,6 +73,7 @@ import argparse
 import ConfigParser
 
 from ecohydroworkflowlib.metadata import GenericMetadata
+from ecohydroworkflowlib.metadata import AssetProvenance
 from ecohydroworkflowlib.spatialdata.utils import extractTileFromRaster
 from ecohydroworkflowlib.spatialdata.utils import resampleRaster
 from ecohydroworkflowlib.spatialdata.utils import deleteGeoTiff
@@ -86,6 +87,7 @@ parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
 parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the DEM file to be written.  File extension ".tif" will be added.')
 args = parser.parse_args()
+cmdline = " ".join(sys.argv[:])
 
 configFile = None
 if args.configfile:
@@ -145,8 +147,22 @@ resampleRaster(config, projectDir, tmpTileFilepath, tileFilename, \
             s_srs=None, t_srs=srs, \
             trX=outputrasterresolutionX, trY=outputrasterresolutionY, \
             resampleMethod='near')
-GenericMetadata.writeManifestEntry(projectDir, "landcover", tileFilename)
+
+# Write metadata
 GenericMetadata.writeStudyAreaEntry(projectDir, "landcover_type", "NLCD2006")
+
+# Write provenance
+asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
+asset.name = 'landcover'
+asset.dcIdentifier = tileFilename
+asset.dcSource = 'http://gisdata.usgs.gov/TDDS/DownloadFile.php?TYPE=nlcd2006&FNAME=NLCD2006_landcover_4-20-11_se5.zip'
+asset.dcTitle = 'The National Landcover Database 2006'
+asset.dcPublisher = 'USGS'
+asset.dcDescription = cmdline
+asset.writeToMetadata(projectDir)
+
+# Write processing history
+GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)
 
 # Clean-up
 deleteGeoTiff(tmpTileFilepath)

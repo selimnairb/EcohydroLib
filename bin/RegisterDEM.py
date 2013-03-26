@@ -72,6 +72,7 @@ import argparse
 import ConfigParser
 
 from ecohydroworkflowlib.metadata import GenericMetadata
+from ecohydroworkflowlib.metadata import AssetProvenance
 from ecohydroworkflowlib.spatialdata.utils import copyRasterToGeoTIFF
 from ecohydroworkflowlib.spatialdata.utils import getDimensionsForRaster
 from ecohydroworkflowlib.spatialdata.utils import getSpatialReferenceForRaster
@@ -88,7 +89,10 @@ parser.add_argument('-d', '--demfile', dest='demfile', required=True,
                     help='The name of the DEM file to be registered.')
 parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the DEM file to be written to the project directory.  File extension ".tif" will be added.')
+parser.add_argument('-b', '--publisher', dest='publisher', required=False,
+                    help="The publisher of the landcover dataset, if not supplied 'SELF PUBLISHED' will be used")
 args = parser.parse_args()
+cmdline = " ".join(sys.argv[:])
 
 configFile = None
 if args.configfile:
@@ -121,6 +125,12 @@ projectDir = os.path.abspath(projectDir)
 
 if not os.access(args.demfile, os.R_OK):
     raise IOError(errno.EACCES, "Not allowed to read input DEM %s" (args.demfile,))
+inDEMPath = os.path.abspath(args.demfile)
+
+if args.publisher:
+    publisher = args.publisher
+else:
+    publisher = 'SELF PUBLISHED'
 
 if args.outfile:
     outfile = args.outfile
@@ -134,7 +144,7 @@ if os.path.exists(demFilepath):
     os.unlink(demFilepath)
 
 # Copy the raster in to the project directory
-copyRasterToGeoTIFF(config, projectDir, args.demfile, demFilename)
+copyRasterToGeoTIFF(config, projectDir, inDEMPath, demFilename)
 # Get the bounding box for the DEM
 bbox = getBoundingBoxForRaster(demFilepath)
 # Write a shapefile for the bounding box
@@ -142,8 +152,6 @@ shpFilename = writeBboxPolygonToShapefile(bbox, projectDir, "studyarea")
 
 # Write metadata
 GenericMetadata.writeStudyAreaEntry(projectDir, "bbox_wgs84", "%f %f %f %f" % (bbox['minX'], bbox['minY'], bbox['maxX'], bbox['maxY']))
-GenericMetadata.writeManifestEntry(projectDir, "study_area_shapefile", shpFilename)
-GenericMetadata.writeManifestEntry(projectDir, "dem", demFilename)
 
 # Get spatial metadata for DEM
 demSpatialMetadata = getSpatialReferenceForRaster(demFilepath)
@@ -156,3 +164,26 @@ demFilepath = os.path.join(projectDir, demFilename)
 (columns, rows) = getDimensionsForRaster(demFilepath)
 GenericMetadata.writeStudyAreaEntry(projectDir, "dem_columns", columns)
 GenericMetadata.writeStudyAreaEntry(projectDir, "dem_rows", rows)
+
+# Write provenance
+inputDEMURL = "file://%s" % (inDEMPath,)
+asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
+asset.name = 'dem'
+asset.dcIdentifier = demFilename
+asset.dcSource = inputDEMURL
+asset.dcTitle = 'Digital Elevation Model'
+asset.dcPublisher = publisher
+asset.dcDescription = cmdline
+asset.writeToMetadata(projectDir)
+
+asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
+asset.name = 'study_area_shapefile'
+asset.dcIdentifier = shpFilename
+asset.dcSource = inputDEMURL
+asset.dcTitle = 'Study area shapefile'
+asset.dcPublisher = publisher
+asset.dcDescription = cmdline
+asset.writeToMetadata(projectDir)
+
+# Write processing history
+GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)

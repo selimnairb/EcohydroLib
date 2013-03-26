@@ -73,6 +73,7 @@ import argparse
 import ConfigParser
 
 from ecohydroworkflowlib.metadata import GenericMetadata
+from ecohydroworkflowlib.metadata import AssetProvenance
 from ecohydroworkflowlib.spatialdata.utils import copyRasterToGeoTIFF
 from ecohydroworkflowlib.spatialdata.utils import resampleRaster
 from ecohydroworkflowlib.spatialdata.utils import getDimensionsForRaster
@@ -91,7 +92,10 @@ parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the DEM file to be written to the project directory.  File extension ".tif" will be added.')
 parser.add_argument('--force', dest='force', required=False, action='store_true',
                     help='Force registry of landcover data if extent does not match DEM.')
+parser.add_argument('-b', '--publisher', dest='publisher', required=False,
+                    help="The publisher of the DEM, if not supplied 'SELF PUBLISHED' will be used")
 args = parser.parse_args()
+cmdline = " ".join(sys.argv[:])
 
 configFile = None
 if args.configfile:
@@ -130,6 +134,11 @@ if not os.access(args.landcoverfile, os.R_OK):
     raise IOError(errno.EACCES, "Not allowed to read input landcover raster %s" %
                   args.landcoverfile)
 inLandcoverPath = os.path.abspath(args.landcoverfile)
+
+if args.publisher:
+    publisher = args.publisher
+else:
+    publisher = 'SELF PUBLISHED'
 
 if args.outfile:
     outfile = args.outfile
@@ -182,5 +191,19 @@ if not force and ( (newLcMetadata[0] != demColumns) or (newLcMetadata[1] != demR
              (landcoverFilename, projectDir))
 
 # Write metadata
-GenericMetadata.writeManifestEntry(projectDir, "landcover", landcoverFilename)
 GenericMetadata.writeStudyAreaEntry(projectDir, "landcover_type", "custom")
+
+# Write provenance
+#GenericMetadata.writeManifestEntry(projectDir, "landcover", landcoverFilename)
+asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
+asset.name = 'landcover'
+asset.dcIdentifier = landcoverFilename
+asset.dcSource = "file://%s" % (inLandcoverPath,)
+asset.dcTitle = 'Landcover Dataset'
+asset.dcPublisher = publisher
+asset.dcDescription = cmdline
+asset.writeToMetadata(projectDir)
+
+# Write processing history
+GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)
+

@@ -62,6 +62,7 @@ import argparse
 import ConfigParser
 
 from ecohydroworkflowlib.metadata import GenericMetadata
+from ecohydroworkflowlib.metadata import AssetProvenance
 from ecohydroworkflowlib.hydro1k.basins import getCatchmentShapefileForHYDRO1kBasins
 
 # Handle command line options
@@ -75,6 +76,7 @@ parser.add_argument('-f', '--outfile', dest='outfile', required=False,
 parser.add_argument('-b', '--basins', dest='basins', nargs='+', required=True,
                     help='HYDRO1k basins to extract')
 args = parser.parse_args()
+cmdline = " ".join(sys.argv[:])
 
 configFile = None
 if args.configfile:
@@ -120,4 +122,17 @@ shapeFilename = "%s.shp" % (outfile)
 shapeFilepath = os.path.join(projectDir, shapeFilename)
 if not os.path.exists(shapeFilepath):
     getCatchmentShapefileForHYDRO1kBasins(config, projectDir, shapeFilename, args.basins)
-    GenericMetadata.writeManifestEntry(projectDir, "study_area_shapefile", shapeFilename)
+    
+    # Write provenance
+    asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
+    asset.name = 'study_area_shapefile'
+    asset.dcIdentifier = shapeFilename
+    asset.dcSource = 'http://eros.usgs.gov/#/Find_Data/Products_and_Data_Available/gtopo30/hydro/namerica'
+    asset.dcTitle = 'Study area shapefile derived from HYDRO1k Basins'
+    asset.dcPublisher = 'USGS'
+    asset.dcDescription = cmdline
+    asset.writeToMetadata(projectDir)
+
+    # Write processing history
+    GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)
+    

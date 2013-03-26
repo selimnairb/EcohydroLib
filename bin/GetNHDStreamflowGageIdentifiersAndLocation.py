@@ -68,7 +68,6 @@ import sys
 import errno
 import argparse
 import ConfigParser
-from datetime import datetime
 
 from ecohydroworkflowlib.metadata import GenericMetadata
 from ecohydroworkflowlib.metadata import AssetProvenance
@@ -144,9 +143,8 @@ GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_lon_wgs84', gage_lon)
 asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
 asset.name = 'gage'
 asset.dcIdentifier = shpFilename
-asset.dcSource = 'NHDPlusV2'
+asset.dcSource = 'http://www.horizon-systems.com/NHDPlus/NHDPlusV2_home.php'
 asset.dcTitle = 'Streamflow gage'
-asset.dcDate = datetime.now()
 asset.dcPublisher = 'USGS'
 asset.dcDescription = cmdline
 asset.writeToMetadata(projectDir)

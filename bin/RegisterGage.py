@@ -66,6 +66,7 @@ import argparse
 import ConfigParser
 
 from ecohydroworkflowlib.metadata import GenericMetadata
+from ecohydroworkflowlib.metadata import AssetProvenance
 from ecohydroworkflowlib.spatialdata.utils import deleteShapefile
 from ecohydroworkflowlib.spatialdata.utils import getCoordinatesOfPointsFromShapefile
 from ecohydroworkflowlib.spatialdata.utils import writeCoordinatePairsToPointShapefile
@@ -88,7 +89,10 @@ parser.add_argument('-d', '--idValue', dest='idValue', required=True,
                     help='The gage ID that uniquely identifies the gage point.')
 parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the gage shapefile to be written to the project directory.  File extension ".shp" will be added.')
+parser.add_argument('-b', '--publisher', dest='publisher', required=False,
+                    help="The publisher of the stream flow gage location dataset, if not supplied 'SELF PUBLISHED' will be used")
 args = parser.parse_args()
+cmdline = " ".join(sys.argv[:])
 
 configFile = None
 if args.configfile:
@@ -119,6 +123,11 @@ if not os.access(args.gageFile, os.R_OK):
     raise IOError(errno.EACCES, "Not allowed to read input gage shapefile %s" %
                   args.gageFile)
 inGagePath = os.path.abspath(args.gageFile)
+
+if args.publisher:
+    publisher = args.publisher
+else:
+    publisher = 'SELF PUBLISHED'
 
 if args.outfile:
     outfile = args.outfile
@@ -151,8 +160,20 @@ if not isCoordinatePairInBoundingBox(bbox, coordinates):
 shpFilename = writeCoordinatePairsToPointShapefile(projectDir, outfile, "gage_id", gageIDs, [coordinates])
 
 # Write metadata
-GenericMetadata.writeManifestEntry(projectDir, 'gage', shpFilename)
 GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_id_attr', 'gage_id')
 GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_id', args.idValue)
 GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_lat_wgs84', gage_lat)
 GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_lon_wgs84', gage_lon)
+
+# Write provenance
+asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
+asset.name = 'gage'
+asset.dcIdentifier = shpFilename
+asset.dcSource = "file://%s" % (inGagePath,)
+asset.dcTitle = 'Streamflow gage'
+asset.dcPublisher = publisher
+asset.dcDescription = cmdline
+asset.writeToMetadata(projectDir)
+
+# Write processing history
+GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)

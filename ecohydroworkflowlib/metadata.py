@@ -94,7 +94,7 @@ class ClimatePointStation(MetadataEntity):
         
             @param projectDir Path of the project whose metadata store is to be written to
         """
-        fqId = self.type + GenericMetadata.KEY_SEP + self.id
+        fqId = self.type + GenericMetadata.COMPOUND_KEY_SEP + self.id
         fqId = fqId.lower()
 
         climatePoints = GenericMetadata.readClimatePointEntries(projectDir)
@@ -110,7 +110,7 @@ class ClimatePointStation(MetadataEntity):
             stationsStr = GenericMetadata.VALUE_DELIM.join(stations)
             keys.append('stations'); values.append(stationsStr)
         # Write attributes for station
-        keyProto = 'station' + GenericMetadata.KEY_SEP + fqId + GenericMetadata.KEY_SEP 
+        keyProto = 'station' + GenericMetadata.COMPOUND_KEY_SEP + fqId + GenericMetadata.COMPOUND_KEY_SEP 
         longitude = keyProto + 'longitude'
         keys.append(longitude); values.append(self.longitude)
         latitude = keyProto + 'latitude'
@@ -136,7 +136,7 @@ class ClimatePointStation(MetadataEntity):
             # Try to write data entries for each variable separately
             vars = self.variablesData.keys()
             for var in vars:
-                varKey = keyProto + var + GenericMetadata.KEY_SEP + 'data'
+                varKey = keyProto + var + GenericMetadata.COMPOUND_KEY_SEP + 'data'
                 keys.append(varKey); values.append(self.variablesData[var])
         GenericMetadata.writeClimatePointEntries(projectDir, keys, values)
     
@@ -153,10 +153,10 @@ class ClimatePointStation(MetadataEntity):
             @raise KeyError if required field is not in metadata
         """
         newInstance = ClimatePointStation()
-        (newInstance.type, newInstance.id) = fqId.split(GenericMetadata.KEY_SEP)
+        (newInstance.type, newInstance.id) = fqId.split(GenericMetadata.COMPOUND_KEY_SEP)
         
         climate = GenericMetadata.readClimatePointEntries(projectDir)
-        keyProto = 'station' + GenericMetadata.KEY_SEP + fqId + GenericMetadata.KEY_SEP
+        keyProto = 'station' + GenericMetadata.COMPOUND_KEY_SEP + fqId + GenericMetadata.COMPOUND_KEY_SEP
         longitude = keyProto + 'longitude'
         newInstance.longitude = float(climate[longitude])
         latitude = keyProto + 'latitude'
@@ -178,7 +178,7 @@ class ClimatePointStation(MetadataEntity):
             pass
         try:
             for var in newInstance.variables:
-                varKey = keyProto + var + GenericMetadata.KEY_SEP + 'data'
+                varKey = keyProto + var + GenericMetadata.COMPOUND_KEY_SEP + 'data'
                 newInstance.variablesData[var] = climate[varKey]
         except KeyError:
             pass
@@ -196,7 +196,7 @@ class AssetProvenance(MetadataEntity):
         self.dcIdentifier = None
         self.dcSource = None
         self.dcTitle = None
-        self.dcDate = None
+        self.dcDate = datetime.now()
         self.dcPublisher = None
         self.dcDescription = None
         
@@ -207,7 +207,7 @@ class AssetProvenance(MetadataEntity):
             @param projectDir Path of the project whose metadata store is to be written to
             @exception Exception if section is not a valid GenericMetadata section
         """
-        fqId = self.section + GenericMetadata.KEY_SEP + self.name
+        fqId = self.section + GenericMetadata.COMPOUND_KEY_SEP + self.name
         fqId = fqId.lower()
         
         # Write self to the appropriate section
@@ -227,7 +227,7 @@ class AssetProvenance(MetadataEntity):
             entitiesStr = GenericMetadata.VALUE_DELIM.join(entities)
             keys.append('entities'); values.append(entitiesStr)
         # Write attributes for entity
-        keyProto = fqId + GenericMetadata.KEY_SEP
+        keyProto = fqId + GenericMetadata.COMPOUND_KEY_SEP
         dcIdentifier = keyProto + 'dc.identifier'
         keys.append(dcIdentifier); values.append(self.dcIdentifier)
         dcSource = keyProto + 'dc.source'
@@ -256,10 +256,10 @@ class AssetProvenance(MetadataEntity):
             @raise KeyError if required field is not in metadata
         """
         newInstance = AssetProvenance()
-        (newInstance.section, newInstance.name) = fqId.split(GenericMetadata.KEY_SEP)
+        (newInstance.section, newInstance.name) = fqId.split(GenericMetadata.COMPOUND_KEY_SEP)
         
         provenance = GenericMetadata.readProvenanceEntries(projectDir)
-        keyProto = fqId + GenericMetadata.KEY_SEP
+        keyProto = fqId + GenericMetadata.COMPOUND_KEY_SEP
         dcIdentifier = keyProto + 'dc.identifier'
         newInstance.dcIdentifier = provenance[dcIdentifier]
         dcSource = keyProto + 'dc.source'
@@ -288,6 +288,7 @@ class GenericMetadata:
 
     VALUE_DELIM = ','
     KEY_SEP = '_'
+    COMPOUND_KEY_SEP = '/' # Used for keys that may contain KEY_SEP
     METADATA_FILENAME = 'metadata.txt'
     METADATA_LOCKFILE = 'metadata.txt.lock'
     
@@ -640,7 +641,7 @@ class GenericMetadata:
         assetProvenanceObjects = []
         provenance = GenericMetadata.readProvenanceEntries(projectDir)
         try:
-            assets = [provenance['entities']]
+            assets = provenance['entities'].split(GenericMetadata.VALUE_DELIM)
             for asset in assets:
                 assetProvenanceObjects.append(AssetProvenance.readFromMetadata(projectDir, asset))
         except KeyError:

@@ -227,7 +227,7 @@ How to use - Typical workflows
 A workflow using data from large-scale spatial data infrastructure will consist of 
 running the follow scripts in the following order:
 1. GetNHDStreamflowGageIdentifiersAndLocation.py
-2. GetCatchmentShapefileForStreamflowGage.py
+2. GetCatchmentShapefileForNHDStreamflowGage.py
 3. GetBoundingboxFromStudyAreaShapefile.py
 4. GetDEMExplorerDEMForBoundingbox.py
 5. GetNLCDForBoundingbox.py

@@ -67,6 +67,7 @@ import argparse
 import ConfigParser
 
 from ecohydroworkflowlib.metadata import GenericMetadata
+from ecohydroworkflowlib.metadata import AssetProvenance
 from ecohydroworkflowlib.ssurgo.rasterize import rasterizeSSURGOFeatures
 import ecohydroworkflowlib.ssurgo.attributequery     
 
@@ -77,6 +78,7 @@ parser.add_argument('-i', '--configfile', dest='configfile', required=False,
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory to which metadata, intermediate, and final files should be saved')
 args = parser.parse_args()
+cmdline = " ".join(sys.argv[:])
 
 configFile = None
 if args.configfile:
@@ -107,6 +109,11 @@ if not os.access(projectDir, os.W_OK):
                   projectDir)
 projectDir = os.path.abspath(projectDir)
 
+# Get provenance data for SSURGO
+ssurgoProvenance = [i for i in GenericMetadata.readAssetProvenanceObjects(projectDir) if i.name == 'soil_features'][0]
+if ssurgoProvenance is None:
+    sys.exit("Unable to load SSURGO provenance information from metadata")
+
 # Get manifest entries
 manifest = GenericMetadata.readManifestEntries(projectDir)
 shpFilename = manifest['soil_features']
@@ -124,5 +131,14 @@ rasterFiles = rasterizeSSURGOFeatures(config=config, outputDir=projectDir, featu
                                       rasterResolutionX=outputrasterresolutionX, rasterResolutionY=outputrasterresolutionY)
 # Write metadata entries
 for attr in rasterFiles.keys():
-    GenericMetadata.writeManifestEntry(projectDir, "soil_raster_%s" % (attr,), rasterFiles[attr])
-
+    asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
+    asset.name = "soil_raster_%s" % (attr,)
+    asset.dcIdentifier = rasterFiles[attr]
+    asset.dcSource = ssurgoProvenance.dcSource
+    asset.dcTitle = attr
+    asset.dcPublisher = ssurgoProvenance.dcSource
+    asset.dcDescription = cmdline
+    asset.writeToMetadata(projectDir)
+    
+# Write processing history
+GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)

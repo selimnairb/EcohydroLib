@@ -68,7 +68,7 @@ def getDEMForBoundingBox(config, outputDir, outDEMFilename, bbox, coverage='SRTM
         @raise IOError if outputDir is not a writable directory
         @raise IOError if outDEMFilename already exists and overwrite is False (see above)
     
-        @return True if DEM data were fetched and False if not.
+        @return Tuple(True if DEM data were fetched and False if not, URL of DEM fetched)
     """
     dataFetched = False
     assert(format in SUPPORTED_FORMATS)
@@ -115,7 +115,7 @@ def getDEMForBoundingBox(config, outputDir, outDEMFilename, bbox, coverage='SRTM
             data = res.read(_BUFF_LEN)
         demOut.close()
         
-    return dataFetched
+    return ( dataFetched, "http://%s%s\n" % (HOST, url) )
 
     
     

@@ -74,6 +74,7 @@ import argparse
 import ConfigParser
 
 from ecohydroworkflowlib.metadata import GenericMetadata
+from ecohydroworkflowlib.metadata import AssetProvenance
 from ecohydroworkflowlib.wcs4dem.demquery import getDEMForBoundingBox
 from ecohydroworkflowlib.spatialdata.utils import resampleRaster
 from ecohydroworkflowlib.spatialdata.utils import getSpatialReferenceForRaster
@@ -96,6 +97,7 @@ parser.add_argument('-s', '--demResolution', dest='demResolution', required=Fals
 parser.add_argument('-t', '--t_srs', dest='t_srs', required=False, 
                     help='Target spatial reference system of output, in EPSG:num format')
 args = parser.parse_args()
+cmdline = " ".join(sys.argv[:])
 
 configFile = None
 if args.configfile:
@@ -153,7 +155,7 @@ else:
 
 # Get DEM from DEMExplorer
 tmpDEMFilename = "%s-TEMP.tif" % (outfile)
-returnCode = getDEMForBoundingBox(config, projectDir, tmpDEMFilename, bbox=bbox, srs=t_srs)
+(returnCode, demURL) = getDEMForBoundingBox(config, projectDir, tmpDEMFilename, bbox=bbox, srs=t_srs)
 assert(returnCode)
 tmpDEMFilepath = os.path.join(projectDir, tmpDEMFilename)
 
@@ -171,7 +173,6 @@ resampleRaster(config, projectDir, tmpDEMFilepath, demFilename, \
                trX=demResolutionX, trY=demResolutionY)
 
 # Write metadata
-GenericMetadata.writeManifestEntry(projectDir, "dem", demFilename)
 GenericMetadata.writeStudyAreaEntry(projectDir, "dem_res_x", demResolutionX)
 GenericMetadata.writeStudyAreaEntry(projectDir, "dem_res_y", demResolutionY)
 GenericMetadata.writeStudyAreaEntry(projectDir, "dem_srs", t_srs)
@@ -180,6 +181,19 @@ GenericMetadata.writeStudyAreaEntry(projectDir, "dem_srs", t_srs)
 (columns, rows) = getDimensionsForRaster(demFilepath)
 GenericMetadata.writeStudyAreaEntry(projectDir, "dem_columns", columns)
 GenericMetadata.writeStudyAreaEntry(projectDir, "dem_rows", rows)
+
+# Write provenance
+asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
+asset.name = 'dem'
+asset.dcIdentifier = demFilename
+asset.dcSource = demURL
+asset.dcTitle = 'Digital Elevation Model'
+asset.dcPublisher = 'GeoBrain'
+asset.dcDescription = cmdline
+asset.writeToMetadata(projectDir)
+
+# Write processing history
+GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)
 
 # Clean-up
 deleteGeoTiff(tmpDEMFilepath)

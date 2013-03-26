@@ -74,8 +74,8 @@ import argparse
 import ConfigParser
 
 from ecohydroworkflowlib.metadata import GenericMetadata
+from ecohydroworkflowlib.metadata import AssetProvenance
 from ecohydroworkflowlib.hydro1k import demtile
-#from ecohydroworkflowlib.hydro1k.demtile import getDEMForBoundingBox
 from ecohydroworkflowlib.spatialdata.utils import resampleRaster
 from ecohydroworkflowlib.spatialdata.utils import getSpatialReferenceForRaster
 from ecohydroworkflowlib.spatialdata.utils import getDimensionsForRaster
@@ -97,6 +97,7 @@ parser.add_argument('-s', '--demResolution', dest='demResolution', required=Fals
 parser.add_argument('-t', '--t_srs', dest='t_srs', required=False, 
                     help='Target spatial reference system of output, in EPSG:num format')
 args = parser.parse_args()
+cmdline = " ".join(sys.argv[:])
 
 configFile = None
 if args.configfile:
@@ -172,7 +173,6 @@ resampleRaster(config, projectDir, tmpDEMFilepath, demFilename, \
                trX=demResolutionX, trY=demResolutionY)
 
 # Write metadata
-GenericMetadata.writeManifestEntry(projectDir, "dem", demFilename)
 GenericMetadata.writeStudyAreaEntry(projectDir, "dem_res_x", demResolutionX)
 GenericMetadata.writeStudyAreaEntry(projectDir, "dem_res_y", demResolutionY)
 GenericMetadata.writeStudyAreaEntry(projectDir, "dem_srs", t_srs)
@@ -181,6 +181,20 @@ GenericMetadata.writeStudyAreaEntry(projectDir, "dem_srs", t_srs)
 (columns, rows) = getDimensionsForRaster(demFilepath)
 GenericMetadata.writeStudyAreaEntry(projectDir, "dem_columns", columns)
 GenericMetadata.writeStudyAreaEntry(projectDir, "dem_rows", rows)
+
+# Write provenance
+#GenericMetadata.writeManifestEntry(projectDir, "dem", demFilename)
+asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
+asset.name = 'dem'
+asset.dcIdentifier = demFilename
+asset.dcSource = 'http://eros.usgs.gov/#/Find_Data/Products_and_Data_Available/gtopo30/hydro/namerica'
+asset.dcTitle = 'Digital Elevation Model from HYDRO1k'
+asset.dcPublisher = 'USGS'
+asset.dcDescription = cmdline
+asset.writeToMetadata(projectDir)
+
+# Write processing history
+GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)
 
 # Clean-up
 deleteGeoTiff(tmpDEMFilepath)

@@ -51,6 +51,7 @@ GetBoundingboxFromStudyareaShapefile.py -p /path/to/project_dir
 @endcode
 """
 import os
+import sys
 import errno
 import argparse
 
@@ -64,6 +65,7 @@ parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
 parser.add_argument('-b', '--buffer', dest='buffer', required=False,
                     help='Number of WGS84 degrees by which to buffer the bounding box')
 args = parser.parse_args()
+cmdline = " ".join(sys.argv[:])
 
 if not os.access(args.projectDir, os.W_OK):
     raise IOError(errno.EACCES, "Unable to write to project directory %s" % \
@@ -87,3 +89,5 @@ if not os.access(shapefilePath, os.R_OK):
 bbox = getBoundingBoxForShapefile(shapefilePath, buffer=buffer)
 GenericMetadata.writeStudyAreaEntry(projectDir, "bbox_wgs84", "%f %f %f %f" % (bbox['minX'], bbox['minY'], bbox['maxX'], bbox['maxY']))
 
+# Write processing history
+GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)

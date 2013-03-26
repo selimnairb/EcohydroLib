@@ -87,6 +87,7 @@ parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
 parser.add_argument('-d', '--outdir', dest='outdir', required=False,
                     help='The name of the subdirectory within the project directory to write the climate data to.')
 args = parser.parse_args()
+cmdline = " ".join(sys.argv[:])
 
 configFile = None
 if args.configfile:
@@ -153,3 +154,6 @@ station.data = outFile
 #station.variables = [ClimatePointStation.VAR_TMIN, \
 #                    ClimatePointStation.VAR_TMAX]
 station.writeToMetadata(projectDir)
+
+# Write processing history
+GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)
