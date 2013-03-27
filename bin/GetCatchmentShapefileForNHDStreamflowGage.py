@@ -78,7 +78,7 @@ parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
 parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the catchment shapefile to be written.  File extension ".shp" will be added.  If a file of this name exists, program will silently exit.')
 args = parser.parse_args()
-cmdline = " ".join(sys.argv[:])
+cmdline = GenericMetadata.getCommandLine()
 
 configFile = None
 if args.configfile:

@@ -87,7 +87,7 @@ parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
 parser.add_argument('-d', '--outdir', dest='outdir', required=False,
                     help='The name of the subdirectory within the project directory to write the climate data to.')
 args = parser.parse_args()
-cmdline = " ".join(sys.argv[:])
+cmdline = GenericMetadata.getCommandLine()
 
 configFile = None
 if args.configfile:

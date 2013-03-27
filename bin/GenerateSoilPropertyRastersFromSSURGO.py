@@ -78,7 +78,7 @@ parser.add_argument('-i', '--configfile', dest='configfile', required=False,
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory to which metadata, intermediate, and final files should be saved')
 args = parser.parse_args()
-cmdline = " ".join(sys.argv[:])
+cmdline = GenericMetadata.getCommandLine()
 
 configFile = None
 if args.configfile:

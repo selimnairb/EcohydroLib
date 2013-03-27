@@ -351,6 +351,29 @@ class GenericMetadata:
         
         # Remove lock file
         os.unlink(lockFilepath)
+    
+    
+    @staticmethod
+    def getCommandLine():
+        """ Return string representing original command line, as close as possible,
+            used to run the command.  Will convert all paths in the command line to
+            absolute path, if a non-path element has spaces in it, they will be
+            quoted.
+            
+            @return String with each element of sys.argv separated by a space
+        """
+        import sys, os
+        cmdline = os.path.abspath(sys.argv[0]) + ' '
+        for elem in sys.argv[1:]:
+            if os.path.exists(elem):
+                cmdline += os.path.abspath(elem) + ' '
+            else:
+                if elem.find(' ') != -1:
+                    # If a non-path element has spaces in it, quote them
+                    cmdline += '"' + elem + '"' + ' '
+                else:
+                    cmdline += elem + ' '
+        return cmdline 
         
         
     @staticmethod

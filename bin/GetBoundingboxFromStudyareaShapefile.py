@@ -65,7 +65,7 @@ parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
 parser.add_argument('-b', '--buffer', dest='buffer', required=False,
                     help='Number of WGS84 degrees by which to buffer the bounding box')
 args = parser.parse_args()
-cmdline = " ".join(sys.argv[:])
+cmdline = GenericMetadata.getCommandLine()
 
 if not os.access(args.projectDir, os.W_OK):
     raise IOError(errno.EACCES, "Unable to write to project directory %s" % \

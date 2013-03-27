@@ -76,7 +76,7 @@ parser.add_argument('-f', '--outfile', dest='outfile', required=False,
 parser.add_argument('-b', '--basins', dest='basins', nargs='+', required=True,
                     help='HYDRO1k basins to extract')
 args = parser.parse_args()
-cmdline = " ".join(sys.argv[:])
+cmdline = GenericMetadata.getCommandLine()
 
 configFile = None
 if args.configfile:

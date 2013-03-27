@@ -95,7 +95,7 @@ parser.add_argument('--force', dest='force', required=False, action='store_true'
 parser.add_argument('-b', '--publisher', dest='publisher', required=False,
                     help="The publisher of the DEM, if not supplied 'SELF PUBLISHED' will be used")
 args = parser.parse_args()
-cmdline = " ".join(sys.argv[:])
+cmdline = GenericMetadata.getCommandLine()
 
 configFile = None
 if args.configfile:

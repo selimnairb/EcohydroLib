@@ -92,7 +92,7 @@ parser.add_argument('-f', '--outfile', dest='outfile', required=False,
 parser.add_argument('-b', '--publisher', dest='publisher', required=False,
                     help="The publisher of the stream flow gage location dataset, if not supplied 'SELF PUBLISHED' will be used")
 args = parser.parse_args()
-cmdline = " ".join(sys.argv[:])
+cmdline = GenericMetadata.getCommandLine()
 
 configFile = None
 if args.configfile:
