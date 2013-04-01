@@ -76,7 +76,7 @@ def findStationsWithinBoundingBox(config, bbox):
         @endcode 
     """
     stations = []
-    pattern = re.compile("^POINT\((-?\d+\.\d+) (-?\d+\.\d+)\)$")
+    pattern = re.compile("^POINT\((-?\d+\.?\d*) (-?\d+\.?\d*)\)$")
     
     ghcnDB = config.get('GHCND', 'PATH_OF_STATION_DB')
     

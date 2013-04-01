@@ -251,7 +251,7 @@ configuration file:
 		HYDRO1k_BAS_LAYER_NAME = na_bas_polygon
 		
 		[GHCND]
-		PATH_OF_STATION_DB = /Users/miles/Research/data/obs/NCDC/GHCND/GHCND.spatialite
+		PATH_OF_STATION_DB = /Users/<username>/Research/data/obs/NCDC/GHCND/GHCND.spatialite
 		
 		[UTIL]
 		PATH_OF_FIND = /usr/bin/find
