@@ -177,7 +177,7 @@ class TestMetadata(TestCase):
         
         
     def test_write_climate_point2(self):
-        """ Test case where there are separate data files for each variable """
+        """ Test case where there are separate data files for each variable and there are two climate stations """
         projectDir = "/tmp"
         station = ClimatePointStation()
         station.type = "GHCN"
@@ -193,6 +193,21 @@ class TestMetadata(TestCase):
         station.variablesData[ClimatePointStation.VAR_PRECIP] = ClimatePointStation.VAR_PRECIP + '.txt'
         station.variablesData[ClimatePointStation.VAR_SNOW] = ClimatePointStation.VAR_SNOW + '.txt'
         station.writeToMetadata(projectDir)
+        
+        station2 = ClimatePointStation()
+        station2.type = "GHCN"
+        station2.id = "US1MDBL4242"
+        station2.longitude = -42.716
+        station2.latitude = 42.317
+        station2.elevation = 42.0
+        station2.name = "My 42 station"
+        station2.startDate = datetime.strptime("199907", "%Y%m")
+        station2.endDate = datetime.strptime("200110", "%Y%m")
+        station2.variables = [ClimatePointStation.VAR_PRECIP, \
+                             ClimatePointStation.VAR_SNOW]
+        station2.variablesData[ClimatePointStation.VAR_PRECIP] = ClimatePointStation.VAR_PRECIP + '.txt'
+        station2.variablesData[ClimatePointStation.VAR_SNOW] = ClimatePointStation.VAR_SNOW + '.txt'
+        station2.writeToMetadata(projectDir)
         
         climatePointStation = GenericMetadata.readClimatePointStations(projectDir)[0]        
         self.assertTrue(station.type.lower() == climatePointStation.type)

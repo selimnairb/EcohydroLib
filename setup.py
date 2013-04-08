@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='ecohydroworkflowlib',
-      version='0.971',
+      version='0.972',
       description='Libraries and command-line scripts for performing ecohydrology data preparation workflows.',
       long_description=readme(),
       classifiers=[
@@ -39,8 +39,9 @@ setup(name='ecohydroworkflowlib',
       ],
       scripts=['bin/NHDPlusV2Setup/NHDPlusV2Setup.py',
                'bin/GHCNDSetup/GHCNDSetup.py',
-               'bin/GenerateSoilPropertyRastersFromSSURGO.py',
+               'bin/DumpClimateStationInfo.py',
                'bin/GenerateSoilPropertyRastersFromSOLIM.py',
+               'bin/GenerateSoilPropertyRastersFromSSURGO.py',
                'bin/GetBoundingboxFromStudyareaShapefile.py',
                'bin/GetCatchmentShapefileForHYDRO1kBasins.py',
                'bin/GetCatchmentShapefileForNHDStreamflowGage.py',

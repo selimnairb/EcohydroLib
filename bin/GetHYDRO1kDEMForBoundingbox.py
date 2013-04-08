@@ -66,6 +66,8 @@ or -i option must be specified.
 
 @note If option -t is not specified, UTM projection (WGS 84 coordinate system) will be inferred
 from bounding box center.
+
+@todo Debug case where t_srs is specified as NAD83, with unit degree, and 1000 is used as default DEM resolution
 """
 import os
 import sys
@@ -93,7 +95,7 @@ parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
 parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the DEM file to be written.  File extension ".tif" will be added.')
 parser.add_argument('-s', '--demResolution', dest='demResolution', required=False, nargs=2, type=float,
-                    help='Two floating point numbers representing the desired X and Y output resolution of soil property raster maps; unit: meters')
+                    help='Two floating point numbers representing the desired X and Y output resolution of soil property raster maps; unit: meters if SRS is UTM')
 parser.add_argument('-t', '--t_srs', dest='t_srs', required=False, 
                     help='Target spatial reference system of output, in EPSG:num format')
 args = parser.parse_args()

@@ -1,0 +1,28 @@
+1. Change version number in ecohydroworkflowlib/__init__.py
+
+2. Edit setup.py:
+	- Change version number to match that in ecohydroworkflowlib/__init__.py
+	- Make sure packages list is up to date
+	- Make sure install_requires is up to date
+	- Make sure scripts is up to date
+
+3. Update version number in Doxyfile
+	
+4. Remove old documentation: rm -rf docs/html
+
+5. Generate new documentation: doxygen
+
+6. Generate zip of new documentation: cd docs/html; zip -r ~/Desktop/ecohydrodocs.zip *
+
+7. Publish package to PyPi: sudo python setup.py register sdist upload
+
+8. Check on PyPi to make sure the new version is the only non-hidden version
+
+9. Upload new documentation to PyPi using web form
+
+10. Commit to git:
+
+11. Tag release in git: 
+
+12. Push to master git repository:  
+

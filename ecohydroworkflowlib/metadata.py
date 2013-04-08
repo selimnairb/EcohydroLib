@@ -32,6 +32,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 @author Brian Miles <brian_miles@unc.edu>
+
+@todo Refactor storage of climate station to embedded database
 """
 import os
 import time
@@ -154,8 +156,9 @@ class ClimatePointStation(MetadataEntity):
         """
         newInstance = ClimatePointStation()
         (newInstance.type, newInstance.id) = fqId.split(GenericMetadata.COMPOUND_KEY_SEP)
-        
+
         climate = GenericMetadata.readClimatePointEntries(projectDir)
+        
         keyProto = 'station' + GenericMetadata.COMPOUND_KEY_SEP + fqId + GenericMetadata.COMPOUND_KEY_SEP
         longitude = keyProto + 'longitude'
         newInstance.longitude = float(climate[longitude])
@@ -164,15 +167,24 @@ class ClimatePointStation(MetadataEntity):
         elevation = keyProto + 'elevation'
         newInstance.elevation = float(climate[elevation])
         name = keyProto + 'name'
-        newInstance.name = climate[name]
+        newInstance.name = climate[name]      
         startDate = keyProto + 'startdate'
-        newInstance.startDate = datetime.strptime(climate[startDate], ClimatePointStation.FMT_DATE)
-        endDate = keyProto + 'enddate'
-        newInstance.endDate = datetime.strptime(climate[endDate], ClimatePointStation.FMT_DATE)
-        variablesKey = keyProto + 'variables'
-        newInstance.variables = climate[variablesKey].split(GenericMetadata.VALUE_DELIM)
         try:
-            data = keyProto + 'data'
+            newInstance.startDate = datetime.strptime(climate[startDate], ClimatePointStation.FMT_DATE)
+        except KeyError:
+            pass    
+        endDate = keyProto + 'enddate'
+        try:
+            newInstance.endDate = datetime.strptime(climate[endDate], ClimatePointStation.FMT_DATE)
+        except KeyError:
+            pass
+        variablesKey = keyProto + 'variables'
+        try:
+            newInstance.variables = climate[variablesKey].split(GenericMetadata.VALUE_DELIM)
+        except KeyError:
+            pass
+        data = keyProto + 'data'
+        try:
             newInstance.data = climate[data]
         except KeyError:
             pass
@@ -182,7 +194,7 @@ class ClimatePointStation(MetadataEntity):
                 newInstance.variablesData[var] = climate[varKey]
         except KeyError:
             pass
-        
+       
         return newInstance
 
 
@@ -622,7 +634,7 @@ class GenericMetadata:
         stationObjects = []
         climatePoints = GenericMetadata.readClimatePointEntries(projectDir)
         try:
-            stations = [climatePoints['stations']]
+            stations = climatePoints['stations'].split(GenericMetadata.VALUE_DELIM)
             for station in stations:
                 stationObjects.append(ClimatePointStation.readFromMetadata(projectDir, station))
         except KeyError:
