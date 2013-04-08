@@ -20,9 +20,9 @@
 
 9. Upload new documentation to PyPi using web form
 
-10. Commit to git:
+10. Commit to git: git commit -a
 
-11. Tag release in git: 
+11. Tag release in git: git tag -a v0.9 -m 'Initial alpha release'
 
-12. Push to master git repository:  
+12. Push to master git repository: git push -u origin master --tags
 
