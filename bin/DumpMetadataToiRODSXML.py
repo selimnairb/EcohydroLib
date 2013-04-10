@@ -42,7 +42,7 @@ Pre conditions:
 
 Post conditions:
 ----------------
-2. A file named metadata.txt will be written to the specified project directory
+2. A file named metadata.xml will be written to the specified project directory
 
 Usage:
 @code
