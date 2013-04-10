@@ -64,6 +64,7 @@ python ./RegisterDEM.py -p /path/to/project_dir -d /demfile/to/register
 or -i option must be specified. 
 
 @todo Add targer SRS, if present, call GDAL warp instead of just copying the file
+@todo Set date in provenance to file modification date
 """
 import os
 import sys

@@ -65,6 +65,8 @@ python ./RegisterLandcover.py -p /path/to/project_dir -l /landcoverfile/to/regis
 
 @note If option -t is not specified, UTM projection (WGS 84 coordinate system) will be inferred
 from bounding box center.
+
+@todo Set date in provenance to file modification date
 """
 import os
 import sys
