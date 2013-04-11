@@ -6,7 +6,7 @@
 	- Make sure install_requires is up to date
 	- Make sure scripts is up to date
 
-3. Update version number in Doxyfile
+3. Update PROJECT_NUMBER in Doxyfile matches version in above.
 	
 4. Remove old documentation: rm -rf docs/html
 
