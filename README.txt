@@ -105,6 +105,11 @@ data for a given datatype (e.g. local LIDAR-based DEM).
 ![Fig. 1 Ecohydrology model data preparation workflow software stack depicting EcohydroWorkflowLib's role as an intermediary between raw data, derived data subsets, and specific ecohydrology models](RHESSysWorkflowImpl-20130318.png)
 
 
+Source code
+-----------
+Source code can be found at https://github.com/selimnairb/EcohydrologyWorkflowLib.
+
+
 Installation
 ------------
 Using easy_install:
