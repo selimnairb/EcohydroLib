@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='ecohydroworkflowlib',
-      version='0.973',
+      version='0.974',
       description='Libraries and command-line scripts for performing ecohydrology data preparation workflows.',
       long_description=readme(),
       classifiers=[
@@ -34,7 +34,6 @@ setup(name='ecohydroworkflowlib',
         'PySimpleSOAP',
         'OWSLib',
         'oset',
-        'pyspatialite==3.0.1',
         'httplib2'
       ],
       scripts=['bin/NHDPlusV2Setup/NHDPlusV2Setup.py',

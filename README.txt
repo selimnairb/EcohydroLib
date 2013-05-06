@@ -126,8 +126,12 @@ distinct from where the Python package will be installed.  This is
 accomplished by specifying the --script-dir option to easy install
 (see above).
 
-Note, pyspatialite 3.0.1, a required package, currently fails to build
-under easy_install/pip.  The workaround, for now, is to:
+Note, pyspatialite 3.0.1, needed for GHCNDSetup.py and 
+GetGHCNDailyClimateData*.py, currently fails to build under easy_install/pip.
+Until this is fixed by the pyspatialite developer, I have removed
+pyspatialite from the dependency list.  If you need to use GNCHD data, you
+can install pyspatialite manually using the following steps (this can be
+done before or after installing ecohydroworkflowlib):
 - Manually download pyspatialite here:
   https://pypi.python.org/pypi/pyspatialite/3.0.1 
 - Apply the following patch to pyspatialite's setup.py:
@@ -146,13 +150,14 @@ Libraries (with headers):
 
 Binaries:
 - GDAL/OGR (throughout)
-- Seven Zip (NHDPlusV2Setup.py)
-- SQLite3, with Spatialite (NHDPlusV2Setup.py)
-- Unix find (NHDPlusV2Setup.py)
+- SQLite3 (throughout)
+- Seven Zip (if using NHDPlus)
+- Spatialite (if using GHCNDSetup.py/GetGHCNDailyClimateData*.py)
+- Unix find (if using NHDPlus)
 
 
-Required data
--------------
+Data stored locally
+-------------------
 - NLCD 2006 raster (http://www.mrlc.gov/nlcd06_data.php)
 - HYDRO1k North America dataset (http://eros.usgs.gov/#/Find_Data/Products_and_Data_Available/gtopo30/hydro/namerica)
 - NHDPlus V2 dataset (http://www.horizon-systems.com/NHDPlus/NHDPlusV2_home.php)
@@ -160,12 +165,12 @@ Required data
 
 NHDPlus V2 database setup
 -------------------------
-Before EcohydrologyWorkflowLib is able to extract study area ROI, it
-is necessary to download and build a custom SQLite3-based
-implementation of the NHDPlus V2 dataset.  A script for building the
-dataset from downloaded NHDPlus V2 7z archives is provided in
-bin/NHDPlusV2Setup/NHDPlusV2Setup.py.  The following NHDPlus V2
-datasets are required:
+Before EcohydrologyWorkflowLib is able to extract study area ROI
+using the NHDPlus dataset, it is necessary to download and build a 
+custom SQLite3-based implementation of the NHDPlus V2 dataset.  A 
+script for building the dataset from downloaded NHDPlus V2 7z 
+archives is provided in bin/NHDPlusV2Setup/NHDPlusV2Setup.py.  
+The following NHDPlus V2 datasets are required:
 
 - NHDPlusV21_NationalData_GageInfo_02.7z
 - NHDPlusV21_NationalData_GageLoc_01.7z
