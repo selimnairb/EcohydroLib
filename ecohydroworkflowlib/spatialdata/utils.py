@@ -589,8 +589,6 @@ def getSpatialReferenceForRaster(filename):
     hDataset = gdal.Open(filename, gdal.GA_ReadOnly)
 
     if hDataset is not None:
-        # Breaks under some versions of GDAL?
-        #adfGeoTransform = hDataset.GetGeoTransform(can_return_null=True)
         adfGeoTransform = hDataset.GetGeoTransform()
         if adfGeoTransform is not None:
             pixelWidth = abs(adfGeoTransform[1])
