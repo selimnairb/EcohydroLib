@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """@package DumpMetadataToiRODSXML
 
-@brief Dump EcohydroWorkflowLib metadata to iRODS XML metadata import format
+@brief Dump EcohydroLib metadata to iRODS XML metadata import format
 
 This software is provided free of charge under the New BSD License. Please see
 the following license information:
@@ -55,8 +55,9 @@ import errno
 import argparse
 from xml.sax.saxutils import escape
 
-from ecohydroworkflowlib.metadata import GenericMetadata
-from ecohydroworkflowlib.metadata import AssetProvenance
+from ecohydrolib.context import Context
+from ecohydrolib.metadata import GenericMetadata
+from ecohydrolib.metadata import AssetProvenance
 
 
 PATH_SEP_IRODS = '/'
@@ -102,38 +103,40 @@ def writeDictToXMLFile(outfile, target, dict):
         outfile.write('\t</AVU>\n')
 
 
-parser = argparse.ArgumentParser(description='Dump point climate station information from EcohydroWorkflowLib metadata to standard output')
+parser = argparse.ArgumentParser(description='Dump point climate station information from EcohydroLib metadata to standard output')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory from which metadata should be read')
 parser.add_argument('-c', '--collection', dest='collection', required=True,
                     help='The iRODS collection corresponding to the project directory')
 args = parser.parse_args()
 
-if not os.access(args.projectDir, os.W_OK):
-    raise IOError(errno.EACCES, "Unable to write to project directory %s" % \
-                  (args.projectDir,))
-projectDir = os.path.abspath(args.projectDir)
+#if not os.access(args.projectDir, os.W_OK):
+#    raise IOError(errno.EACCES, "Unable to write to project directory %s" % \
+#                  (args.projectDir,))
+#projectDir = os.path.abspath(args.projectDir)
+
+context = Context(args.projectDir, None) 
 
 # Make sure there's no trailing PATH_SEP_IRODS on the collection
 collection = args.collection.rstrip(PATH_SEP_IRODS)
 
-outfilePath = os.path.join(projectDir, OUTFILE_NAME)
+outfilePath = os.path.join(context.projectDir, OUTFILE_NAME)
 outfile = codecs.getwriter('utf-8')(open(outfilePath, 'w')) 
 outfile.write('<?xml version="1.0" encoding="UTF-8" ?>\n')
 outfile.write('<metadata>\n')
 
 # Write study area metadata to collection root
-writeDictToXMLFile(outfile,  collection, GenericMetadata.readStudyAreaEntries(projectDir))
+writeDictToXMLFile(outfile,  collection, GenericMetadata.readStudyAreaEntries(context))
 
 # Write processing history to collection root
-history = GenericMetadata.getProcessingHistoryList(projectDir)
+history = GenericMetadata.getProcessingHistoryList(context)
 i = 1
 for entry in history:
     attribute = "processing_step_%d" % (i,); i += 1
     writeAVUToXMLFile(outfile, collection, attribute, entry)
 
 # Write provenance to each item in the manifest
-provenance = GenericMetadata.readAssetProvenanceObjects(projectDir)
+provenance = GenericMetadata.readAssetProvenanceObjects(context)
 for entry in provenance:
     target = collection + PATH_SEP_IRODS + entry.dcIdentifier
     writeAVUToXMLFile(outfile, target, 'name', entry.name)
@@ -144,7 +147,7 @@ for entry in provenance:
     writeAVUToXMLFile(outfile, target, 'dc.description', entry.dcDescription)
     
 # Write point climate station metadata to the data file for that station
-stations = GenericMetadata.readClimatePointStations(projectDir)
+stations = GenericMetadata.readClimatePointStations(context)
 for station in stations:
     target = collection + PATH_SEP_IRODS + station.data
     writeAVUToXMLFile(outfile, target, 'id', station.id)

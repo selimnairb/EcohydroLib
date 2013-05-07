@@ -61,7 +61,7 @@ Usage:
 python ./GetNLCDForBoundingbox.py -p /path/to/project_dir
 @endcode
 
-@note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
+@note EcohydroLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
 or -i option must be specified. 
 
 @todo Buffer bounding box to ensure full coverage with valid NLCD data
@@ -72,11 +72,12 @@ import errno
 import argparse
 import ConfigParser
 
-from ecohydroworkflowlib.metadata import GenericMetadata
-from ecohydroworkflowlib.metadata import AssetProvenance
-from ecohydroworkflowlib.spatialdata.utils import extractTileFromRaster
-from ecohydroworkflowlib.spatialdata.utils import resampleRaster
-from ecohydroworkflowlib.spatialdata.utils import deleteGeoTiff
+from ecohydrolib.context import Context
+from ecohydrolib.metadata import GenericMetadata
+from ecohydrolib.metadata import AssetProvenance
+from ecohydrolib.spatialdata.utils import extractTileFromRaster
+from ecohydrolib.spatialdata.utils import resampleRaster
+from ecohydrolib.spatialdata.utils import deleteGeoTiff
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get NLCD data (in GeoTIFF format) for a bounding box from a local copy of the entire NLCD 2006 dataset.')
@@ -92,44 +93,46 @@ cmdline = GenericMetadata.getCommandLine()
 configFile = None
 if args.configfile:
     configFile = args.configfile
-else:
-    try:
-        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
-    except KeyError:
-        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
-if not os.access(configFile, os.R_OK):
-    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-                  configFile)
-config = ConfigParser.RawConfigParser()
-config.read(configFile)
+#else:
+#    try:
+#        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
+#    except KeyError:
+#        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
+#if not os.access(configFile, os.R_OK):
+#    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
+#                  configFile)
+#config = ConfigParser.RawConfigParser()
+#config.read(configFile)
 
-if not config.has_option('GDAL/OGR', 'PATH_OF_GDAL_TRANSLATE'):
+context = Context(args.projectDir, configFile) 
+
+if not context.config.has_option('GDAL/OGR', 'PATH_OF_GDAL_TRANSLATE'):
     sys.exit("Config file %s does not define option %s in section %s" & \
           (args.configfile, 'GDAL/OGR', 'PATH_OF_GDAL_TRANSLATE'))
 
-if args.projectDir:
-    projectDir = args.projectDir
-else:
-    projectDir = os.getcwd()
-if not os.path.isdir(projectDir):
-    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
-if not os.access(projectDir, os.W_OK):
-    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
-                  projectDir)
-projectDir = os.path.abspath(projectDir)
+#if args.projectDir:
+#    projectDir = args.projectDir
+#else:
+#    projectDir = os.getcwd()
+#if not os.path.isdir(projectDir):
+#    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
+#if not os.access(projectDir, os.W_OK):
+#    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
+#                  projectDir)
+#projectDir = os.path.abspath(projectDir)
 
 if args.outfile:
     outfile = args.outfile
 else:
     outfile = "NLCD"
 
-nlcdRaster = config.get('NLCD', 'PATH_OF_NLCD2006')
+nlcdRaster = context.config.get('NLCD', 'PATH_OF_NLCD2006')
 if not os.access(nlcdRaster, os.R_OK):
     raise IOError(errno.EACCES, "Not allowed to read NLCD raster %s" % (nlcdRaster,))
 nlcdRaster = os.path.abspath(nlcdRaster)
 
 # Get study area parameters
-studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
+studyArea = GenericMetadata.readStudyAreaEntries(context)
 bbox = studyArea['bbox_wgs84'].split()
 bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
 outputrasterresolutionX = studyArea['dem_res_x']
@@ -138,18 +141,18 @@ srs = studyArea['dem_srs']
 
 # Get tile from NLCD raster
 tmpTileFilename = "%s-TEMP.tif" % (outfile)
-extractTileFromRaster(config, projectDir, nlcdRaster, tmpTileFilename, bbox)
+extractTileFromRaster(context.config, context.projectDir, nlcdRaster, tmpTileFilename, bbox)
 
-tmpTileFilepath = os.path.join(projectDir, tmpTileFilename)
+tmpTileFilepath = os.path.join(context.projectDir, tmpTileFilename)
 # Resample NLCD to target srs and resolution
 tileFilename = "%s.tif" % (outfile)
-resampleRaster(config, projectDir, tmpTileFilepath, tileFilename, \
+resampleRaster(context.config, context.projectDir, tmpTileFilepath, tileFilename, \
             s_srs=None, t_srs=srs, \
             trX=outputrasterresolutionX, trY=outputrasterresolutionY, \
             resampleMethod='near')
 
 # Write metadata
-GenericMetadata.writeStudyAreaEntry(projectDir, "landcover_type", "NLCD2006")
+GenericMetadata.writeStudyAreaEntry(context, "landcover_type", "NLCD2006")
 
 # Write provenance
 asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
@@ -159,10 +162,10 @@ asset.dcSource = 'http://gisdata.usgs.gov/TDDS/DownloadFile.php?TYPE=nlcd2006&FN
 asset.dcTitle = 'The National Landcover Database 2006'
 asset.dcPublisher = 'USGS'
 asset.dcDescription = cmdline
-asset.writeToMetadata(projectDir)
+asset.writeToMetadata(context)
 
 # Write processing history
-GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)
+GenericMetadata.appendProcessingHistoryItem(context, cmdline)
 
 # Clean-up
 deleteGeoTiff(tmpTileFilepath)

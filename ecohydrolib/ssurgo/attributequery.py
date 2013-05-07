@@ -1,4 +1,4 @@
-"""@package ecohydroworkflowlib.ssurgo.attributequery
+"""@package ecohydrolib.ssurgo.attributequery
     
 @brief Make tabular queries against USDA Soil Data Mart SOAP web service interface
 @note Requires python-httplib2 to be installed, else requests to soil data mart may timeout

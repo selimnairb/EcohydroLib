@@ -55,8 +55,9 @@ import sys
 import errno
 import argparse
 
-from ecohydroworkflowlib.metadata import GenericMetadata
-from ecohydroworkflowlib.spatialdata.utils import getBoundingBoxForShapefile
+from ecohydrolib.context import Context
+from ecohydrolib.metadata import GenericMetadata
+from ecohydrolib.spatialdata.utils import getBoundingBoxForShapefile
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get bounding box from study area shapefile')
@@ -67,27 +68,29 @@ parser.add_argument('-b', '--buffer', dest='buffer', required=False,
 args = parser.parse_args()
 cmdline = GenericMetadata.getCommandLine()
 
-if not os.access(args.projectDir, os.W_OK):
-    raise IOError(errno.EACCES, "Unable to write to project directory %s" % \
-                  (args.projectDir,))
-projectDir = os.path.abspath(args.projectDir)
+context = Context(args.projectDir, None)
+
+#if not os.access(args.projectDir, os.W_OK):
+#    raise IOError(errno.EACCES, "Unable to write to project directory %s" % \
+#                  (args.projectDir,))
+#projectDir = os.path.abspath(args.projectDir)
 
 buffer = 0.01
 if args.buffer:
     buffer = float(args.buffer)
 
 # Get name of study area shapefile
-manifest = GenericMetadata.readManifestEntries(projectDir)
+manifest = GenericMetadata.readManifestEntries(context)
 shapefileName = manifest['study_area_shapefile']
 
-shapefilePath = os.path.join(projectDir, shapefileName)
+shapefilePath = os.path.join(context.projectDir, shapefileName)
 if not os.access(shapefilePath, os.R_OK):
     raise IOError(errno.EACCES, "Unable to read shapefile %s" %
                   args.shapefile)
 
 # Get bounding box, buffer by about 1 km
 bbox = getBoundingBoxForShapefile(shapefilePath, buffer=buffer)
-GenericMetadata.writeStudyAreaEntry(projectDir, "bbox_wgs84", "%f %f %f %f" % (bbox['minX'], bbox['minY'], bbox['maxX'], bbox['maxY']))
+GenericMetadata.writeStudyAreaEntry(context, "bbox_wgs84", "%f %f %f %f" % (bbox['minX'], bbox['minY'], bbox['maxX'], bbox['maxY']))
 
 # Write processing history
-GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)
+GenericMetadata.appendProcessingHistoryItem(context, cmdline)

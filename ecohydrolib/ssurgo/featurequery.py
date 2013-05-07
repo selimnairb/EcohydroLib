@@ -1,4 +1,4 @@
-"""@package ecohydroworkflowlib.ssurgo.featurequery
+"""@package ecohydrolib.ssurgo.featurequery
     
 @brief Make feature queries against USDA Soil Data Mart OGC web service interface
 
@@ -40,8 +40,8 @@ import xml.sax
 
 from owslib.wfs import WebFeatureService
 
-from ecohydroworkflowlib.spatialdata.utils import calculateBoundingBoxAreaSqMeters
-from ecohydroworkflowlib.spatialdata.utils import tileBoundingBox
+from ecohydrolib.spatialdata.utils import calculateBoundingBoxAreaSqMeters
+from ecohydrolib.spatialdata.utils import tileBoundingBox
 from attributequery import getParentMatKsatTexturePercentClaySiltSandForComponentsInMUKEYs
 from attributequery import computeWeightedAverageKsatClaySandSilt
 from attributequery import joinSSURGOAttributesToFeaturesByMUKEY

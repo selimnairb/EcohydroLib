@@ -60,7 +60,7 @@ Usage:
 python ./RegisterDEM.py -p /path/to/project_dir -d /demfile/to/register
 @endcode
 
-@note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
+@note EcohydroLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
 or -i option must be specified. 
 
 @todo Add targer SRS, if present, call GDAL warp instead of just copying the file
@@ -72,13 +72,14 @@ import errno
 import argparse
 import ConfigParser
 
-from ecohydroworkflowlib.metadata import GenericMetadata
-from ecohydroworkflowlib.metadata import AssetProvenance
-from ecohydroworkflowlib.spatialdata.utils import copyRasterToGeoTIFF
-from ecohydroworkflowlib.spatialdata.utils import getDimensionsForRaster
-from ecohydroworkflowlib.spatialdata.utils import getSpatialReferenceForRaster
-from ecohydroworkflowlib.spatialdata.utils import getBoundingBoxForRaster
-from ecohydroworkflowlib.spatialdata.utils import writeBboxPolygonToShapefile
+from ecohydrolib.context import Context
+from ecohydrolib.metadata import GenericMetadata
+from ecohydrolib.metadata import AssetProvenance
+from ecohydrolib.spatialdata.utils import copyRasterToGeoTIFF
+from ecohydrolib.spatialdata.utils import getDimensionsForRaster
+from ecohydrolib.spatialdata.utils import getSpatialReferenceForRaster
+from ecohydrolib.spatialdata.utils import getBoundingBoxForRaster
+from ecohydrolib.spatialdata.utils import writeBboxPolygonToShapefile
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Register DEM with project')
@@ -98,31 +99,33 @@ cmdline = GenericMetadata.getCommandLine()
 configFile = None
 if args.configfile:
     configFile = args.configfile
-else:
-    try:
-        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
-    except KeyError:
-        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
-if not os.access(configFile, os.R_OK):
-    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-                  configFile)
-config = ConfigParser.RawConfigParser()
-config.read(configFile)
+#else:
+#    try:
+#        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
+#    except KeyError:
+#        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
+#if not os.access(configFile, os.R_OK):
+#    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
+#                  configFile)
+#config = ConfigParser.RawConfigParser()
+#config.read(configFile)
 
-if not config.has_option('GDAL/OGR', 'PATH_OF_GDAL_WARP'):
+context = Context(args.projectDir, configFile) 
+
+if not context.config.has_option('GDAL/OGR', 'PATH_OF_GDAL_WARP'):
     sys.exit("Config file %s does not define option %s in section %s" & \
           (args.configfile, 'GDAL/OGR', 'PATH_OF_GDAL_WARP'))
 
-if args.projectDir:
-    projectDir = args.projectDir
-else:
-    projectDir = os.getcwd()
-if not os.path.isdir(projectDir):
-    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
-if not os.access(projectDir, os.W_OK):
-    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
-                  projectDir)
-projectDir = os.path.abspath(projectDir)
+#if args.projectDir:
+#    projectDir = args.projectDir
+#else:
+#    projectDir = os.getcwd()
+#if not os.path.isdir(projectDir):
+#    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
+#if not os.access(projectDir, os.W_OK):
+#    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
+#                  projectDir)
+#projectDir = os.path.abspath(projectDir)
 
 if not os.access(args.demfile, os.R_OK):
     raise IOError(errno.EACCES, "Not allowed to read input DEM %s" (args.demfile,))
@@ -140,31 +143,31 @@ else:
 
 demFilename = "%s%stif" % (outfile, os.extsep)
 # Overwrite DEM if already present
-demFilepath = os.path.join(projectDir, demFilename)
+demFilepath = os.path.join(context.projectDir, demFilename)
 if os.path.exists(demFilepath):
     os.unlink(demFilepath)
 
 # Copy the raster in to the project directory
-copyRasterToGeoTIFF(config, projectDir, inDEMPath, demFilename)
+copyRasterToGeoTIFF(context.config, context.projectDir, inDEMPath, demFilename)
 # Get the bounding box for the DEM
 bbox = getBoundingBoxForRaster(demFilepath)
 # Write a shapefile for the bounding box
-shpFilename = writeBboxPolygonToShapefile(bbox, projectDir, "studyarea")
+shpFilename = writeBboxPolygonToShapefile(bbox, context.projectDir, "studyarea")
 
 # Write metadata
-GenericMetadata.writeStudyAreaEntry(projectDir, "bbox_wgs84", "%f %f %f %f" % (bbox['minX'], bbox['minY'], bbox['maxX'], bbox['maxY']))
+GenericMetadata.writeStudyAreaEntry(context, "bbox_wgs84", "%f %f %f %f" % (bbox['minX'], bbox['minY'], bbox['maxX'], bbox['maxY']))
 
 # Get spatial metadata for DEM
 demSpatialMetadata = getSpatialReferenceForRaster(demFilepath)
-GenericMetadata.writeStudyAreaEntry(projectDir, "dem_res_x", demSpatialMetadata[0])
-GenericMetadata.writeStudyAreaEntry(projectDir, "dem_res_y", demSpatialMetadata[1])
-GenericMetadata.writeStudyAreaEntry(projectDir, "dem_srs", demSpatialMetadata[5])
+GenericMetadata.writeStudyAreaEntry(context, "dem_res_x", demSpatialMetadata[0])
+GenericMetadata.writeStudyAreaEntry(context, "dem_res_y", demSpatialMetadata[1])
+GenericMetadata.writeStudyAreaEntry(context, "dem_srs", demSpatialMetadata[5])
 
 # Get rows and columns for DEM
-demFilepath = os.path.join(projectDir, demFilename)
+demFilepath = os.path.join(context.projectDir, demFilename)
 (columns, rows) = getDimensionsForRaster(demFilepath)
-GenericMetadata.writeStudyAreaEntry(projectDir, "dem_columns", columns)
-GenericMetadata.writeStudyAreaEntry(projectDir, "dem_rows", rows)
+GenericMetadata.writeStudyAreaEntry(context, "dem_columns", columns)
+GenericMetadata.writeStudyAreaEntry(context, "dem_rows", rows)
 
 # Write provenance
 inputDEMURL = "file://%s" % (inDEMPath,)
@@ -175,7 +178,7 @@ asset.dcSource = inputDEMURL
 asset.dcTitle = 'Digital Elevation Model'
 asset.dcPublisher = publisher
 asset.dcDescription = cmdline
-asset.writeToMetadata(projectDir)
+asset.writeToMetadata(context)
 
 asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
 asset.name = 'study_area_shapefile'
@@ -184,7 +187,7 @@ asset.dcSource = inputDEMURL
 asset.dcTitle = 'Study area shapefile'
 asset.dcPublisher = publisher
 asset.dcDescription = cmdline
-asset.writeToMetadata(projectDir)
+asset.writeToMetadata(context)
 
 # Write processing history
-GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)
+GenericMetadata.appendProcessingHistoryItem(context, cmdline)

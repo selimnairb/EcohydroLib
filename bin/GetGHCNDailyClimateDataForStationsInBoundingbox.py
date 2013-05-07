@@ -60,7 +60,7 @@ Usage:
 GetGHCNDailyClimateDataForStationsInBoundingbox.py -p /path/to/project_dir
 @endcode
 
-@note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
+@note EcohydroLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
 or -i option must be specified. 
 
 @todo parse data files to determine start date, start time, and variables
@@ -72,11 +72,12 @@ import argparse
 import ConfigParser
 from datetime import datetime
 
-from ecohydroworkflowlib.metadata import GenericMetadata
-from ecohydroworkflowlib.metadata import ClimatePointStation
-#from ecohydroworkflowlib.spatialdata.utils import calculateBoundingBoxCenter
-from ecohydroworkflowlib.climatedata.ghcndquery import findStationsWithinBoundingBox
-from ecohydroworkflowlib.climatedata.ghcndquery import getClimateDataForStation
+from ecohydrolib.context import Context
+from ecohydrolib.metadata import GenericMetadata
+from ecohydrolib.metadata import ClimatePointStation
+#from ecohydrolib.spatialdata.utils import calculateBoundingBoxCenter
+from ecohydrolib.climatedata.ghcndquery import findStationsWithinBoundingBox
+from ecohydrolib.climatedata.ghcndquery import getClimateDataForStation
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Query NCDC archive for climate data for all Global Historical Climatology Network stations in the study area bounding box.')
@@ -92,52 +93,54 @@ cmdline = GenericMetadata.getCommandLine()
 configFile = None
 if args.configfile:
     configFile = args.configfile
-else:
-    try:
-        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
-    except KeyError:
-        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
-if not os.access(configFile, os.R_OK):
-    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-                  configFile)
-config = ConfigParser.RawConfigParser()
-config.read(configFile)
+#else:
+#    try:
+#        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
+#    except KeyError:
+#        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
+#if not os.access(configFile, os.R_OK):
+#    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
+#                  configFile)
+#config = ConfigParser.RawConfigParser()
+#config.read(configFile)
 
-if not config.has_option('GHCND', 'PATH_OF_STATION_DB'):
+context = Context(args.projectDir, configFile) 
+
+if not context.config.has_option('GHCND', 'PATH_OF_STATION_DB'):
     sys.exit("Config file %s does not define option %s in section %s" % \
           (configFile, 'PATH_OF_STATION_DB', 'GHCND'))
 
-if args.projectDir:
-    projectDir = args.projectDir
-else:
-    projectDir = os.getcwd()
-if not os.path.isdir(projectDir):
-    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
-if not os.access(projectDir, os.W_OK):
-    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
-                  projectDir)
-projectDir = os.path.abspath(projectDir)
+#if args.projectDir:
+#    projectDir = args.projectDir
+#else:
+#    projectDir = os.getcwd()
+#if not os.path.isdir(projectDir):
+#    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
+#if not os.access(projectDir, os.W_OK):
+#    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
+#                  projectDir)
+#projectDir = os.path.abspath(projectDir)
 
 if args.outdir:
     outDir = args.outdir
 else:
     outDir = 'climate'
-outDirPath = os.path.join(projectDir, outDir)
+outDirPath = os.path.join(context.projectDir, outDir)
 if not os.path.exists(outDirPath):
     os.mkdir(outDirPath)
 
 # Get study area parameters
-studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
+studyArea = GenericMetadata.readStudyAreaEntries(context)
 bbox = studyArea['bbox_wgs84'].split()
 bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
 
 # Find all GHCN stations within bounding box
-stations = findStationsWithinBoundingBox(config, bbox)
+stations = findStationsWithinBoundingBox(context.config, bbox)
 print "Found %d stations in bounding box, downloading data..." % (len(stations))
 # Get data for each station
 for station in stations:
     outFile = os.path.join(outDir, station[0])
-    returnCode = getClimateDataForStation(config, projectDir, outFile, station[0])
+    returnCode = getClimateDataForStation(context.config, context.projectDir, outFile, station[0])
     assert(returnCode)
     
     # Write metadata
@@ -153,7 +156,7 @@ for station in stations:
     #newStation.endDate = datetime.strptime("200101", "%Y%m")
     #newStation.variables = [ClimatePointStation.VAR_TMIN, \
     #                    ClimatePointStation.VAR_TMAX]
-    newStation.writeToMetadata(projectDir)
+    newStation.writeToMetadata(context)
     
 # Write processing history
-GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)
+GenericMetadata.appendProcessingHistoryItem(context, cmdline)

@@ -74,12 +74,13 @@ import errno
 import argparse
 import ConfigParser
 
-from ecohydroworkflowlib.metadata import GenericMetadata
-from ecohydroworkflowlib.metadata import AssetProvenance
-from ecohydroworkflowlib.spatialdata.utils import copyRasterToGeoTIFF
-from ecohydroworkflowlib.spatialdata.utils import resampleRaster
-from ecohydroworkflowlib.spatialdata.utils import getDimensionsForRaster
-from ecohydroworkflowlib.spatialdata.utils import getSpatialReferenceForRaster
+from ecohydrolib.context import Context
+from ecohydrolib.metadata import GenericMetadata
+from ecohydrolib.metadata import AssetProvenance
+from ecohydrolib.spatialdata.utils import copyRasterToGeoTIFF
+from ecohydrolib.spatialdata.utils import resampleRaster
+from ecohydrolib.spatialdata.utils import getDimensionsForRaster
+from ecohydrolib.spatialdata.utils import getSpatialReferenceForRaster
 
 
 # Handle command line options
@@ -102,35 +103,37 @@ cmdline = GenericMetadata.getCommandLine()
 configFile = None
 if args.configfile:
     configFile = args.configfile
-else:
-    try:
-        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
-    except KeyError:
-        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
-if not os.access(configFile, os.R_OK):
-    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-                  configFile)
-config = ConfigParser.RawConfigParser()
-config.read(configFile)
+#else:
+#    try:
+#        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
+#    except KeyError:
+#        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
+#if not os.access(configFile, os.R_OK):
+#    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
+#                  configFile)
+#config = ConfigParser.RawConfigParser()
+#config.read(configFile)
 
-if not config.has_option('GDAL/OGR', 'PATH_OF_GDAL_WARP'):
+context = Context(args.projectDir, configFile) 
+
+if not context.config.has_option('GDAL/OGR', 'PATH_OF_GDAL_WARP'):
     sys.exit("Config file %s does not define option %s in section %s" & \
           (args.configfile, 'GDAL/OGR', 'PATH_OF_GDAL_WARP'))
     
-if not config.has_option('GDAL/OGR', 'PATH_OF_GDAL_TRANSLATE'):
+if not context.config.has_option('GDAL/OGR', 'PATH_OF_GDAL_TRANSLATE'):
     sys.exit("Config file %s does not define option %s in section %s" & \
           (args.configfile, 'GDAL/OGR', 'PATH_OF_GDAL_TRANSLATE'))
 
-if args.projectDir:
-    projectDir = args.projectDir
-else:
-    projectDir = os.getcwd()
-if not os.path.isdir(projectDir):
-    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
-if not os.access(projectDir, os.W_OK):
-    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
-                  projectDir)
-projectDir = os.path.abspath(projectDir)
+#if args.projectDir:
+#    projectDir = args.projectDir
+#else:
+#    projectDir = os.getcwd()
+#if not os.path.isdir(projectDir):
+#    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
+#if not os.access(projectDir, os.W_OK):
+#    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
+#                  projectDir)
+#projectDir = os.path.abspath(projectDir)
 
 if not os.access(args.landcoverfile, os.R_OK):
     raise IOError(errno.EACCES, "Not allowed to read input landcover raster %s" %
@@ -152,7 +155,7 @@ if args.force:
     force = True
 
 # Get study area parameters
-studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
+studyArea = GenericMetadata.readStudyAreaEntries(context)
 bbox = studyArea['bbox_wgs84'].split()
 bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
 demResolutionX = studyArea['dem_res_x']
@@ -163,7 +166,7 @@ srs = studyArea['dem_srs']
 
 landcoverFilename = "%s%stif" % (outfile, os.extsep)
 # Overwrite DEM if already present
-landcoverFilepath = os.path.join(projectDir, landcoverFilename)
+landcoverFilepath = os.path.join(context.projectDir, landcoverFilename)
 if os.path.exists(landcoverFilepath):
     os.unlink(landcoverFilepath)
 
@@ -174,13 +177,13 @@ lcX = lcMetadata[0]
 lcY = lcMetadata[1]
 if (lcSrs != srs) or (lcX != demResolutionX) or (lcY != demResolutionY):
     # Reproject raster, copying into project directory in the process
-    resampleRaster(config, projectDir, inLandcoverPath, landcoverFilepath, \
+    resampleRaster(context.config, context.projectDir, inLandcoverPath, landcoverFilepath, \
                    s_srs=lcSrs, t_srs=srs, \
                    trX=demResolutionX, trY=demResolutionY, \
                    resampleMethod='near')
 else:
     # Copy the raster in to the project directory
-    copyRasterToGeoTIFF(config, projectDir, inLandcoverPath, landcoverFilename)
+    copyRasterToGeoTIFF(context.config, context.projectDir, inLandcoverPath, landcoverFilename)
 
 # Make sure extent of resampled raster is the same as the extent of the DEM
 newLcMetadata = getDimensionsForRaster(landcoverFilepath)
@@ -190,10 +193,10 @@ if not force and ( (newLcMetadata[0] != demColumns) or (newLcMetadata[1] != demR
     # Extents to not match, roll back and bail out
     os.unlink(landcoverFilepath)
     sys.exit("Extent of landcover dataset %s does not match extent of DEM in project directory %s. Use --force to override." %
-             (landcoverFilename, projectDir))
+             (landcoverFilename, context.projectDir))
 
 # Write metadata
-GenericMetadata.writeStudyAreaEntry(projectDir, "landcover_type", "custom")
+GenericMetadata.writeStudyAreaEntry(context, "landcover_type", "custom")
 
 # Write provenance
 #GenericMetadata.writeManifestEntry(projectDir, "landcover", landcoverFilename)
@@ -204,8 +207,8 @@ asset.dcSource = "file://%s" % (inLandcoverPath,)
 asset.dcTitle = 'Landcover Dataset'
 asset.dcPublisher = publisher
 asset.dcDescription = cmdline
-asset.writeToMetadata(projectDir)
+asset.writeToMetadata(context)
 
 # Write processing history
-GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)
+GenericMetadata.appendProcessingHistoryItem(context, cmdline)
 

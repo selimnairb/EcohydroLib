@@ -1,4 +1,4 @@
-from ecohydroworkflowlib.spatialdata.utils import writeCoordinatePairsToPointShapefile
+from ecohydrolib.spatialdata.utils import writeCoordinatePairsToPointShapefile
 out = "/Users/miles/Dropbox/EarthCube-Multilayered/RHESSys-workflow/scratchspace"
 layer = "DR5_gage"
 idAttr = "gage_id"

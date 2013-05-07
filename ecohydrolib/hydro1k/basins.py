@@ -1,4 +1,4 @@
-"""@package ecohydroworkflowlib.hydro1k.basins
+"""@package ecohydrolib.hydro1k.basins
     
 @brief Methods for querying HYDRO1k basins
 

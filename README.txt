@@ -1,4 +1,4 @@
-EcohydroWorkflowLib			{#index}
+EcohydroLib			{#index}
 =======================
 
 This software is provided free of charge under the New BSD License. Please see
@@ -49,9 +49,9 @@ Introduction
 EcohydrologyWorkflowLib provides a series of Python scripts for
 performing ecohydrology data preparation workflows.  Workflow
 sub-components are orchestrated via a metadata persistence store
-provided by the ecohydroworkflowlib.metadata package.  These scripts
+provided by the EcohydroLib.metadata package.  These scripts
 are built on top of a series of task-oriented APIs defined in the
-Python package ecohydroworkflowlib.  The workflow scripts provide
+Python package EcohydroLib.  The workflow scripts provide
 information needed to run a ecohydrology models, information such as:
 digital elevation model (DEM), soils, land cover, and vegetation leaf
 area index (LAI; NOT YET IMPLEMENTED), hydrology/meteorology point
@@ -102,7 +102,7 @@ from USDA) or from third-party data centers (GeoBrain's DEM Explorer).
 However it is also possible for the user to upload their own custom
 data for a given datatype (e.g. local LIDAR-based DEM).
 
-![Fig. 1 Ecohydrology model data preparation workflow software stack depicting EcohydroWorkflowLib's role as an intermediary between raw data, derived data subsets, and specific ecohydrology models](RHESSysWorkflowImpl-20130318.png)
+![Fig. 1 Ecohydrology model data preparation workflow software stack depicting EcohydroLib's role as an intermediary between raw data, derived data subsets, and specific ecohydrology models](RHESSysWorkflowImpl-20130318.png)
 
 
 Source code
@@ -114,11 +114,11 @@ Installation
 ------------
 Using easy_install:
 
-easy_install --script-dir /path/to/install/scripts ecohydroworkflowlib
+easy_install --script-dir /path/to/install/scripts EcohydroLib
 
 Using pip:
 
-pip install ecohydroworkflowlib
+pip install EcohydroLib
 
 
 It is recommended that you install the workflow scripts in a location
@@ -131,13 +131,13 @@ GetGHCNDailyClimateData*.py, currently fails to build under easy_install/pip.
 Until this is fixed by the pyspatialite developer, I have removed
 pyspatialite from the dependency list.  If you need to use GNCHD data, you
 can install pyspatialite manually using the following steps (this can be
-done before or after installing ecohydroworkflowlib):
+done before or after installing EcohydroLib):
 - Manually download pyspatialite here:
   https://pypi.python.org/pypi/pyspatialite/3.0.1 
 - Apply the following patch to pyspatialite's setup.py:
   https://code.google.com/p/pyspatialite/issues/detail?id=9 
 - Install pyspatialite 
-- Install ecohydroworkflowlib as described above
+- Install EcohydroLib as described above
 
 
 Required runtime software
@@ -235,7 +235,7 @@ Many of the command line scripts (including NHDPlusV2Setup.py) require
 a configuration file to specify locations to executables and datasets
 required by the ecohydrology workflow libraries.  The configuration
 file can be specified via the environmental variable
-ECOHYDROWORKFLOW_CFG or via command line option. Here is an example
+ECOHYDROLIB_CFG or via command line option. Here is an example
 configuration file:
 
 		[GDAL/OGR]

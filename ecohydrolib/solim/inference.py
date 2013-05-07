@@ -1,4 +1,4 @@
-"""@package ecohydroworkflowlib.solim.inference
+"""@package ecohydrolib.solim.inference
     
 @brief Infer soil properties from SSURGO and terrain data using SOLIM framework
 

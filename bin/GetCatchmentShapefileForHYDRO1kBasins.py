@@ -52,7 +52,7 @@ Usage:
 GetCatchmentShapefileForHYDRO1kBasins.py -p /path/to/project_dir -b <basin1> <basin2> ... <basinN>
 @endcode
 
-@note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
+@note EcohydroLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
 or -i option must be specified. 
 """
 import os
@@ -61,9 +61,10 @@ import errno
 import argparse
 import ConfigParser
 
-from ecohydroworkflowlib.metadata import GenericMetadata
-from ecohydroworkflowlib.metadata import AssetProvenance
-from ecohydroworkflowlib.hydro1k.basins import getCatchmentShapefileForHYDRO1kBasins
+from ecohydrolib.context import Context
+from ecohydrolib.metadata import GenericMetadata
+from ecohydrolib.metadata import AssetProvenance
+from ecohydrolib.hydro1k.basins import getCatchmentShapefileForHYDRO1kBasins
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get shapefile for the drainage area of an NHDPlus2 streamflow gage')
@@ -81,37 +82,39 @@ cmdline = GenericMetadata.getCommandLine()
 configFile = None
 if args.configfile:
     configFile = args.configfile
-else:
-    try:
-        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
-    except KeyError:
-        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
-if not os.access(configFile, os.R_OK):
-    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-                  configFile)
-config = ConfigParser.RawConfigParser()
-config.read(configFile)
+#else:
+#    try:
+#        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
+#    except KeyError:
+#        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
+#if not os.access(configFile, os.R_OK):
+#    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
+#                  configFile)
+#config = ConfigParser.RawConfigParser()
+#config.read(configFile)
 
-if not config.has_option('GDAL/OGR', 'PATH_OF_OGR2OGR'):
+context = Context(args.projectDir, configFile) 
+
+if not context.config.has_option('GDAL/OGR', 'PATH_OF_OGR2OGR'):
     sys.exit("Config file %s does not define option %s in section %s" % \
           (args.configfile, 'GDAL/OGR', 'PATH_OF_OGR2OGR'))
-if not config.has_option('HYDRO1k', 'PATH_OF_HYDRO1K_BAS'):
+if not context.config.has_option('HYDRO1k', 'PATH_OF_HYDRO1K_BAS'):
     sys.exit("Config file %s does not define option %s in section %s" % \
           (args.configfile, 'HYDRO1k', 'PATH_OF_HYDRO1K_BAS'))
-if not config.has_option('HYDRO1k', 'HYDRO1k_BAS_LAYER_NAME'):
+if not context.config.has_option('HYDRO1k', 'HYDRO1k_BAS_LAYER_NAME'):
     sys.exit("Config file %s does not define option %s in section %s" % \
           (args.configfile, 'HYDRO1k', 'HYDRO1k_BAS_LAYER_NAME'))
   
-if args.projectDir:
-    projectDir = args.projectDir
-else:
-    projectDir = os.getcwd()
-if not os.path.isdir(projectDir):
-    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
-if not os.access(projectDir, os.W_OK):
-    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
-                  projectDir)
-projectDir = os.path.abspath(projectDir)
+#if args.projectDir:
+#    projectDir = args.projectDir
+#else:
+#    projectDir = os.getcwd()
+#if not os.path.isdir(projectDir):
+#    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
+#if not os.access(projectDir, os.W_OK):
+#    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
+#                  projectDir)
+#projectDir = os.path.abspath(projectDir)
 
 if args.outfile:
     outfile = args.outfile
@@ -119,9 +122,9 @@ else:
     outfile = "catchment"
 
 shapeFilename = "%s.shp" % (outfile)
-shapeFilepath = os.path.join(projectDir, shapeFilename)
+shapeFilepath = os.path.join(context.projectDir, shapeFilename)
 if not os.path.exists(shapeFilepath):
-    getCatchmentShapefileForHYDRO1kBasins(config, projectDir, shapeFilename, args.basins)
+    getCatchmentShapefileForHYDRO1kBasins(context.config, context.projectDir, shapeFilename, args.basins)
     
     # Write provenance
     asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
@@ -131,8 +134,8 @@ if not os.path.exists(shapeFilepath):
     asset.dcTitle = 'Study area shapefile derived from HYDRO1k Basins'
     asset.dcPublisher = 'USGS'
     asset.dcDescription = cmdline
-    asset.writeToMetadata(projectDir)
+    asset.writeToMetadata(context)
 
     # Write processing history
-    GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)
+    GenericMetadata.appendProcessingHistoryItem(context, cmdline)
     

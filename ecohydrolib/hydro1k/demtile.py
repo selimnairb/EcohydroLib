@@ -1,4 +1,4 @@
-"""@package ecohydroworkflowlib.hydro1k.demtile
+"""@package ecohydrolib.hydro1k.demtile
     
 @brief Extract tile for HYDRO1k digital elevation model (DEM) stored locally
 
@@ -35,8 +35,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 import os, errno
 
-from ecohydroworkflowlib.spatialdata.utils import extractTileFromRaster
-from ecohydroworkflowlib.spatialdata.utils import deleteGeoTiff
+from ecohydrolib.spatialdata.utils import extractTileFromRaster
+from ecohydrolib.spatialdata.utils import deleteGeoTiff
 
 
 DEFAULT_CRS = 'EPSG:2163' # spatial reference of HYDRO1k North America

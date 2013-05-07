@@ -1,4 +1,4 @@
-"""@package ecohydroworkflowlib.ssurgo.rasterize
+"""@package ecohydrolib.ssurgo.rasterize
     
 @brief Rasterize SSURGO features
 
@@ -37,9 +37,9 @@ import os.path, errno
 import osr
 
 
-from ecohydroworkflowlib.spatialdata.utils import getSpatialReferenceForRaster
-from ecohydroworkflowlib.spatialdata.utils import getMeterConversionFactorForLinearUnitOfShapefile
-from ecohydroworkflowlib.spatialdata.utils import getMeterConversionFactorForLinearUnitOfGMLfile
+from ecohydrolib.spatialdata.utils import getSpatialReferenceForRaster
+from ecohydrolib.spatialdata.utils import getMeterConversionFactorForLinearUnitOfShapefile
+from ecohydrolib.spatialdata.utils import getMeterConversionFactorForLinearUnitOfGMLfile
 
 def rasterizeSSURGOFeatures(config, outputDir, featureFilename, featureLayername, featureAttrList, \
                             getResolutionFromRasterFileNamed=None, rasterResolutionX=None, rasterResolutionY=None):

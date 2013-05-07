@@ -53,7 +53,7 @@ import subprocess
 import sqlite3
 import ConfigParser
 
-from ecohydroworkflowlib.dbf import dbfreader
+from ecohydrolib.dbf import dbfreader
 
 
 parser = argparse.ArgumentParser(description='Assemble regional NHDPLus V2 data into a national dataset')

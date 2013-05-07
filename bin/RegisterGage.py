@@ -67,12 +67,13 @@ import errno
 import argparse
 import ConfigParser
 
-from ecohydroworkflowlib.metadata import GenericMetadata
-from ecohydroworkflowlib.metadata import AssetProvenance
-from ecohydroworkflowlib.spatialdata.utils import deleteShapefile
-from ecohydroworkflowlib.spatialdata.utils import getCoordinatesOfPointsFromShapefile
-from ecohydroworkflowlib.spatialdata.utils import writeCoordinatePairsToPointShapefile
-from ecohydroworkflowlib.spatialdata.utils import isCoordinatePairInBoundingBox
+from ecohydrolib.context import Context
+from ecohydrolib.metadata import GenericMetadata
+from ecohydrolib.metadata import AssetProvenance
+from ecohydrolib.spatialdata.utils import deleteShapefile
+from ecohydrolib.spatialdata.utils import getCoordinatesOfPointsFromShapefile
+from ecohydrolib.spatialdata.utils import writeCoordinatePairsToPointShapefile
+from ecohydrolib.spatialdata.utils import isCoordinatePairInBoundingBox
 
 
 # Handle command line options
@@ -99,27 +100,29 @@ cmdline = GenericMetadata.getCommandLine()
 configFile = None
 if args.configfile:
     configFile = args.configfile
-else:
-    try:
-        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
-    except KeyError:
-        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
-if not os.access(configFile, os.R_OK):
-    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-                  configFile)
-config = ConfigParser.RawConfigParser()
-config.read(configFile)
+#else:
+#    try:
+#        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
+#    except KeyError:
+#        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
+#if not os.access(configFile, os.R_OK):
+#    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
+#                  configFile)
+#config = ConfigParser.RawConfigParser()
+#config.read(configFile)
 
-if args.projectDir:
-    projectDir = args.projectDir
-else:
-    projectDir = os.getcwd()
-if not os.path.isdir(projectDir):
-    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
-if not os.access(projectDir, os.W_OK):
-    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
-                  projectDir)
-projectDir = os.path.abspath(projectDir)
+context = Context(args.projectDir, configFile) 
+
+#if args.projectDir:
+#    projectDir = args.projectDir
+#else:
+#    projectDir = os.getcwd()
+#if not os.path.isdir(projectDir):
+#    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
+#if not os.access(projectDir, os.W_OK):
+#    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
+#                  projectDir)
+#projectDir = os.path.abspath(projectDir)
 
 if not os.access(args.gageFile, os.R_OK):
     raise IOError(errno.EACCES, "Not allowed to read input gage shapefile %s" %
@@ -137,13 +140,13 @@ else:
     outfile = "gage"
 
 # Get study area parameters
-studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
+studyArea = GenericMetadata.readStudyAreaEntries(context)
 bbox = studyArea['bbox_wgs84'].split()
 bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
 
 outFilename = "%s%sshp" % (outfile, os.extsep)
 # Overwrite DEM if already present
-outFilepath = os.path.join(projectDir, outFilename)
+outFilepath = os.path.join(context.projectDir, outFilename)
 if os.path.exists(outFilepath):
     deleteShapefile(outFilepath)
 
@@ -159,13 +162,13 @@ if not isCoordinatePairInBoundingBox(bbox, coordinates):
     sys.exit("Gage coordinates %s, %s do not appear to lie within bounding box %s, %s, %s, %s" %
              ( str(gage_lon), str(gage_lat), str(bbox['minX']), str(bbox['minY']), str(bbox['maxX']), str(bbox['maxY']) ) )
 
-shpFilename = writeCoordinatePairsToPointShapefile(projectDir, outfile, "gage_id", gageIDs, [coordinates])
+shpFilename = writeCoordinatePairsToPointShapefile(context.projectDir, outfile, "gage_id", gageIDs, [coordinates])
 
 # Write metadata
-GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_id_attr', 'gage_id')
-GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_id', args.idValue)
-GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_lat_wgs84', gage_lat)
-GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_lon_wgs84', gage_lon)
+GenericMetadata.writeStudyAreaEntry(context, 'gage_id_attr', 'gage_id')
+GenericMetadata.writeStudyAreaEntry(context, 'gage_id', args.idValue)
+GenericMetadata.writeStudyAreaEntry(context, 'gage_lat_wgs84', gage_lat)
+GenericMetadata.writeStudyAreaEntry(context, 'gage_lon_wgs84', gage_lon)
 
 # Write provenance
 asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
@@ -175,7 +178,7 @@ asset.dcSource = "file://%s" % (inGagePath,)
 asset.dcTitle = 'Streamflow gage'
 asset.dcPublisher = publisher
 asset.dcDescription = cmdline
-asset.writeToMetadata(projectDir)
+asset.writeToMetadata(context)
 
 # Write processing history
-GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)
+GenericMetadata.appendProcessingHistoryItem(context, cmdline)

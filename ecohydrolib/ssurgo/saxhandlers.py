@@ -1,4 +1,4 @@
-"""@package ecohydroworkflowlib.ssurgo.saxhandlers
+"""@package ecohydrolib.ssurgo.saxhandlers
     
 @brief xml.sax.ContentHandler subclass for parsing SSURGO features stored as GML files
 

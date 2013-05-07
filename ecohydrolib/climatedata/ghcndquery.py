@@ -1,4 +1,4 @@
-"""@package ecohydroworkflowlib.climatedata.ghcndquery
+"""@package ecohydrolib.climatedata.ghcndquery
     
 @brief Query NCDC Global Historical Climatology Network dataset for daily
 climate data
@@ -62,8 +62,8 @@ def findStationsWithinBoundingBox(config, bbox):
         @code
         import os
         import ConfigParser
-        from ecohydroworkflowlib.metadata import GenericMetadata
-        from ecohydroworkflowlib.climatedata.ghcndquery import findStationsWithinBoundingBox
+        from ecohydrolib.metadata import GenericMetadata
+        from ecohydrolib.climatedata.ghcndquery import findStationsWithinBoundingBox
         studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
         bbox = studyArea['bbox_wgs84'].split()
         bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
@@ -111,14 +111,14 @@ def findStationNearestToCoordinates(config, longitude, latitude):
         None if no gage is found.
         
         @code
-        from ecohydroworkflowlib.climatedata.ghcndquery import findStationNearestToCoordinates
+        from ecohydrolib.climatedata.ghcndquery import findStationNearestToCoordinates
         import ConfigParser
         config = ConfigParser.RawConfigParser()
         config.read('./bin/macosx2.cfg')
         lon = -76.7443397486
         lat = 39.2955590994
         nearest = findStationNearestToCoordinates(config, lon, lat)
-        from ecohydroworkflowlib.climatedata.ghcndquery import getClimateDataForStation
+        from ecohydrolib.climatedata.ghcndquery import getClimateDataForStation
         outputDir = '/tmp'
         outfileName = 'clim.txt'
         getClimateDataForStation(config, outputDir, outfileName, nearest[0])

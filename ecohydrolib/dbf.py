@@ -1,4 +1,4 @@
-"""@package ecohydroworkflowlib.dbf
+"""@package ecohydrolib.dbf
     
 @brief Methods for reading and write DBF data files
 @brief Adapted from: http://code.activestate.com/recipes/362715-dbf-reader-and-writer/

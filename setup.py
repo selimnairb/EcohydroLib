@@ -4,7 +4,7 @@ def readme():
     with open('README.txt') as f:
         return f.read()
 
-setup(name='ecohydroworkflowlib',
+setup(name='ecohydrolib',
       version='0.974',
       description='Libraries and command-line scripts for performing ecohydrology data preparation workflows.',
       long_description=readme(),
@@ -21,11 +21,11 @@ setup(name='ecohydroworkflowlib',
       author='Brian Miles',
       author_email='brian_miles@unc.edu',
       license='BSD',
-      packages=['ecohydroworkflowlib', 'ecohydroworkflowlib.tests', 
-                'ecohydroworkflowlib.nhdplus2', 'ecohydroworkflowlib.solim',
-                'ecohydroworkflowlib.spatialdata', 'ecohydroworkflowlib.ssurgo',
-                'ecohydroworkflowlib.wcs4dem', 'ecohydroworkflowlib.climatedata',
-                'ecohydroworkflowlib.hydro1k'],
+      packages=['ecohydrolib', 'ecohydrolib.tests', 
+                'ecohydrolib.nhdplus2', 'ecohydrolib.solim',
+                'ecohydrolib.spatialdata', 'ecohydrolib.ssurgo',
+                'ecohydrolib.wcs4dem', 'ecohydrolib.climatedata',
+                'ecohydrolib.hydro1k'],
       install_requires=[
         'GDAL',
         'pyproj==1.9.2',

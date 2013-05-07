@@ -1,4 +1,4 @@
-"""@package ecohydroworkflowlib.nhdplus2.networkanalysis
+"""@package ecohydrolib.nhdplus2.networkanalysis
     
 @brief Methods for querying the NHDPlus V2 data set. Requires that a NHDPlus V2 
 database be initialized from data archive files using NHDPlusSetup.py
@@ -42,8 +42,8 @@ import re
 
 import ogr
 
-from ecohydroworkflowlib.spatialdata.utils import getBoundingBoxForShapefile
-from ecohydroworkflowlib.spatialdata.utils import deleteShapefile
+from ecohydrolib.spatialdata.utils import getBoundingBoxForShapefile
+from ecohydrolib.spatialdata.utils import deleteShapefile
 
 
 NORTH = 0
@@ -314,89 +314,9 @@ def getBoundingBoxForCatchmentsForGage(config, outputDir, reachcode, measure, de
     conn.close()
 
     return bbox
-
-
+ 
+ 
 def getCatchmentShapefileForGage(config, outputDir, catchmentFilename, reachcode, measure, deleteIntermediateFiles=True):
-    """ Get shapefile (in WGS 84) for the drainage area associated with a given NHD 
-        (National Hydrography Dataset) streamflow gage identified by a reach code and measure.
-        
-        @note Deprecated. Uses ogr2ogr binary and is limited to gages with <1000 upstream reaches.
-        use getCatchmentShapefileForGageOGR instead
-        @note No return value. catchmentFilename will be written to outputDir if successful
-        
-        @param config A Python ConfigParser containing the following sections and options:
-            'GDAL/OGR' and option 'PATH_OF_OGR2OGR' (absolute path of ogr2ogr binary)
-            'NHDPLUS2' and option 'PATH_OF_NHDPLUS2_DB' (absolute path to SQLite3 DB of NHDFlow data)
-            'NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT' (absolute path to NHD catchment shapefile)
-        @param outputDir String representing the absolute/relative path of the directory into which output 
-            rasters should be written
-        @param catchmentFilename String representing name of file to save catchment shapefile to
-        @param reachcode String representing NHD streamflow gage 
-        @param measure Float representing the measure along reach where Stream Gage is located 
-            in percent from downstream end of the one or more NHDFlowline features that are 
-            assigned to the ReachCode (see NHDPlusV21 GageLoc table)
-         
-        @exception ConfigParser.NoSectionError
-        @exception ConfigParser.NoOptionError
-        @exception IOError(errno.ENOTDIR) if outputDir is not a directory
-        @exception IOError(errno.EACCESS) if outputDir is not writable
-        @exception Exception if number of upstream reaches is greater than 1000
-        @exception Exception of catchment shapefile extraction fails
-    """
-    nhddbPath = config.get('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB')
-    if not os.access(nhddbPath, os.R_OK):
-        raise IOError(errno.EACCES, "The database at %s is not readable" %
-                      nhddbPath)
-    nhddbPath = os.path.abspath(nhddbPath)
-        
-    catchmentFeatureDBPath = config.get('NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT')
-    if not os.access(catchmentFeatureDBPath, os.R_OK):
-        raise IOError(errno.EACCES, "The catchment feature DB at %s is not readable" %
-                      catchmentFeatureDBPath)
-    catchmentFeatureDBPath = os.path.abspath(catchmentFeatureDBPath)
-    
-    ogrCmdPath = config.get('GDAL/OGR', 'PATH_OF_OGR2OGR')
-    if not os.access(ogrCmdPath, os.X_OK):
-        raise IOError(errno.EACCES, "The ogr2ogr binary at %s is not executable" %
-                      ogrCmdPath)
-    ogrCmdPath = os.path.abspath(ogrCmdPath)
-    
-    if not os.path.isdir(outputDir):
-        raise IOError(errno.ENOTDIR, "Output directory %s is not a directory" % (outputDir,))
-    if not os.access(outputDir, os.W_OK):
-        raise IOError(errno.EACCES, "Not allowed to write to output directory %s" % (outputDir,))
-    outputDir = os.path.abspath(outputDir)
-    
-    catchmentFilename = os.path.join(outputDir, catchmentFilename)
-    
-    # Connect to DB
-    conn = sqlite3.connect(nhddbPath)
-    
-    comID = getComIdForStreamGage(conn, reachcode, measure)
-    #sys.stderr.write("Gage with reachcode %s, measure %f has ComID %d" % (reachcode, measure, comID))
-    
-    # Get upstream reaches
-    upstream_reaches = []
-    getUpstreamReachesSQL(conn, comID, upstream_reaches)
-    #sys.stderr.write("Upstream reaches: ")
-    #sys.stderr.write(upstream_reaches)
-    conn.close()
-    
-    if len(upstream_reaches) > 1000:
-        raise Exception("Number of upstream reaches is greater than threshold of 1,000")
-        
-    # Extract polygons for upstream catchments
-    ogrCommand = "%s -s_srs EPSG:4326 -t_srs EPSG:4326  -f 'ESRI Shapefile' -sql 'SELECT * FROM catchment WHERE featureid=%s" % (ogrCmdPath, comID) # NHDPlusV2
-    for reach in upstream_reaches:
-        ogrCommand = ogrCommand + " OR featureid=%s" % reach # NHDPlusV2
-    ogrCommand = ogrCommand +"' " + catchmentFilename + " " + catchmentFeatureDBPath  
-    #sys.stderr.write("ogr command: %s\n" % ogrCommand)
-    returnCode = os.system(ogrCommand)
-    if returnCode != 0:
-        raise Exception("OGR command %s failed." % (ogrCommand,))  
- 
- 
-def getCatchmentShapefileForGageOGR(config, outputDir, catchmentFilename, reachcode, measure, deleteIntermediateFiles=True):
     """ Get shapefile (in WGS 84) for the drainage area associated with a given NHD 
         (National Hydrography Dataset) streamflow gage identified by a reach code and measure.
         

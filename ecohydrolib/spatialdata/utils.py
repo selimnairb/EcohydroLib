@@ -1,4 +1,4 @@
-"""@package ecohydroworkflowlib.spatialdata.utils
+"""@package ecohydrolib.spatialdata.utils
     
 @brief Generic utilities for manipulating spatial data sets.
 @brief Builds a task-oriented API, for select operations, on top of

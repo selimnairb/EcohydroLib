@@ -61,7 +61,7 @@ Usage:
 GetHYDRO1kDEMForBoundingbox.py -p /path/to/project_dir -s 3 3
 @endcode
 
-@note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
+@note EcohydroLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
 or -i option must be specified. 
 
 @note If option -t is not specified, UTM projection (WGS 84 coordinate system) will be inferred
@@ -75,16 +75,17 @@ import errno
 import argparse
 import ConfigParser
 
-from ecohydroworkflowlib.metadata import GenericMetadata
-from ecohydroworkflowlib.metadata import AssetProvenance
-from ecohydroworkflowlib.hydro1k import demtile
-from ecohydroworkflowlib.spatialdata.utils import resampleRaster
-from ecohydroworkflowlib.spatialdata.utils import getSpatialReferenceForRaster
-from ecohydroworkflowlib.spatialdata.utils import getDimensionsForRaster
-from ecohydroworkflowlib.spatialdata.utils import deleteGeoTiff
-from ecohydroworkflowlib.spatialdata.utils import calculateBoundingBoxCenter
-from ecohydroworkflowlib.spatialdata.utils import getUTMZoneFromCoordinates
-from ecohydroworkflowlib.spatialdata.utils import getEPSGStringForUTMZone
+from ecohydrolib.context import Context
+from ecohydrolib.metadata import GenericMetadata
+from ecohydrolib.metadata import AssetProvenance
+from ecohydrolib.hydro1k import demtile
+from ecohydrolib.spatialdata.utils import resampleRaster
+from ecohydrolib.spatialdata.utils import getSpatialReferenceForRaster
+from ecohydrolib.spatialdata.utils import getDimensionsForRaster
+from ecohydrolib.spatialdata.utils import deleteGeoTiff
+from ecohydrolib.spatialdata.utils import calculateBoundingBoxCenter
+from ecohydrolib.spatialdata.utils import getUTMZoneFromCoordinates
+from ecohydrolib.spatialdata.utils import getEPSGStringForUTMZone
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get DEM raster (in GeoTIFF format) for a bounding box from GeoBrain WCS4DEM')
@@ -104,31 +105,33 @@ cmdline = GenericMetadata.getCommandLine()
 configFile = None
 if args.configfile:
     configFile = args.configfile
-else:
-    try:
-        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
-    except KeyError:
-        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
-if not os.access(configFile, os.R_OK):
-    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-                  configFile)
-config = ConfigParser.RawConfigParser()
-config.read(configFile)
+#else:
+#    try:
+#        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
+#    except KeyError:
+#        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
+#if not os.access(configFile, os.R_OK):
+#    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
+#                  configFile)
+#config = ConfigParser.RawConfigParser()
+#config.read(configFile)
 
-if not config.has_option('GDAL/OGR', 'PATH_OF_GDAL_WARP'):
+context = Context(args.projectDir, configFile) 
+
+if not context.config.has_option('GDAL/OGR', 'PATH_OF_GDAL_WARP'):
     sys.exit("Config file %s does not define option %s in section %s" & \
           (args.configfile, 'GDAL/OGR', 'PATH_OF_GDAL_WARP'))
 
-if args.projectDir:
-    projectDir = args.projectDir
-else:
-    projectDir = os.getcwd()
-if not os.path.isdir(projectDir):
-    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
-if not os.access(projectDir, os.W_OK):
-    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
-                  projectDir)
-projectDir = os.path.abspath(projectDir)
+#if args.projectDir:
+#    projectDir = args.projectDir
+#else:
+#    projectDir = os.getcwd()
+#if not os.path.isdir(projectDir):
+#    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
+#if not os.access(projectDir, os.W_OK):
+#    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
+#                  projectDir)
+#projectDir = os.path.abspath(projectDir)
 
 if args.outfile:
     outfile = args.outfile
@@ -137,12 +140,12 @@ else:
 
 demFilename = "%s.tif" % (outfile)
 # Overwrite DEM if already present
-demFilepath = os.path.join(projectDir, demFilename)
+demFilepath = os.path.join(context.projectDir, demFilename)
 if os.path.exists(demFilepath):
     deleteGeoTiff(demFilepath)
 
 # Get study area parameters
-studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
+studyArea = GenericMetadata.readStudyAreaEntries(context)
 bbox = studyArea['bbox_wgs84'].split()
 bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
 
@@ -157,9 +160,9 @@ else:
 
 # Get DEM from HYDRO1k dataset on disk
 tmpDEMFilename = "%s-TEMP.tif" % (outfile)
-returnCode = demtile.getDEMForBoundingBox(config, projectDir, tmpDEMFilename, bbox=bbox, srs=t_srs)
+returnCode = demtile.getDEMForBoundingBox(context.config, context.projectDir, tmpDEMFilename, bbox=bbox, srs=t_srs)
 assert(returnCode)
-tmpDEMFilepath = os.path.join(projectDir, tmpDEMFilename)
+tmpDEMFilepath = os.path.join(context.projectDir, tmpDEMFilename)
 
 if args.demResolution:
     demResolutionX = args.demResolution[0]
@@ -170,22 +173,21 @@ else:
     demResolutionY = demSrs[1]
     
 # Resample DEM to target srs and resolution
-resampleRaster(config, projectDir, tmpDEMFilepath, demFilename, \
+resampleRaster(context.config, context.projectDir, tmpDEMFilepath, demFilename, \
                s_srs=demtile.DEFAULT_CRS, t_srs=t_srs, \
                trX=demResolutionX, trY=demResolutionY)
 
 # Write metadata
-GenericMetadata.writeStudyAreaEntry(projectDir, "dem_res_x", demResolutionX)
-GenericMetadata.writeStudyAreaEntry(projectDir, "dem_res_y", demResolutionY)
-GenericMetadata.writeStudyAreaEntry(projectDir, "dem_srs", t_srs)
+GenericMetadata.writeStudyAreaEntry(context, "dem_res_x", demResolutionX)
+GenericMetadata.writeStudyAreaEntry(context, "dem_res_y", demResolutionY)
+GenericMetadata.writeStudyAreaEntry(context, "dem_srs", t_srs)
 
 # Get rows and columns for DEM
 (columns, rows) = getDimensionsForRaster(demFilepath)
-GenericMetadata.writeStudyAreaEntry(projectDir, "dem_columns", columns)
-GenericMetadata.writeStudyAreaEntry(projectDir, "dem_rows", rows)
+GenericMetadata.writeStudyAreaEntry(context, "dem_columns", columns)
+GenericMetadata.writeStudyAreaEntry(context, "dem_rows", rows)
 
 # Write provenance
-#GenericMetadata.writeManifestEntry(projectDir, "dem", demFilename)
 asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
 asset.name = 'dem'
 asset.dcIdentifier = demFilename
@@ -193,10 +195,10 @@ asset.dcSource = 'http://eros.usgs.gov/#/Find_Data/Products_and_Data_Available/g
 asset.dcTitle = 'Digital Elevation Model from HYDRO1k'
 asset.dcPublisher = 'USGS'
 asset.dcDescription = cmdline
-asset.writeToMetadata(projectDir)
+asset.writeToMetadata(context)
 
 # Write processing history
-GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)
+GenericMetadata.appendProcessingHistoryItem(context, cmdline)
 
 # Clean-up
 deleteGeoTiff(tmpDEMFilepath)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """@package DumpClimateStationInfo
 
-@brief Dump point climate station information from EcohydroWorkflowLib metadata to standard output
+@brief Dump point climate station information from EcohydroLib metadata to standard output
 
 This software is provided free of charge under the New BSD License. Please see
 the following license information:
@@ -54,22 +54,26 @@ import os
 import errno
 import argparse
 
-from ecohydroworkflowlib.metadata import GenericMetadata
+from ecohydrolib.context import Context
+from ecohydrolib.metadata import GenericMetadata
 
-parser = argparse.ArgumentParser(description='Dump point climate station information from EcohydroWorkflowLib metadata to standard output')
+parser = argparse.ArgumentParser(description='Dump point climate station information from EcohydroLib metadata to standard output')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory from which metadata should be read')
 parser.add_argument('-s', '--separator', dest='separator', required=False, default=',', help='Field separator for output')
 args = parser.parse_args()
 
-if not os.access(args.projectDir, os.R_OK):
-    raise IOError(errno.EACCES, "Unable to read from project directory %s" % \
-                  (args.projectDir,))
-projectDir = os.path.abspath(args.projectDir)
+#if not os.access(args.projectDir, os.R_OK):
+#    raise IOError(errno.EACCES, "Unable to read from project directory %s" % \
+#                  (args.projectDir,))
+#projectDir = os.path.abspath(args.projectDir)
+
+context = Context(args.projectDir, None) 
+
 s = args.separator
 
 sys.stderr.write("Getting stations from metadata... ")
-stations = GenericMetadata.readClimatePointStations(projectDir)
+stations = GenericMetadata.readClimatePointStations(context)
 sys.stderr.write("done\n")
 
 for station in stations:

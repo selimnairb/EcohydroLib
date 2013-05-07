@@ -56,7 +56,7 @@ Usage:
 GetCatchmentShapefileForNHDStreamflowGage.py -p /path/to/project_dir
 @endcode
 
-@note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
+@note EcohydroLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
 or -i option must be specified. 
 """
 import os
@@ -65,9 +65,10 @@ import errno
 import argparse
 import ConfigParser
 
-from ecohydroworkflowlib.metadata import GenericMetadata
-from ecohydroworkflowlib.metadata import AssetProvenance
-from ecohydroworkflowlib.nhdplus2.networkanalysis import getCatchmentShapefileForGageOGR
+from ecohydrolib.context import Context
+from ecohydrolib.metadata import GenericMetadata
+from ecohydrolib.metadata import AssetProvenance
+from ecohydrolib.nhdplus2.networkanalysis import getCatchmentShapefileForGage
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get shapefile for the drainage area of an NHDPlus2 streamflow gage')
@@ -83,34 +84,36 @@ cmdline = GenericMetadata.getCommandLine()
 configFile = None
 if args.configfile:
     configFile = args.configfile
-else:
-    try:
-        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
-    except KeyError:
-        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
-if not os.access(configFile, os.R_OK):
-    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-                  configFile)
-config = ConfigParser.RawConfigParser()
-config.read(configFile)
+#else:
+#    try:
+#        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
+#    except KeyError:
+#        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
+#if not os.access(configFile, os.R_OK):
+#    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
+#                  configFile)
+#config = ConfigParser.RawConfigParser()
+#config.read(configFile)
 
-if not config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'):
+context = Context(args.projectDir, configFile) 
+
+if not context.config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'):
     sys.exit("Config file %s does not define option %s in section %s" % \
           (args.configfile, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'))
-if not config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT'):
+if not context.config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT'):
     sys.exit("Config file %s does not define option %s in section %s" % \
           (args.configfile, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT'))  
 
-if args.projectDir:
-    projectDir = args.projectDir
-else:
-    projectDir = os.getcwd()
-if not os.path.isdir(projectDir):
-    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
-if not os.access(projectDir, os.W_OK):
-    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
-                  projectDir)
-projectDir = os.path.abspath(projectDir)
+#if args.projectDir:
+#    projectDir = args.projectDir
+#else:
+#    projectDir = os.getcwd()
+#if not os.path.isdir(projectDir):
+#    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
+#if not os.access(projectDir, os.W_OK):
+#    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
+#                  projectDir)
+#projectDir = os.path.abspath(projectDir)
 
 if args.outfile:
     outfile = args.outfile
@@ -118,20 +121,19 @@ else:
     outfile = "catchment"
 
 # Get provenance data for gage
-gageProvenance = [i for i in GenericMetadata.readAssetProvenanceObjects(projectDir) if i.name == 'gage'][0]
+gageProvenance = [i for i in GenericMetadata.readAssetProvenanceObjects(context) if i.name == 'gage'][0]
 if gageProvenance is None:
     sys.exit("Unable to load gage provenance information from metadata")
 
 # Get study area parameters
-studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
+studyArea = GenericMetadata.readStudyAreaEntries(context)
 reachcode = studyArea['nhd_gage_reachcode']
 measure = studyArea['nhd_gage_measure_pct']
 
 shapeFilename = "%s.shp" % (outfile)
-shapeFilepath = os.path.join(projectDir, shapeFilename)
+shapeFilepath = os.path.join(context.projectDir, shapeFilename)
 if not os.path.exists(shapeFilepath):
-    #getCatchmentShapefileForGage(config, projectDir, shapeFilename, reachcode, measure)
-    getCatchmentShapefileForGageOGR(config, projectDir, shapeFilename, reachcode, measure)
+    getCatchmentShapefileForGage(context.config, context.projectDir, shapeFilename, reachcode, measure)
     
     # Write provenance
     asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
@@ -141,7 +143,7 @@ if not os.path.exists(shapeFilepath):
     asset.dcTitle = 'Study area shapefile'
     asset.dcPublisher = gageProvenance.dcPublisher
     asset.dcDescription = cmdline
-    asset.writeToMetadata(projectDir)
+    asset.writeToMetadata(context)
 
     # Write processing history
-    GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)
+    GenericMetadata.appendProcessingHistoryItem(context, cmdline)

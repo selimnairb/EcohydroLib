@@ -1,4 +1,4 @@
-"""@package ecohydroworkflowlib.wcs4dem.demquery
+"""@package ecohydrolib.wcs4dem.demquery
     
 @brief Query NASA EOS Education Alliance (NEHEA) GeoBrain for DEM data
 
@@ -36,7 +36,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import os, errno
 import httplib
 
-from ecohydroworkflowlib.spatialdata.utils import deleteGeoTiff
+from ecohydrolib.spatialdata.utils import deleteGeoTiff
 
 
 SUPPORTED_COVERAGE = ['SRTM_30m_USA', 'SRTM_90m_Global', 'GTOPO_30arc_Global']

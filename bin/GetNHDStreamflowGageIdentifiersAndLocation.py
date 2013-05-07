@@ -60,7 +60,7 @@ Usage:
 GetNHDStreamflowGageIdentifiersAndLocation.py -p /path/to/project_dir -g 01589330
 @endcode
 
-@note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
+@note EcohydroLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
 or -i option must be specified. 
 """
 import os
@@ -69,11 +69,12 @@ import errno
 import argparse
 import ConfigParser
 
-from ecohydroworkflowlib.metadata import GenericMetadata
-from ecohydroworkflowlib.metadata import AssetProvenance
-from ecohydroworkflowlib.nhdplus2.networkanalysis import getNHDReachcodeAndMeasureForGageSourceFea
-from ecohydroworkflowlib.nhdplus2.networkanalysis import getLocationForStreamGageByGageSourceFea
-from ecohydroworkflowlib.spatialdata.utils import writeCoordinatePairsToPointShapefile
+from ecohydrolib.context import Context
+from ecohydrolib.metadata import GenericMetadata
+from ecohydrolib.metadata import AssetProvenance
+from ecohydrolib.nhdplus2.networkanalysis import getNHDReachcodeAndMeasureForGageSourceFea
+from ecohydrolib.nhdplus2.networkanalysis import getLocationForStreamGageByGageSourceFea
+from ecohydrolib.spatialdata.utils import writeCoordinatePairsToPointShapefile
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get NHDPlus2 streamflow gage identifiers for a USGS gage.')
@@ -85,42 +86,44 @@ parser.add_argument('-g', '--gageid', dest='gageid', required=True,
                     help='An integer representing the USGS site identifier')
 args = parser.parse_args()
 cmdline = GenericMetadata.getCommandLine()
-
+#
 configFile = None
 if args.configfile:
     configFile = args.configfile
-else:
-    try:
-        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
-    except KeyError:
-        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
-if not os.access(configFile, os.R_OK):
-    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-                  configFile)
-config = ConfigParser.RawConfigParser()
-config.read(configFile)
+#else:
+#    try:
+#        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
+#    except KeyError:
+#        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
+#if not os.access(configFile, os.R_OK):
+#    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
+#                  configFile)
+#config = ConfigParser.RawConfigParser()
+#config.read(configFile)
 
-if not config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'):
+context = Context(args.projectDir, configFile) 
+
+if not context.config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'):
     sys.exit("Config file %s does not define option %s in section %s" & \
           (args.configfile, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'))
 
-if not config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_GAGELOC'):
+if not context.config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_GAGELOC'):
     sys.exit("Config file %s does not define option %s in section %s" & \
           (args.configfile, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_GAGELOC'))
 
-if not os.access(args.projectDir, os.W_OK):
-    raise IOError(errno.EACCES, "Unable to write to project directory %s" % \
-                  (args.projectDir,))
-projectDir = os.path.abspath(args.projectDir)
+#if not os.access(args.projectDir, os.W_OK):
+#    raise IOError(errno.EACCES, "Unable to write to project directory %s" % \
+#                  (args.projectDir,))
+#projectDir = os.path.abspath(args.projectDir)
 
-result = getNHDReachcodeAndMeasureForGageSourceFea(config, args.gageid)
+result = getNHDReachcodeAndMeasureForGageSourceFea(context.config, args.gageid)
 if result:
     reachcode = result[0]
     measure = result[1]
 else:
     reachcode = measure = "Gage not found"
 
-result = getLocationForStreamGageByGageSourceFea(config, args.gageid)
+result = getLocationForStreamGageByGageSourceFea(context.config, args.gageid)
 if result:
     gage_lat = result[1]
     gage_lon = result[0]
@@ -128,16 +131,16 @@ else:
     gage_lat = gage_lon = "Gage not found"
 
 # Write gage coordinates to a shapefile in the project directory
-shpFilename = writeCoordinatePairsToPointShapefile(projectDir, "gage", 
+shpFilename = writeCoordinatePairsToPointShapefile(context.projectDir, "gage", 
                                                    "gage_id", [args.gageid], [(gage_lon, gage_lat)])
 
 # Write study area metadata
-GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_id_attr', 'gage_id')
-GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_id', args.gageid)
-GenericMetadata.writeStudyAreaEntry(projectDir, 'nhd_gage_reachcode', reachcode)
-GenericMetadata.writeStudyAreaEntry(projectDir, 'nhd_gage_measure_pct', measure)
-GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_lat_wgs84', gage_lat)
-GenericMetadata.writeStudyAreaEntry(projectDir, 'gage_lon_wgs84', gage_lon)
+GenericMetadata.writeStudyAreaEntry(context, 'gage_id_attr', 'gage_id')
+GenericMetadata.writeStudyAreaEntry(context, 'gage_id', args.gageid)
+GenericMetadata.writeStudyAreaEntry(context, 'nhd_gage_reachcode', reachcode)
+GenericMetadata.writeStudyAreaEntry(context, 'nhd_gage_measure_pct', measure)
+GenericMetadata.writeStudyAreaEntry(context, 'gage_lat_wgs84', gage_lat)
+GenericMetadata.writeStudyAreaEntry(context, 'gage_lon_wgs84', gage_lon)
 
 # Write provenance
 asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
@@ -147,7 +150,7 @@ asset.dcSource = 'http://www.horizon-systems.com/NHDPlus/NHDPlusV2_home.php'
 asset.dcTitle = 'Streamflow gage'
 asset.dcPublisher = 'USGS'
 asset.dcDescription = cmdline
-asset.writeToMetadata(projectDir)
+asset.writeToMetadata(context)
 
 # Write processing history
-GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)
+GenericMetadata.appendProcessingHistoryItem(context, cmdline)

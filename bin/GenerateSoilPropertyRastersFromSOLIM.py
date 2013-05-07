@@ -57,7 +57,7 @@ Usage:
 GenerateSoilPropertyRastersFromSOLIM.py -p /path/to/project_dir
 @endcode
 
-@note EcoHydroWorkflowLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
+@note EcohydroLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
 or -i option must be specified.
 
 @todo Recognize when DEM resolution is less than 10m, resample temporary DEM, run SOLIM with resampled DEM
@@ -68,10 +68,11 @@ import errno
 import argparse
 import ConfigParser
 
-from ecohydroworkflowlib.metadata import GenericMetadata
-from ecohydroworkflowlib.metadata import AssetProvenance
-import ecohydroworkflowlib.ssurgo.attributequery
-from ecohydroworkflowlib.solim.inference import inferSoilPropertiesForSSURGOAndTerrainData     
+from ecohydrolib.context import Context
+from ecohydrolib.metadata import GenericMetadata
+from ecohydrolib.metadata import AssetProvenance
+import ecohydrolib.ssurgo.attributequery
+from ecohydrolib.solim.inference import inferSoilPropertiesForSSURGOAndTerrainData     
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get SSURGO features for a bounding box')
@@ -85,53 +86,55 @@ cmdline = GenericMetadata.getCommandLine()
 configFile = None
 if args.configfile:
     configFile = args.configfile
-else:
-    try:
-        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
-    except KeyError:
-        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
-if not os.access(configFile, os.R_OK):
-    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-                  configFile)
-config = ConfigParser.RawConfigParser()
-config.read(configFile)
+#else:
+#    try:
+#        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
+#    except KeyError:
+#        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
+#if not os.access(configFile, os.R_OK):
+#    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
+#                  configFile)
+#config = ConfigParser.RawConfigParser()
+#config.read(configFile)
 
-if not config.has_option('SOLIM', 'PATH_OF_SOLIM'):
+context = Context(args.projectDir, configFile) 
+
+if not context.config.has_option('SOLIM', 'PATH_OF_SOLIM'):
     sys.exit("Config file %s does not define option %s in section %s" & \
           (args.configfile, 'SOLIM', 'PATH_OF_SOLIM'))
 
-if args.projectDir:
-    projectDir = args.projectDir
-else:
-    projectDir = os.getcwd()
-if not os.path.isdir(projectDir):
-    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
-if not os.access(projectDir, os.W_OK):
-    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
-                  projectDir)
-projectDir = os.path.abspath(projectDir)
+#if args.projectDir:
+#    projectDir = args.projectDir
+#else:
+#    projectDir = os.getcwd()
+#if not os.path.isdir(projectDir):
+#    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
+#if not os.access(projectDir, os.W_OK):
+#    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
+#                  projectDir)
+#projectDir = os.path.abspath(projectDir)
 
 # Get provenance data for SSURGO
-ssurgoProvenance = [i for i in GenericMetadata.readAssetProvenanceObjects(projectDir) if i.name == 'soil_features'][0]
+ssurgoProvenance = [i for i in GenericMetadata.readAssetProvenanceObjects(context) if i.name == 'soil_features'][0]
 if ssurgoProvenance is None:
     sys.exit("Unable to load SSURGO provenance information from metadata")
 
 # Get manifest entries
-manifest = GenericMetadata.readManifestEntries(projectDir)
+manifest = GenericMetadata.readManifestEntries(context)
 shpFilename = manifest['soil_features']
-shpFilepath = os.path.join(projectDir, shpFilename)
+shpFilepath = os.path.join(context.projectDir, shpFilename)
 demFilename = manifest['dem']
-demFilepath = os.path.join(projectDir, demFilename)
+demFilepath = os.path.join(context.projectDir, demFilename)
 layerName = os.path.splitext(shpFilename)[0]
 
 # Get study area parameters
-studyArea = GenericMetadata.readStudyAreaEntries(projectDir)
+studyArea = GenericMetadata.readStudyAreaEntries(context)
 outputrasterresolutionX = studyArea['dem_res_x']
 outputrasterresolutionY = studyArea['dem_res_y']
 
 # Truncate attributes to 10 characters because shapefiles rely on ancient technology
-attrList = [elem[:10] for elem in ecohydroworkflowlib.ssurgo.attributequery.attributeListNumeric] 
-rasterFiles = inferSoilPropertiesForSSURGOAndTerrainData(config=config, outputDir=projectDir, \
+attrList = [elem[:10] for elem in ecohydrolib.ssurgo.attributequery.attributeListNumeric] 
+rasterFiles = inferSoilPropertiesForSSURGOAndTerrainData(config=context.config, outputDir=context.projectDir, \
                                                          shpFilepath=shpFilepath, demFilepath=demFilepath, \
                                                          featureAttrList=attrList)
 # Write metadata entries
@@ -144,7 +147,7 @@ for attr in rasterFiles.keys():
     asset.dcTitle = attr
     asset.dcPublisher = 'Department of Geography, UW-Madison'
     asset.dcDescription = cmdline
-    asset.writeToMetadata(projectDir)
+    asset.writeToMetadata(context)
 
 # Write processing history
-GenericMetadata.appendProcessingHistoryItem(projectDir, cmdline)
+GenericMetadata.appendProcessingHistoryItem(context, cmdline)
