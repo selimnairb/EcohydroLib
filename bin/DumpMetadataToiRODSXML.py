@@ -51,7 +51,6 @@ DumpMetadataToiRODSXML.py -p /path/to/project_dir -c /irods/collection/path
 """
 import os
 import codecs
-import errno
 import argparse
 from xml.sax.saxutils import escape
 
@@ -109,11 +108,6 @@ parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
 parser.add_argument('-c', '--collection', dest='collection', required=True,
                     help='The iRODS collection corresponding to the project directory')
 args = parser.parse_args()
-
-#if not os.access(args.projectDir, os.W_OK):
-#    raise IOError(errno.EACCES, "Unable to write to project directory %s" % \
-#                  (args.projectDir,))
-#projectDir = os.path.abspath(args.projectDir)
 
 context = Context(args.projectDir, None) 
 

@@ -51,7 +51,6 @@ GetBoundingboxFromStudyareaShapefile.py -p /path/to/project_dir
 @endcode
 """
 import os
-import sys
 import errno
 import argparse
 
@@ -69,11 +68,6 @@ args = parser.parse_args()
 cmdline = GenericMetadata.getCommandLine()
 
 context = Context(args.projectDir, None)
-
-#if not os.access(args.projectDir, os.W_OK):
-#    raise IOError(errno.EACCES, "Unable to write to project directory %s" % \
-#                  (args.projectDir,))
-#projectDir = os.path.abspath(args.projectDir)
 
 buffer = 0.01
 if args.buffer:

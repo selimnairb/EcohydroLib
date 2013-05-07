@@ -62,9 +62,7 @@ or -i option must be specified.
 """
 import os
 import sys
-import errno
 import argparse
-import ConfigParser
 
 from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
@@ -86,33 +84,12 @@ cmdline = GenericMetadata.getCommandLine()
 configFile = None
 if args.configfile:
     configFile = args.configfile
-#else:
-#    try:
-#        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
-#    except KeyError:
-#        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
-#if not os.access(configFile, os.R_OK):
-#    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-#                  configFile)
-#config = ConfigParser.RawConfigParser()
-#config.read(configFile)
 
 context = Context(args.projectDir, configFile) 
 
 if not context.config.has_option('GDAL/OGR', 'PATH_OF_OGR2OGR'):
     sys.exit("Config file %s does not define option %s in section %s" & \
           (args.configfile, 'GDAL/OGR', 'PATH_OF_OGR2OGR'))
-
-#if args.projectDir:
-#    projectDir = args.projectDir
-#else:
-#    projectDir = os.getcwd()
-#if not os.path.isdir(projectDir):
-#    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
-#if not os.access(projectDir, os.W_OK):
-#    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
-#                  projectDir)
-#projectDir = os.path.abspath(projectDir)
 
 # Get study area parameters
 studyArea = GenericMetadata.readStudyAreaEntries(context)
@@ -138,7 +115,6 @@ asset.dcTitle = 'SSURGO soils data'
 asset.dcPublisher = 'USDA'
 asset.dcDescription = cmdline
 asset.writeToMetadata(context)
-#GenericMetadata.writeManifestEntry(projectDir, "soil_features", shpFilename)
 
 # Write processing history
 GenericMetadata.appendProcessingHistoryItem(context, cmdline)

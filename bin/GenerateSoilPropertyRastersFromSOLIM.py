@@ -64,9 +64,7 @@ or -i option must be specified.
 """
 import os
 import sys
-import errno
 import argparse
-import ConfigParser
 
 from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
@@ -86,33 +84,12 @@ cmdline = GenericMetadata.getCommandLine()
 configFile = None
 if args.configfile:
     configFile = args.configfile
-#else:
-#    try:
-#        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
-#    except KeyError:
-#        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
-#if not os.access(configFile, os.R_OK):
-#    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-#                  configFile)
-#config = ConfigParser.RawConfigParser()
-#config.read(configFile)
 
 context = Context(args.projectDir, configFile) 
 
 if not context.config.has_option('SOLIM', 'PATH_OF_SOLIM'):
     sys.exit("Config file %s does not define option %s in section %s" & \
           (args.configfile, 'SOLIM', 'PATH_OF_SOLIM'))
-
-#if args.projectDir:
-#    projectDir = args.projectDir
-#else:
-#    projectDir = os.getcwd()
-#if not os.path.isdir(projectDir):
-#    raise IOError(errno.ENOTDIR, "Project directory %s is not a directory" % (projectDir,))
-#if not os.access(projectDir, os.W_OK):
-#    raise IOError(errno.EACCES, "Not allowed to write to project directory %s" %
-#                  projectDir)
-#projectDir = os.path.abspath(projectDir)
 
 # Get provenance data for SSURGO
 ssurgoProvenance = [i for i in GenericMetadata.readAssetProvenanceObjects(context) if i.name == 'soil_features'][0]
@@ -139,7 +116,6 @@ rasterFiles = inferSoilPropertiesForSSURGOAndTerrainData(config=context.config, 
                                                          featureAttrList=attrList)
 # Write metadata entries
 for attr in rasterFiles.keys():
-    #GenericMetadata.writeManifestEntry(projectDir, "soil_raster_%s" % (attr,), rasterFiles[attr])
     asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
     asset.name = "soil_raster_%s" % (attr,)
     asset.dcIdentifier = rasterFiles[attr]

@@ -51,7 +51,6 @@ DumpClimateStationInfo.py -p /path/to/project_dir > file.csv
 """
 import sys
 import os
-import errno
 import argparse
 
 from ecohydrolib.context import Context
@@ -62,11 +61,6 @@ parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory from which metadata should be read')
 parser.add_argument('-s', '--separator', dest='separator', required=False, default=',', help='Field separator for output')
 args = parser.parse_args()
-
-#if not os.access(args.projectDir, os.R_OK):
-#    raise IOError(errno.EACCES, "Unable to read from project directory %s" % \
-#                  (args.projectDir,))
-#projectDir = os.path.abspath(args.projectDir)
 
 context = Context(args.projectDir, None) 
 

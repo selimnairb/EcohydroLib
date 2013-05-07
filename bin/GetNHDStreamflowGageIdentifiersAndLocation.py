@@ -63,11 +63,8 @@ GetNHDStreamflowGageIdentifiersAndLocation.py -p /path/to/project_dir -g 0158933
 @note EcohydroLib configuration file must be specified by environmental variable 'ECOHYDROWORKFLOW_CFG',
 or -i option must be specified. 
 """
-import os
 import sys
-import errno
 import argparse
-import ConfigParser
 
 from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
@@ -86,20 +83,10 @@ parser.add_argument('-g', '--gageid', dest='gageid', required=True,
                     help='An integer representing the USGS site identifier')
 args = parser.parse_args()
 cmdline = GenericMetadata.getCommandLine()
-#
+
 configFile = None
 if args.configfile:
     configFile = args.configfile
-#else:
-#    try:
-#        configFile = os.environ['ECOHYDROWORKFLOW_CFG']
-#    except KeyError:
-#        sys.exit("Configuration file not specified via environmental variable\n'ECOHYDROWORKFLOW_CFG', and -i option not specified")
-#if not os.access(configFile, os.R_OK):
-#    raise IOError(errno.EACCES, "Unable to read configuration file %s" %
-#                  configFile)
-#config = ConfigParser.RawConfigParser()
-#config.read(configFile)
 
 context = Context(args.projectDir, configFile) 
 
@@ -110,11 +97,6 @@ if not context.config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'):
 if not context.config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_GAGELOC'):
     sys.exit("Config file %s does not define option %s in section %s" & \
           (args.configfile, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_GAGELOC'))
-
-#if not os.access(args.projectDir, os.W_OK):
-#    raise IOError(errno.EACCES, "Unable to write to project directory %s" % \
-#                  (args.projectDir,))
-#projectDir = os.path.abspath(args.projectDir)
 
 result = getNHDReachcodeAndMeasureForGageSourceFea(context.config, args.gageid)
 if result:
