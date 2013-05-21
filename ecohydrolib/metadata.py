@@ -407,7 +407,7 @@ class GenericMetadata:
         
     
     @staticmethod
-    def writeEntryToSection(context, section, key, value):
+    def writeEntryToSection(context, section, key, value, callback=None):
         """ Write an entry in the given section to the metadata store for a given project. 
         
             @note Will overwrite the value for a key that already exists
@@ -417,6 +417,8 @@ class GenericMetadata:
             @param section The section the key is to be written to
             @param key The key to be written to the given section of the project metadata
             @param value The value to be written for key stored in the given section of the project metadata
+            @param callback A function that should be called before writing the entry.  The function takes as
+            input the config object.
             
             @raise IOError(errno.EACCES) if the metadata store for the project is not writable
             @raise Exception if section is not a valid GenericMetadata section
@@ -450,6 +452,10 @@ class GenericMetadata:
         config = ConfigParser.RawConfigParser()
         config.read(metadataFilepath)
         GenericMetadata._writeVersionToMetadata(config)
+        
+        if callback:
+            callback(config)
+        
         # Write new entry
         if not config.has_section(section):
             config.add_section(section)
@@ -462,7 +468,7 @@ class GenericMetadata:
         
         
     @staticmethod
-    def _writeEntriesToSection(projectDir, section, keys, values):
+    def _writeEntriesToSection(projectDir, section, keys, values, callback=None):
         """ Write entries in the given section to the metadata store for a given project. 
         
             @note Will overwrite the value for each key that already exists
@@ -471,6 +477,8 @@ class GenericMetadata:
             @param section The section the keys are to be written to
             @param keys List of keys to be written to the given section of the project metadata
             @param values List of values to be written for key stored in the given section of the project metadata
+            @param callback A function that should be called before writing the entry.  The function takes as
+            input the config object.
             
             @raise IOError(errno.EACCES) if the metadata store for the project is not writable
             @raise Exception if len(keys) != len(values)
@@ -505,6 +513,10 @@ class GenericMetadata:
         config = ConfigParser.RawConfigParser()
         config.read(metadataFilepath)
         GenericMetadata._writeVersionToMetadata(config)
+        
+        if callback:
+            callback(config)
+        
         # Write new entries
         if not config.has_section(section):
             config.add_section(section)

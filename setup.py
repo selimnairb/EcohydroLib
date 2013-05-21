@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='ecohydrolib',
-      version='0.974',
+      version='0.975',
       description='Libraries and command-line scripts for performing ecohydrology data preparation workflows.',
       long_description=readme(),
       classifiers=[

@@ -40,7 +40,7 @@ from ecohydrolib.metadata import GenericMetadata
 
 CONFIG_FILE_ENV = 'ECOHYDROLIB_CFG'
 
-class Context:
+class Context(object):
     def __init__(self, projectDir, configFile=None):
         """ Constructor for Context class
         

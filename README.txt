@@ -46,10 +46,10 @@ Federation Consortium.
 
 Introduction 
 ------------ 
-EcohydrologyWorkflowLib provides a series of Python scripts for
+EcohydroLib provides a series of Python scripts for
 performing ecohydrology data preparation workflows.  Workflow
 sub-components are orchestrated via a metadata persistence store
-provided by the EcohydroLib.metadata package.  These scripts
+provided by the ecohydrolib.metadata package.  These scripts
 are built on top of a series of task-oriented APIs defined in the
 Python package EcohydroLib.  The workflow scripts provide
 information needed to run a ecohydrology models, information such as:
@@ -80,20 +80,20 @@ metadata and provenance information that will be registered into the
 formal workflow environment.
 
 The fundamental operation for any ecohydrology modeling workflow is to
-define the study region of interest (ROI).  In EcohydrologyWorkflowLib
+define the study region of interest (ROI).  In EcohydroLib
 the ROI is simply defined as a bounding box of WGS84 latitude and
 longitude coordinates (e.g. coordinates for the upper- left and
 lower-right corners).  For workflows using the National Hydrography
 Dataset (NHD), the ROI bounding box can be derived using catchment
 polygons associated with the stream reaches upstream of a particular
 gage.  The user begins by picking a streamflow discharge gage listed
-in the NHD dataset.  EcohydrologyWorkflowLib can then determine the
+in the NHD dataset.  EcohydroLib can then determine the
 stream reaches upstream of the data, and then select the catchment
 polygons associated with each upstream reach.  From these polygons,
 the bounding box of the land area draining through the streamflow gage
 can easily be calculated.
 
-Once the ROI is known, EcohydrologyWorkflowLib can extract datasets
+Once the ROI is known, EcohydroLib can extract datasets
 (DEM, soils, etc.)  specific to the study area.  Some of these
 datasets are extracted from static local copies of national spatial
 data (e.g. NLCD), while other are retrieved via web services
@@ -107,7 +107,7 @@ data for a given datatype (e.g. local LIDAR-based DEM).
 
 Source code
 -----------
-Source code can be found at https://github.com/selimnairb/EcohydrologyWorkflowLib.
+Source code can be found at https://github.com/selimnairb/EcohydroLib.
 
 
 Installation
@@ -149,7 +149,7 @@ Libraries (with headers):
 - libgeos
 
 Binaries:
-- GDAL/OGR (throughout)
+- GDAL/OGR 1.9 or later (throughout)
 - SQLite3 (throughout)
 - Seven Zip (if using NHDPlus)
 - Spatialite (if using GHCNDSetup.py/GetGHCNDailyClimateData*.py)
@@ -165,7 +165,7 @@ Data stored locally
 
 NHDPlus V2 database setup
 -------------------------
-Before EcohydrologyWorkflowLib is able to extract study area ROI
+Before EcohydroLib is able to extract study area ROI
 using the NHDPlus dataset, it is necessary to download and build a 
 custom SQLite3-based implementation of the NHDPlus V2 dataset.  A 
 script for building the dataset from downloaded NHDPlus V2 7z 
@@ -194,7 +194,7 @@ into the following databases: - Catchment.sqlite (a spatial dataset
 containing all catchment polygons in the selected NHD region(s); -
 GageLoc.sqlite (a spatial dataset containing streamflow gage points
 for the national NHD dataset; - NHDPlusDB.sqlite (a tabular dataset
-containing other NHD data needed by EcohydrologyWorkflowLib).
+containing other NHD data needed by EcohydroLib).
 
 Make sure to edit your configuration file to include the absolute
 paths of these files (see below).
@@ -207,7 +207,7 @@ GB of memory or more is recommended to build the datasets efficiently.
 However, database setup is a one-time process, and you can use
 databases created on one machine on other machines, provided SQLite3
 is installed.  NHDPlusV2Setup.py creates each database with the
-indices needed by EcohydrologyWorkflowLib, so lookups are very fast.
+indices needed by EcohydroLib, so lookups are very fast.
 
 
 HYDRO1k North America
@@ -221,7 +221,7 @@ GHCN Climate Data
 -----------------
 To download NCDC Global Historical Climatology Network (GHCN) dataset
 for daily climate data, you must first create the spatialite database
-that EcohydrologyWorkflowLib uses to find climate stations using
+that EcohydroLib uses to find climate stations using
 spatial queries.  This database is created using
 bin/GHCNDSetup/GHCNDSetup.py.  The output from the script will be a
 spatialite database.  Make sure to edit your configuration file and

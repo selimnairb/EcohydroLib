@@ -1,7 +1,7 @@
-1. Change version number in ecohydroworkflowlib/__init__.py
+1. Change version number in ecohydrolib/__init__.py
 
 2. Edit setup.py:
-	- Change version number to match that in ecohydroworkflowlib/__init__.py
+	- Change version number to match that in ecohydrolib/__init__.py
 	- Make sure packages list is up to date
 	- Make sure install_requires is up to date
 	- Make sure scripts is up to date
