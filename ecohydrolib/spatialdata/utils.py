@@ -42,6 +42,7 @@ import os, sys, errno
 from math import sqrt
 import math
 
+from osgeo.gdalconst import *
 import gdal
 import ogr
 import osr
@@ -55,9 +56,19 @@ SHP_MAXX = 1
 SHP_MINY = 2
 SHP_MAXY = 3
 
-RASTER_RESAMPLE_METHOD = ['near', 'bilinear', 'cubic', 'cubicspline', 'lanczos']
+RASTER_RESAMPLE_METHOD = ['near', 'bilinear', 'cubic', 'cubicspline', 'lanczos', 'average', 'mode']
 WGS84_EPSG = 4326
 WGS84_EPSG_STR = "EPSG:4326"
+
+
+def _readImageGDAL(filePath):
+    ds = gdal.Open(filePath, GA_ReadOnly)
+    cols = ds.RasterXSize
+    rows = ds.RasterYSize
+    trans = ds.GetGeoTransform()
+    proj = ds.GetProjection()
+    ds=None
+    return { 'rows': rows, 'cols': cols, 'trans': trans, 'srs': proj }
 
 
 def getEPSGStringForUTMZone(zone, isNorth):
@@ -105,6 +116,68 @@ def transformCoordinates(sourceX, sourceY, t_srs, s_srs="EPSG:4326"):
     p_out = Proj(init=t_srs)
     return transform(p_in, p_out, sourceX, sourceY)
 
+
+def extractTileFromRasterByRasterExtent(config, outputDir, extentRasterFilepath, inRasterFilepath, outRasterFilename, resampleMethod='near'):
+    """ Extract a tile from a raster using the extent of another raster as the tile bounds.
+        
+        @note Output raster will be in LZW-compressed GeoTIFF file.
+        @note Will silently return if output raster already exists.
+        
+        @param config Python ConfigParser containing the section 'GDAL/OGR' and option 'PATH_OF_GDAL_WARP'
+        @param outputDir String representing the absolute/relative path of the directory into which output raster
+         should be written
+        @param extentRasterFilepath String representing the path of the extent raster
+        @param inRasterFilepath String representing the path of the raster from which a tile will be extracted
+        @param outRasterFilename String representing the name of the output raster
+        @param resampleMethod String representing method to use to resample; one of: RASTER_RESAMPLE_METHOD
+    """
+    assert(resampleMethod in RASTER_RESAMPLE_METHOD)
+    gdalCmdPath = config.get('GDAL/OGR', 'PATH_OF_GDAL_WARP')
+    if not os.access(gdalCmdPath, os.X_OK):
+        raise IOError(errno.EACCES, "The gdalwarp binary at %s is not executable" %
+                      gdalCmdPath)
+    gdalCmdPath = os.path.abspath(gdalCmdPath)
+    
+    if not os.path.isdir(outputDir):
+        raise IOError(errno.ENOTDIR, "Output directory %s is not a directory" % (outputDir,))
+    if not os.access(outputDir, os.W_OK):
+        raise IOError(errno.EACCES, "Not allowed to write to output directory %s" % (outputDir,))
+    outputDir = os.path.abspath(outputDir)
+    
+    extentRasterFilepath = os.path.abspath(extentRasterFilepath)
+    inRasterFilepath = os.path.abspath(inRasterFilepath)
+    
+    outRasterFilepath = os.path.join(outputDir, outRasterFilename)
+    outRasterFilepath = os.path.abspath(outRasterFilepath)
+
+    if not os.path.exists(outRasterFilepath):
+        extentImg = _readImageGDAL(extentRasterFilepath)
+        t_srs = extentImg['srs']
+        inImg = _readImageGDAL(inRasterFilepath)
+        s_srs = inImg['srs']
+        
+        rows = extentImg['rows']
+        cols = extentImg['cols']
+        targetResX = abs(extentImg['trans'][1])
+        targetResY = abs(extentImg['trans'][5])
+        xmin = extentImg['trans'][0]
+        ymax = extentImg['trans'][3]
+        xmax = xmin + (targetResX * cols)
+        ymin = ymax - (targetResY * rows)
+        
+        targetExtent = [xmin, ymin, xmax, ymax]
+        targetExtent = [str(x) for x in targetExtent]
+        targetExtent = ' '.join(targetExtent)
+        
+        targetRes = "%f %f" % (targetResX, targetResY)
+        
+        gdalCommand = "%s -s_srs %s -t_srs %s -te %s -tr %s -r %s %s %s" \
+            % (gdalCmdPath, s_srs, t_srs, targetExtent, targetRes, resampleMethod, inRasterFilepath, outRasterFilepath)
+        #print gdalCommand
+        returnCode = os.system(gdalCommand)
+        if returnCode != 0:
+            raise Exception("GDAL command %s failed." % (gdalCommand,)) 
+            
 
 def extractTileFromRaster(config, outputDir, inRasterFilename, outRasterFilename, bbox):
     """ Extract a tile from a raster. Tile extent is defined by supplied bounding box 

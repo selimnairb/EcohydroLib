@@ -50,7 +50,7 @@ setup(name='ecohydrolib',
                'bin/GetGHCNDailyClimateDataForStationsInBoundingbox.py',
                'bin/GetHYDRO1kDEMForBoundingbox.py',
                'bin/GetNHDStreamflowGageIdentifiersAndLocation.py',
-               'bin/GetNLCDForBoundingbox.py',
+               'bin/GetNLCDForDEMExtent.py',
                'bin/GetSSURGOFeaturesForBoundingbox.py'
       ],
       zip_safe=False)
