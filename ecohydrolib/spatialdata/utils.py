@@ -347,6 +347,9 @@ def getCoordinatesOfPointsFromShapefile(shpFilepath, layerName, pointIDAttr, poi
         @param pointIDAttr String representing name of the attribute used to identify points
         @param pointIDs List of strings representing IDs of coordinate pairs
         
+        @raise Exception if unable to read layer of shapefile, or if no feature(s) with given
+        attribute value(s) were found in the shapefile
+        
         @return Tuple of floats of the form (longitude, latitude)
     """
     coordinates = []
@@ -357,7 +360,8 @@ def getCoordinatesOfPointsFromShapefile(shpFilepath, layerName, pointIDAttr, poi
     poDS = ogr.Open(shpFilepath, True)
     assert(poDS.GetLayerCount() > 0)
     poLayer = poDS.GetLayerByName(layerName)
-    assert(poLayer)
+    if not poLayer:
+        raise Exception( "Layer named '%s' not found in shapefile %s" % (layerName, shpFilepath) )
     
     # Determine type of ID field
     poFeatureDef = poLayer.GetLayerDefn()
@@ -393,7 +397,9 @@ def getCoordinatesOfPointsFromShapefile(shpFilepath, layerName, pointIDAttr, poi
         isWGS84 = False
     
     # Iterate over features matching query string
-    assert(poLayer.SetAttributeFilter(whereFilter) == 0)
+    if poLayer.SetAttributeFilter(whereFilter) != 0:
+        raise Exception( "Feature identified by \"%s\" not found in layer '%s' of shapefile %s" % \
+                         (whereFilter, layerName, shpFilepath) )
     poFeature = poLayer.GetNextFeature()
     while poFeature:
         poGeometry = poFeature.GetGeometryRef()
@@ -408,6 +414,10 @@ def getCoordinatesOfPointsFromShapefile(shpFilepath, layerName, pointIDAttr, poi
         
         coordinates.append( (x, y) )
         poFeature = poLayer.GetNextFeature()
+        
+    if len(coordinates) == 0:
+        raise Exception( "No features identified by \"%s\" not found in layer '%s' of shapefile %s" % \
+                         (whereFilter, layerName, shpFilepath) )
     return coordinates
 
 

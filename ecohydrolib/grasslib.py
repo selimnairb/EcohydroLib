@@ -35,6 +35,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 import os, errno
 import sys
+import shutil
 import tempfile
 import importlib
 
@@ -42,14 +43,14 @@ DEFAULT_LOCATION = 'default'
 DEFAULT_MAPSET = 'PERMANENT'
 
 class GRASSConfig(object):
-    def __init__(self, context, dbase, location=None, mapset=None, newLocation=False):
+    def __init__(self, context, dbase, location=None, mapset=None, overwrite=False):
         """ @brief Constructor for GRASSConfig
         
             @param context ecohydrolib.Context with config containing a GRASS section with GISBASE entry
             @param dbase String representing a GRASS GIS data directory
             @param location String representing a GRASS project location within the data directory; defaults to DEFAULT_LOCATION.
             @param mapset String representing a GRASS mapset within the location; defaults to DEFAULT_MAPSET.
-            @param newLocation Boolean, if True, constructor will raise an error if the location already exists
+            @param overwrite Boolean, if False, constructor will raise an error if the location already exists
             
             @raise IOError(errno.ENOTDIR) if dbase is not a writable directory
             @raise IOError(errno.EACCESS) if dbase is not writable
@@ -72,9 +73,15 @@ class GRASSConfig(object):
                 raise(errno.EACCES, "Not allowed to write to %s" % (self.dbase,))
         # Check if location already exists, if it does, raise an error if newLocation == True
         self.location = location
-        if newLocation and os.path.exists( os.path.join(self.dbase, self.location) ):
-            raise IOError(errno.EEXIST, "Location '%s' already exists in %s" % \
-                          (location, self.dbase))
+    
+        locationPath = os.path.join(self.dbase, self.location)
+        if os.path.exists( locationPath ):
+            if overwrite:
+                # Delete existing location
+                shutil.rmtree(locationPath)
+            else:
+                raise IOError(errno.EEXIST, "Location '%s' already exists in %s" % \
+                              (location, self.dbase))
         self.mapset = mapset
 
 class GRASSLib(object): 
