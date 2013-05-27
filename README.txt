@@ -281,7 +281,7 @@ will consist of running the follow scripts in the following order:
 2. GetCatchmentShapefileForNHDStreamflowGage.py
 3. GetBoundingboxFromStudyAreaShapefile.py
 4. GetDEMExplorerDEMForBoundingbox.py
-5. GetNLCDForBoundingbox.py
+5. GetNLCDForDEMExtent.py
 6. GetSSURGOFeaturesForBoundingbox.py
 7. GenerateSoilPropertyRastersFromSSURGO.py or GenerateSoilPropertyRastersFromSOLIM.py
 
