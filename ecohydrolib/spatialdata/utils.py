@@ -71,6 +71,18 @@ def _readImageGDAL(filePath):
     return { 'rows': rows, 'cols': cols, 'trans': trans, 'srs': proj }
 
 
+def bboxFromString(bboxStr):
+    """ Get bbox dictionary from comma separated string of the form
+        '-76.769782 39.273610 -76.717498 39.326008'
+    
+        @param bboxStr String representing bounding box in WGS84 coordinates
+        @return Dict representing bounding box
+    """
+    bbox = bboxStr.split()
+    bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
+    return bbox
+    
+
 def getEPSGStringForUTMZone(zone, isNorth):
     """ Get EPSG string, e.g. "EPSG:32618" for UTM zone (WGS84)
     

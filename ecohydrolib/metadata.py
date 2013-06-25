@@ -326,13 +326,17 @@ class GenericMetadata:
     PROVENANCE_SECTION = 'provenance'
     HISTORY_SECTION = 'history'
     STUDY_AREA_SECTION = 'study_area'
+    GRASS_SECTION = 'grass'
     CLIMATE_POINT_SECTION = 'climate_point'
     CLIMATE_GRID_SECTION = 'climate_grid'
     SECTIONS = [ECOHYDROLIB_SECION, MANIFEST_SECTION, PROVENANCE_SECTION, HISTORY_SECTION,\
-                STUDY_AREA_SECTION, CLIMATE_POINT_SECTION, CLIMATE_GRID_SECTION]
+                STUDY_AREA_SECTION, GRASS_SECTION, CLIMATE_POINT_SECTION, CLIMATE_GRID_SECTION]
     
     HISTORY_PROTO = "processing%sstep%s" % (KEY_SEP, KEY_SEP)
 
+    RASTER_TYPE_LC = 'landcover'
+    RASTER_TYPE_ROOF = 'roof_connectivity'
+    RASTER_TYPES = [RASTER_TYPE_LC, RASTER_TYPE_ROOF]
 
     @staticmethod
     def getCommandLine():
@@ -562,6 +566,24 @@ class GenericMetadata:
     
     
     @staticmethod 
+    def writeGRASSEntry(context, key, value):
+        """ Write a GRASS entry to the metadata store for a given project.  Typically used to 
+            record the location within a project directory of a GRASS location and mapset, as well
+            as to note the existence of particular datasets stored in the mapset
+            
+            @note Will overwrite the value for a key that already exists
+        
+            @param context Context object containing projectDir, the path of the project whose 
+            metadata store is to be written to
+            @param key The key to be written to the GRASS section of the project metadata
+            @param value The value to be written for key stored in the GRASS section of the project metadata
+            
+            @exception IOError(errno.EACCES) if the metadata store for the project is not writable
+        """
+        GenericMetadata.writeEntryToSection(context, GenericMetadata.GRASS_SECTION, key, value)
+    
+    
+    @staticmethod 
     def writeClimatePointEntry(context, key, value):
         """ Write a point climate entry to the metadata store for a given project.
             
@@ -707,6 +729,18 @@ class GenericMetadata:
             @return A dictionary of key/value pairs from the study area section of the project metadata
         """
         return GenericMetadata._readEntriesForSection(context.projectDir, GenericMetadata.STUDY_AREA_SECTION)
+    
+    
+    @staticmethod
+    def readGRASSEntries(context):
+        """ Read all GRASS entries from the metadata store for a given project
+        
+            @param context Context object containing projectDir, the path of the project whose 
+            metadata store is to be read from
+            
+            @return A dictionary of key/value pairs from the GRASS section of the project metadata
+        """
+        return GenericMetadata._readEntriesForSection(context.projectDir, GenericMetadata.GRASS_SECTION)
     
     
     @staticmethod
