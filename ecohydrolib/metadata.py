@@ -336,7 +336,9 @@ class GenericMetadata:
 
     RASTER_TYPE_LC = 'landcover'
     RASTER_TYPE_ROOF = 'roof_connectivity'
-    RASTER_TYPES = [RASTER_TYPE_LC, RASTER_TYPE_ROOF]
+    RASTER_TYPE_SOIL = 'soil'
+    RASTER_TYPE_LAI = 'lai'
+    RASTER_TYPES = [RASTER_TYPE_LC, RASTER_TYPE_ROOF, RASTER_TYPE_SOIL, RASTER_TYPE_LAI]
 
     @staticmethod
     def getCommandLine():
