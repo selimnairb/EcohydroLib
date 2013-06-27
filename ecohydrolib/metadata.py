@@ -334,11 +334,13 @@ class GenericMetadata:
     
     HISTORY_PROTO = "processing%sstep%s" % (KEY_SEP, KEY_SEP)
 
+    # This should probably be a dict
     RASTER_TYPE_LC = 'landcover'
     RASTER_TYPE_ROOF = 'roof_connectivity'
     RASTER_TYPE_SOIL = 'soil'
     RASTER_TYPE_LAI = 'lai'
-    RASTER_TYPES = [RASTER_TYPE_LC, RASTER_TYPE_ROOF, RASTER_TYPE_SOIL, RASTER_TYPE_LAI]
+    RASTER_TYPE_PATCH = 'patch'
+    RASTER_TYPES = [RASTER_TYPE_LC, RASTER_TYPE_ROOF, RASTER_TYPE_SOIL, RASTER_TYPE_LAI, RASTER_TYPE_PATCH]
 
     @staticmethod
     def getCommandLine():
