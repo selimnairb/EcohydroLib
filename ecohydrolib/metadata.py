@@ -416,6 +416,63 @@ class GenericMetadata:
         
     
     @staticmethod
+    def deleteEntryFromSection(context, section, key, callback=None):
+        """ Delete an entry from the given section of the metadata store for a given project.
+        
+            @param context Context object containing projectDir, the path of the project whose 
+            metadata store is to be deleted from
+            @param section The section the key is to be deleted from
+            @param key The key to be deleted from the given section of the project metadata
+            @param callback A function that should be called before deleting the entry.  The function takes as
+            input the config object.
+        
+            @raise IOError(errno.EACCES) if the metadata store for the project is not writable
+            @raise Exception if section is not a valid GenericMetadata section
+            @raise MetadataVersionError if existing version information in metadata store
+            does not match version of currently running EcohydroLib.
+        """
+        projectDir = context.projectDir
+        if section not in GenericMetadata.SECTIONS:
+            raise Exception( "%s is an unknown section" % (section,) )
+        lockFilepath = os.path.join(projectDir, GenericMetadata.METADATA_LOCKFILE)
+        metadataFilepath = os.path.join(projectDir, GenericMetadata.METADATA_FILENAME)
+        if os.path.exists(metadataFilepath):
+            if not os.access(metadataFilepath, os.W_OK):
+                raise IOError(errno.EACCES, "Unable to write to metadata store for project %s" % \
+                              (projectDir,))
+        else:
+            if not os.access(projectDir, os.W_OK):
+                raise IOError(errno.EACCES, "Unable to write to metadata store for project %s" % \
+                              (projectDir,))
+            # Create metadata file as it does not exist
+            metadataFD = open(metadataFilepath, 'w')
+            metadataFD.close()
+        
+        # Wait for lockfile to be relinquished
+        while os.path.exists(lockFilepath):
+            time.sleep(5)
+        # Write lock file
+        open(lockFilepath, 'w').close()
+        
+        # Read metadata store
+        config = ConfigParser.RawConfigParser()
+        config.read(metadataFilepath)
+        GenericMetadata._writeVersionToMetadata(config)
+        
+        if callback:
+            callback(config)
+        
+        # Delete entry
+        if config.has_section(section):
+            config.remove_option(section, key)
+            # Write metadata store
+            config.write(open(metadataFilepath, 'w'))
+        
+        # Remove lock file
+        os.unlink(lockFilepath)
+    
+    
+    @staticmethod
     def writeEntryToSection(context, section, key, value, callback=None):
         """ Write an entry in the given section to the metadata store for a given project. 
         
@@ -636,6 +693,71 @@ class GenericMetadata:
         """
         GenericMetadata.writeEntryToSection(context, GenericMetadata.CLIMATE_GRID_SECTION, key, value)
         
+    
+    @staticmethod
+    def deleteManifestEntry(context, key):
+        """ Delete an entry from the manifest section of the metadata store for a given project.
+        
+            @param context Context object containing projectDir, the path of the project whose 
+            metadata store is to be deleted from
+            @param key The key to be deleted from the given section of the project metadata
+            
+            @exception IOError(errno.EACCES) if the metadata store for the project is not writable
+        """
+        GenericMetadata.deleteEntryFromSection(context, GenericMetadata.MANIFEST_SECTION, key)
+     
+        
+    @staticmethod 
+    def deleteStudyAreaEntry(context, key):
+        """ Delete an entry from the study area section of the metadata store for a given project.
+        
+            @param context Context object containing projectDir, the path of the project whose 
+            metadata store is to be deleted from
+            @param key The key to be deleted from the given section of the project metadata
+            
+            @exception IOError(errno.EACCES) if the metadata store for the project is not writable
+        """
+        GenericMetadata.deleteEntryFromSection(context, GenericMetadata.STUDY_AREA_SECTION, key)
+    
+    
+    @staticmethod 
+    def deleteGRASSEntry(context, key):
+        """ Delete an entry from the GRASS section of the metadata store for a given project.
+        
+            @param context Context object containing projectDir, the path of the project whose 
+            metadata store is to be deleted from
+            @param key The key to be deleted from the given section of the project metadata
+            
+            @exception IOError(errno.EACCES) if the metadata store for the project is not writable
+        """
+        GenericMetadata.deleteEntryFromSection(context, GenericMetadata.GRASS_SECTION, key)
+    
+    
+    @staticmethod 
+    def deleteClimatePointEntry(context, key):
+        """ Delete an entry from the point climate section of the metadata store for a given project.
+        
+            @param context Context object containing projectDir, the path of the project whose 
+            metadata store is to be deleted from
+            @param key The key to be deleted from the given section of the project metadata
+            
+            @exception IOError(errno.EACCES) if the metadata store for the project is not writable
+        """
+        GenericMetadata.deleteEntryFromSection(context, GenericMetadata.CLIMATE_POINT_SECTION, key)
+        
+    
+    @staticmethod 
+    def deleteClimateGridEntry(context, key):
+        """ Delete an entry from the grid climate section of the metadata store for a given project.
+        
+            @param context Context object containing projectDir, the path of the project whose 
+            metadata store is to be deleted from
+            @param key The key to be deleted from the given section of the project metadata
+            
+            @exception IOError(errno.EACCES) if the metadata store for the project is not writable
+        """
+        GenericMetadata.deleteEntryFromSection(context, GenericMetadata.CLIMATE_GRID_SECTION, key)
+    
         
     @staticmethod 
     def writeClimateGridEntries(context, keys, values):

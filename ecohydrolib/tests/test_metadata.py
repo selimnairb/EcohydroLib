@@ -105,6 +105,38 @@ class TestMetadata(TestCase):
         self.assertTrue(climateGrid["key1"] == "value_one")
         
         
+    def test_delete(self):
+        GenericMetadata.writeManifestEntry(self.context, "key1", "value_one")
+        manifest = GenericMetadata.readManifestEntries(self.context)
+        self.assertTrue(manifest["key1"] == "value_one")
+        GenericMetadata.deleteManifestEntry(self.context, "key1")
+        manifest = GenericMetadata.readManifestEntries(self.context)
+        self.assertTrue(not 'key1' in manifest)
+        
+        GenericMetadata.writeStudyAreaEntry(self.context, "key1", "value_one")
+        studyArea = GenericMetadata.readStudyAreaEntries(self.context)
+        self.assertTrue(studyArea["key1"] == "value_one")
+        GenericMetadata.deleteStudyAreaEntry(self.context, 'key1')
+        studyArea = GenericMetadata.readStudyAreaEntries(self.context)
+        self.assertTrue(not 'key1' in studyArea)
+        
+        GenericMetadata.writeClimatePointEntry(self.context, "key1", "value_one")
+        climatePoint = GenericMetadata.readClimatePointEntries(self.context)
+        self.assertTrue(climatePoint["key1"] == "value_one")
+        GenericMetadata.deleteClimatePointEntry(self.context, 'key1')
+        climatePoint = GenericMetadata.readClimatePointEntries(self.context)
+        self.assertTrue(not 'key1' in climatePoint)
+        
+        GenericMetadata.writeClimateGridEntry(self.context, "key1", "value_one")
+        climateGrid = GenericMetadata.readClimateGridEntries(self.context)
+        self.assertTrue(climateGrid["key1"] == "value_one")
+        GenericMetadata.deleteClimateGridEntry(self.context, 'key1')
+        climateGrid = GenericMetadata.readClimateGridEntries(self.context)
+        self.assertTrue(not 'key1' in climateGrid)
+        # Delete and empty entry
+        GenericMetadata.deleteClimateGridEntry(self.context, "not_in_store")
+        
+        
     def test_write_climate_point1(self):
         """ Test case where there is a single data file the station """
         station = ClimatePointStation()
