@@ -70,11 +70,15 @@ import os
 import sys
 import errno
 import argparse
+import textwrap
 
 from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
 from ecohydrolib.metadata import AssetProvenance
+from ecohydrolib.spatialdata.utils import isValidSrs
+from ecohydrolib.spatialdata.utils import RASTER_RESAMPLE_METHOD
 from ecohydrolib.spatialdata.utils import copyRasterToGeoTIFF
+from ecohydrolib.spatialdata.utils import resampleRaster
 from ecohydrolib.spatialdata.utils import getDimensionsForRaster
 from ecohydrolib.spatialdata.utils import getSpatialReferenceForRaster
 from ecohydrolib.spatialdata.utils import getBoundingBoxForRaster
@@ -92,6 +96,13 @@ parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the DEM file to be written to the project directory.  File extension ".tif" will be added.')
 parser.add_argument('-b', '--publisher', dest='publisher', required=False,
                     help="The publisher of the landcover dataset, if not supplied 'SELF PUBLISHED' will be used")
+parser.add_argument('-c', '--demResolution', dest='demResolution', required=False, nargs=2, type=float,
+                    help='Two floating point numbers representing the desired X and Y output resolution of soil property raster maps; unit: meters')
+parser.add_argument('-t', '--t_srs', dest='t_srs', required=False, 
+                    help='Target spatial reference system of output, in EPSG:num format')
+parser.add_argument('-s', '--resampleMethod', dest='resampleMethod', required=False,
+                    choices=RASTER_RESAMPLE_METHOD, default='bilinear',
+                    help='Method to use to resample DEM (if necessary). Defaults to bilinear.')
 args = parser.parse_args()
 cmdline = GenericMetadata.getCommandLine()
 
@@ -108,6 +119,27 @@ if not context.config.has_option('GDAL/OGR', 'PATH_OF_GDAL_WARP'):
 if not os.access(args.demfile, os.R_OK):
     raise IOError(errno.EACCES, "Not allowed to read input DEM %s" (args.demfile,))
 inDEMPath = os.path.abspath(args.demfile)
+inSpatialMetadata = getSpatialReferenceForRaster(inDEMPath)
+
+resample = False
+
+s_srs = inSpatialMetadata[5]
+t_srs = s_srs
+if args.t_srs:
+    if not isValidSrs(args.t_srs):
+        sys.exit(textwrap.fill("ERROR: '%s' is not a valid spatial reference.  Spatial reference must be of the form 'EPSG:XXXX', e.g. 'EPSG:32617'.  For more information, see: http://www.spatialreference.org/" % (args.t_srs,) ) )
+    if s_srs != args.t_srs:
+        t_srs = args.t_srs
+        resample = True
+
+if args.demResolution:
+    if args.demResolution[0] != inSpatialMetadata[0] or args.demResolution[1] != inSpatialMetadata[1]:
+        resample = True
+    demResolutionX = args.demResolution[0]
+    demResolutionY = args.demResolution[1]
+else:
+    demResolutionX = inSpatialMetadata[0]
+    demResolutionY = inSpatialMetadata[1]
 
 if args.publisher:
     publisher = args.publisher
@@ -125,8 +157,19 @@ demFilepath = os.path.join(context.projectDir, demFilename)
 if os.path.exists(demFilepath):
     os.unlink(demFilepath)
 
-# Copy the raster in to the project directory
-copyRasterToGeoTIFF(context.config, context.projectDir, inDEMPath, demFilename)
+# Copy the raster in to the project directory (reprojecting if need be)
+if not resample:
+    sys.stdout.write("Importing DEM...")
+    sys.stdout.flush()
+    copyRasterToGeoTIFF(context.config, context.projectDir, inDEMPath, demFilename)
+else:
+    sys.stdout.write("Reprojecting DEM from %s to %s, spatial resolution (%.2f, %.2f) to (%.2f, %.2f)..." % \
+                     (s_srs, t_srs, inSpatialMetadata[0], inSpatialMetadata[1],
+                      demResolutionX, demResolutionY) )
+    sys.stdout.flush()
+    resampleRaster(context.config, context.projectDir, inDEMPath, demFilename,
+                   s_srs, t_srs, demResolutionX, demResolutionY, args.resampleMethod)
+sys.stdout.write('done\n')
 # Get the bounding box for the DEM
 bbox = getBoundingBoxForRaster(demFilepath)
 # Write a shapefile for the bounding box

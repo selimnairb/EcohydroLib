@@ -2,7 +2,7 @@
 """@package GetDEMExplorerDEMForBoundingbox
 
 @brief Query GeoBrain WCS4DEM (http://geobrain.laits.gmu.edu/wcs4dem.htm) for digital elevation
-model (DEM) data. 
+model (DEM) data.  Will get DEM from SRTM 30m coverage by default, see --help for other choices.  
 
 This software is provided free of charge under the New BSD License. Please see
 the following license information:
@@ -70,11 +70,15 @@ from bounding box center.
 import os
 import sys
 import argparse
+import textwrap
 
 from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
 from ecohydrolib.metadata import AssetProvenance
 from ecohydrolib.wcs4dem.demquery import getDEMForBoundingBox
+from ecohydrolib.wcs4dem import demquery
+from ecohydrolib.spatialdata.utils import isValidSrs
+from ecohydrolib.spatialdata.utils import bboxFromString
 from ecohydrolib.spatialdata.utils import resampleRaster
 from ecohydrolib.spatialdata.utils import getSpatialReferenceForRaster
 from ecohydrolib.spatialdata.utils import getDimensionsForRaster
@@ -89,9 +93,11 @@ parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory to which metadata, intermediate, and final files should be saved')
+parser.add_argument('-d', '--demType', dest='demType', required=False, choices=demquery.SUPPORTED_COVERAGE, default=demquery.SUPPORTED_COVERAGE[0],
+                    help='Source dataset from which DEM tile should be extracted.')
 parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the DEM file to be written.  File extension ".tif" will be added.')
-parser.add_argument('-s', '--demResolution', dest='demResolution', required=False, nargs=2, type=float,
+parser.add_argument('-c', '--demResolution', dest='demResolution', required=False, nargs=2, type=float,
                     help='Two floating point numbers representing the desired X and Y output resolution of soil property raster maps; unit: meters')
 parser.add_argument('-t', '--t_srs', dest='t_srs', required=False, 
                     help='Target spatial reference system of output, in EPSG:num format')
@@ -121,11 +127,12 @@ if os.path.exists(demFilepath):
 
 # Get study area parameters
 studyArea = GenericMetadata.readStudyAreaEntries(context)
-bbox = studyArea['bbox_wgs84'].split()
-bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
+bbox = bboxFromString(studyArea['bbox_wgs84'])
 
 # Determine target spatial reference
 if args.t_srs:
+    if not isValidSrs(args.t_srs):
+        sys.exit(textwrap.fill("ERROR: '%s' is not a valid spatial reference.  Spatial reference must be of the form 'EPSG:XXXX', e.g. 'EPSG:32617'.  For more information, see: http://www.spatialreference.org/" % (args.t_srs,) ) )
     t_srs = args.t_srs
 else:
     # Default for UTM
@@ -135,7 +142,7 @@ else:
 
 # Get DEM from DEMExplorer
 tmpDEMFilename = "%s-TEMP.tif" % (outfile)
-(returnCode, demURL) = getDEMForBoundingBox(context.config, context.projectDir, tmpDEMFilename, bbox=bbox, srs=t_srs)
+(returnCode, demURL) = getDEMForBoundingBox(context.config, context.projectDir, tmpDEMFilename, bbox=bbox, coverage=args.demType, srs=t_srs)
 assert(returnCode)
 tmpDEMFilepath = os.path.join(context.projectDir, tmpDEMFilename)
 

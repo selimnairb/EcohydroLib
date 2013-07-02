@@ -67,6 +67,7 @@ import argparse
 from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
 from ecohydrolib.metadata import AssetProvenance
+from ecohydrolib.spatialdata.utils import bboxFromString
 from ecohydrolib.spatialdata.utils import convertGMLToShapefile
 from ecohydrolib.ssurgo.featurequery import getMapunitFeaturesForBoundingBox
 from ecohydrolib.ssurgo import featurequery
@@ -93,8 +94,8 @@ if not context.config.has_option('GDAL/OGR', 'PATH_OF_OGR2OGR'):
 
 # Get study area parameters
 studyArea = GenericMetadata.readStudyAreaEntries(context)
-bbox = studyArea['bbox_wgs84'].split()
-bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
+bbox = bboxFromString(studyArea['bbox_wgs84'])
+
 outputrasterresolutionX = studyArea['dem_res_x']
 outputrasterresolutionY = studyArea['dem_res_y']
 srs = studyArea['dem_srs']

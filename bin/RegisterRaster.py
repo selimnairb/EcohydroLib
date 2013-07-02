@@ -74,6 +74,7 @@ import os
 import sys
 import errno
 import argparse
+import textwrap
 
 from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
@@ -96,11 +97,13 @@ parser.add_argument('-r', '--rasterfile', dest='rasterfile', required=True,
                     help='The relative/absolute path of the raster to be registered.')
 parser.add_argument('-s', '--resampleMethod', dest='resampleMethod', required=False,
                     choices=RASTER_RESAMPLE_METHOD, default='near',
-                    help='Method to use to resample raster to DEM extent and spatial reference (if necessary)')
+                    help="Method to use to resample raster to DEM extent and spatial reference (if necessary). Defaults to '%s'." % ('near',) )
 parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the raster to be written to the project directory.  File extension ".tif" will be added.')
 parser.add_argument('--force', dest='force', required=False, action='store_true',
                     help='Force registry of raster if extent does not match DEM.')
+parser.add_argument('--noresample', dest='noresample', required=False, action='store_true',
+                    help='Do not resample raster if its resolution differs from DEM. Will still resample if raster is not in the same spatial reference as DEM.')
 parser.add_argument('-b', '--publisher', dest='publisher', required=False,
                     help="The publisher of the raster, if not supplied 'SELF PUBLISHED' will be used")
 args = parser.parse_args()
@@ -155,29 +158,39 @@ rasterFilepath = os.path.join(context.projectDir, rasterFilename)
 if os.path.exists(rasterFilepath):
     os.unlink(rasterFilepath)
 
-# Ensure input raster has the same projection and resolution as DEM
+# Determine whether we need to resample
+resample = False
 rasterMetadata = getSpatialReferenceForRaster(inRasterPath)
 rasterSrs = rasterMetadata[5]
 rasterX = rasterMetadata[0]
 rasterY = rasterMetadata[1]
-if (rasterSrs != srs) or (rasterX != demResolutionX) or (rasterY != demResolutionY):
+if (rasterSrs != srs):
+    resample = True
+elif (not args.noresample) and ( (rasterX != demResolutionX) or (rasterY != demResolutionY) ):
+    resample = True
+    
+if resample:
     # Reproject raster, copying into project directory in the process
+    sys.stdout.write("Reprojecting %s raster from %s to %s, spatial resolution (%.2f, %.2f) to (%.2f, %.2f)..." % \
+                     (args.type, rasterSrs, srs, rasterX, rasterX,
+                      demResolutionX, demResolutionY) )
     resampleRaster(context.config, context.projectDir, inRasterPath, rasterFilepath, \
                    s_srs=rasterSrs, t_srs=srs, \
                    trX=demResolutionX, trY=demResolutionY, \
                    resampleMethod=args.resampleMethod)
 else:
     # Copy the raster in to the project directory
+    sys.stdout.write("Importing %s raster..." % (args.type, ) )
+    sys.stdout.flush()
     copyRasterToGeoTIFF(context.config, context.projectDir, inRasterPath, rasterFilename)
+sys.stdout.write('done\n')
 
 # Make sure extent of resampled raster is the same as the extent of the DEM
 newRasterMetadata = getDimensionsForRaster(rasterFilepath)
-if not force and ( (newRasterMetadata[0] != demColumns) or (newRasterMetadata[1] != demRows) ):
-    #print("rast cols: %s, rast rows: %s" % (newRasterMetadata[0], newRasterMetadata[1]))
-    #print("dem cols: %s, dem rows: %s" % (demColumns, demRows))
+if (not force) and ( (newRasterMetadata[0] != demColumns) or (newRasterMetadata[1] != demRows) ):
     # Extents to not match, roll back and bail out
     os.unlink(rasterFilepath)
-    sys.exit("Extent of raster dataset %s does not match extent of DEM in project directory %s. Use --force to override." %
+    sys.exit(textwrap.fill("ERROR: Extent of raster dataset %s does not match extent of DEM in project directory %s. Use --force to override.") %
              (rasterFilename, context.projectDir))
 
 # Write metadata

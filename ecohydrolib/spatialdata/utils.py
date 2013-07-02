@@ -41,6 +41,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import os, sys, errno
 from math import sqrt
 import math
+import re
 
 from osgeo.gdalconst import *
 import gdal
@@ -60,6 +61,7 @@ RASTER_RESAMPLE_METHOD = ['near', 'bilinear', 'cubic', 'cubicspline', 'lanczos',
 WGS84_EPSG = 4326
 WGS84_EPSG_STR = "EPSG:4326"
 
+EPSG_RE = re.compile('^epsg:\d+$')
 
 def _readImageGDAL(filePath):
     ds = gdal.Open(filePath, GA_ReadOnly)
@@ -81,6 +83,18 @@ def bboxFromString(bboxStr):
     bbox = bboxStr.split()
     bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
     return bbox
+
+
+def isValidSrs(srsString):
+    """ Determine if spatial reference string is valid.  Currently,
+        only strings of the form 'EPSG:X...X' are valid.
+        
+        @param srsString
+        
+        @return True if valid, False if invalid
+    """   
+    m =  EPSG_RE.match(srsString.lower())
+    return m != None
     
 
 def getEPSGStringForUTMZone(zone, isNorth):
@@ -286,16 +300,19 @@ def resampleRaster(config, outputDir, inRasterFilepath, outRasterFilename, \
     
     assert(resampleMethod in RASTER_RESAMPLE_METHOD)
     
+    nodata = getNodataValuesForRaster(inRasterFilepath)
+    nodataStr = ' '.join(map(str, nodata))
+    
     outRasterFilepath = os.path.join(outputDir, outRasterFilename)
     
     if not os.path.exists(outRasterFilepath):
         if s_srs is None:
-            gdalCommand = "%s -q -t_srs %s -tr %f %f -r %s -of GTiff -co 'COMPRESS=LZW' %s %s" \
-                            % (gdalCmdPath, t_srs, trX, trY, resampleMethod, \
+            gdalCommand = "%s -q -t_srs %s -dstnodata '%s' -tr %f %f -r %s -of GTiff -co 'COMPRESS=LZW' %s %s" \
+                            % (gdalCmdPath, t_srs, nodataStr, trX, trY, resampleMethod, \
                                inRasterFilepath, outRasterFilepath)
         else:
-            gdalCommand = "%s -q -s_srs %s -t_srs %s -tr %f %f -r %s -of GTiff -co 'COMPRESS=LZW' %s %s" \
-                            % (gdalCmdPath, s_srs, t_srs, trX, trY, resampleMethod, \
+            gdalCommand = "%s -q -s_srs %s -t_srs %s -dstnodata '%s' -tr %f %f -r %s -of GTiff -co 'COMPRESS=LZW' %s %s" \
+                            % (gdalCmdPath, s_srs, t_srs, nodataStr, trX, trY, resampleMethod, \
                                inRasterFilepath, outRasterFilepath)
         #print gdalCommand
         returnCode = os.system(gdalCommand)
@@ -660,11 +677,36 @@ def getMeterConversionFactorForLinearUnitOfShapefile(shpFilename):
     return soilSrs.GetLinearUnits()
 
 
+def getNodataValuesForRaster(filename):
+    """ Get nodata value for each band in a raster.  Uses GDAL library
+        Code adapted from: http://svn.osgeo.org/gdal/trunk/gdal/swig/python/samples/gdalinfo.py
+        
+        @param filename String representing the DEM file path
+        
+        @return List containing nodata values for each band
+        
+        @exception IOError if filename is not readable
+    """
+    nodata = []
+    
+    if not os.access(filename, os.R_OK):
+        raise IOError(errno.EACCES, "Not allowed to read DEM %s to nodata value" %
+                      filename)
+        
+    hDataset = gdal.Open(filename, gdal.GA_ReadOnly)
+    if hDataset is not None:
+        for iBand in range(hDataset.RasterCount):
+            hBand = hDataset.GetRasterBand(iBand+1 )
+            nodata.append( hBand.GetNoDataValue() )
+    
+    return nodata
+
+
 def getSpatialReferenceForRaster(filename):
     """ Get pixel size and unit for DEM.  Uses GDAL library
         Code adapted from: http://svn.osgeo.org/gdal/trunk/gdal/swig/python/samples/gdalinfo.py
         
-        @param filename String representing the DEM file to read pixel size and units
+        @param filename String representing the DEM file path
         
         @return A tuple of the form: 
         (pixelWidth, pixelHeight, linearUnitsName, linearUnitsConversionFactor, WKT SRS string, EPSG SRS string)
@@ -678,7 +720,7 @@ def getSpatialReferenceForRaster(filename):
     pszProjection = None
     
     if not os.access(filename, os.R_OK):
-        raise IOError(errno.EACCES, "Not allowed to read DEM %s to read pixel size and units" %
+        raise IOError(errno.EACCES, "Not allowed to read DEM %s to read spatial reference" %
                       filename)
     
     hDataset = gdal.Open(filename, gdal.GA_ReadOnly)
@@ -769,12 +811,14 @@ def getBoundingBoxForRaster(filename):
     return dict({'minX': float(minX), 'minY': float(minY), 'maxX': float(maxX), 'maxY': float(maxY), 'srs': 'EPSG:4326'})
 
 
-def writeBboxPolygonToShapefile(bbox, outputDir, layerName):
+def writeBboxPolygonToShapefile(bbox, outputDir, layerName, overwrite=True):
     """ Write bbox to a shapfile
     
         @param bbox A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
         @param outputDir String representing the absolute/relative path of the directory into which shapefile should be written
         @param layerName String representing the name of the layer. Will be used as root of filename of output shapefile
+        @param overwrite True if existing shapefile should be overwritten.
+        
         @return String representing the name of shapefile created (not the absolute path)
         
         @raise IOError is output directory is not a writable directory
@@ -792,8 +836,11 @@ def writeBboxPolygonToShapefile(bbox, outputDir, layerName):
     
     shpFilepath = os.path.join(outputDir, shpFilename)
     if os.path.exists(shpFilepath):
-        raise Exception("Shapefile %s already exists in directory %s" % \
-                        (shpFilename,outputDir) )
+        if not overwrite:
+            raise Exception("Shapefile %s already exists in directory %s" % \
+                            (shpFilename,outputDir) )
+        else:
+            deleteShapefile(shpFilepath)
     
     ogr.UseExceptions()
     srs = osr.SpatialReference()
@@ -823,7 +870,7 @@ def writeBboxPolygonToShapefile(bbox, outputDir, layerName):
     return shpFilename
 
 
-def writeCoordinatePairsToPointShapefile(outputDir, layerName, pointIDAttr, pointIDs, coordinates):
+def writeCoordinatePairsToPointShapefile(outputDir, layerName, pointIDAttr, pointIDs, coordinates, overwrite=True):
     """ Write coordinates as a point shapefile
     
         @param outputDir String representing the absolute/relative path of the directory into which shapefile should be written
@@ -831,6 +878,7 @@ def writeCoordinatePairsToPointShapefile(outputDir, layerName, pointIDAttr, poin
         @param pointIDAttr String representing name of the attribute used to identify points
         @param pointIDs List of strings representing IDs of coordinate pairs 
         @param coordinates List of tuples of floats of the form (longitude, latitude), in WGS84
+        @param overwrite True if existing shapefile should be overwritten.
         
         @return String representing the name of shapefile created (not the absolute path)
         
@@ -852,8 +900,11 @@ def writeCoordinatePairsToPointShapefile(outputDir, layerName, pointIDAttr, poin
     
     shpFilepath = os.path.join(outputDir, shpFilename)
     if os.path.exists(shpFilepath):
-        raise Exception("Shapefile %s already exists in directory %s" % \
-                        (shpFilename,outputDir) )
+        if not overwrite:
+            raise Exception("Shapefile %s already exists in directory %s" % \
+                            (shpFilename,outputDir) )
+        else:
+            deleteShapefile(shpFilepath)
     
     ogr.UseExceptions()
     srs = osr.SpatialReference()

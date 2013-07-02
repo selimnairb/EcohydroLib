@@ -69,6 +69,7 @@ import argparse
 from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
 from ecohydrolib.metadata import AssetProvenance
+from ecohydrolib.spatialdata.utils import bboxFromString
 from ecohydrolib.spatialdata.utils import deleteShapefile
 from ecohydrolib.spatialdata.utils import getCoordinatesOfPointsFromShapefile
 from ecohydrolib.spatialdata.utils import writeCoordinatePairsToPointShapefile
@@ -119,8 +120,7 @@ else:
 
 # Get study area parameters
 studyArea = GenericMetadata.readStudyAreaEntries(context)
-bbox = studyArea['bbox_wgs84'].split()
-bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
+bbox = bboxFromString(studyArea['bbox_wgs84'])
 
 outFilename = "%s%sshp" % (outfile, os.extsep)
 # Overwrite DEM if already present

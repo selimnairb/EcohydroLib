@@ -77,6 +77,7 @@ from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
 from ecohydrolib.metadata import AssetProvenance
 from ecohydrolib.hydro1k import demtile
+from ecohydrolib.spatialdata.utils import bboxFromString
 from ecohydrolib.spatialdata.utils import resampleRaster
 from ecohydrolib.spatialdata.utils import getSpatialReferenceForRaster
 from ecohydrolib.spatialdata.utils import getDimensionsForRaster
@@ -123,8 +124,7 @@ if os.path.exists(demFilepath):
 
 # Get study area parameters
 studyArea = GenericMetadata.readStudyAreaEntries(context)
-bbox = studyArea['bbox_wgs84'].split()
-bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
+bbox = bboxFromString(studyArea['bbox_wgs84'])
 
 # Determine target spatial reference
 if args.t_srs:

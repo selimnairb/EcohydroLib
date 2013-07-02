@@ -73,6 +73,7 @@ from datetime import datetime
 from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
 from ecohydrolib.metadata import ClimatePointStation
+from ecohydrolib.spatialdata.utils import bboxFromString
 from ecohydrolib.spatialdata.utils import calculateBoundingBoxCenter
 from ecohydrolib.climatedata.ghcndquery import findStationNearestToCoordinates
 from ecohydrolib.climatedata.ghcndquery import getClimateDataForStation
@@ -108,8 +109,7 @@ if not os.path.exists(outDirPath):
 
 # Get study area parameters
 studyArea = GenericMetadata.readStudyAreaEntries(context)
-bbox = studyArea['bbox_wgs84'].split()
-bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
+bbox = bboxFromString(studyArea['bbox_wgs84'])
 
 # Get centroid of bounding box
 (longitude, latitude) = calculateBoundingBoxCenter(bbox)
