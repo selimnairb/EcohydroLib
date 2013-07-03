@@ -216,6 +216,7 @@ class AssetProvenance(MetadataEntity):
         self.dcDate = datetime.now()
         self.dcPublisher = None
         self.dcDescription = None
+        self.processingNotes = None
         
     def writeToMetadata(self, context):
         """ Write AssetProvenance data to provenance section of metadata for
@@ -259,6 +260,8 @@ class AssetProvenance(MetadataEntity):
         keys.append(dcPublisher); values.append(self.dcPublisher)
         dcDescription = keyProto + 'dc.description'
         keys.append(dcDescription); values.append(self.dcDescription)
+        processingNotes = keyProto + 'processing_notes'
+        keys.append(processingNotes); values.append(self.processingNotes)
         GenericMetadata.writeProvenanceEntries(context, keys, values)
     
     @classmethod
@@ -291,6 +294,8 @@ class AssetProvenance(MetadataEntity):
         newInstance.dcPublisher = provenance[dcPublisher]
         dcDescription = keyProto + 'dc.description'
         newInstance.dcDescription = provenance[dcDescription]
+        processingNotes = keyProto + 'processing_notes'
+        newInstance.processingNotes = provenance[processingNotes]
         
         return newInstance
     

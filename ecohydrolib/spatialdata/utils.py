@@ -738,7 +738,10 @@ def getSpatialReferenceForRaster(filename):
                 linearUnitsName = hSRS.GetLinearUnitsName()
                 linearUnitsConversionFactor = hSRS.GetLinearUnits()
         
-        epsgStr = "%s:%s" % ( hSRS.GetAttrValue("AUTHORITY", 0), hSRS.GetAttrValue("AUTHORITY", 1) )
+        if hSRS.GetAttrValue("AUTHORITY", 0) != None and hSRS.GetAttrValue("AUTHORITY", 1):
+            epsgStr = "%s:%s" % ( hSRS.GetAttrValue("AUTHORITY", 0), hSRS.GetAttrValue("AUTHORITY", 1) )
+        else:
+            epsgStr = None
     return (pixelWidth, pixelHeight, linearUnitsName, linearUnitsConversionFactor, pszProjection, epsgStr)
 
 

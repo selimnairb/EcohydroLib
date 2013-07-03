@@ -62,11 +62,8 @@ Post conditions
 
 Usage:
 @code
-python ./RegisterRaster.py -p /path/to/project_dir -l /raster/to/register
+RegisterRaster.py -p /path/to/project_dir -t RASTER_TYPE -r /raster/to/register
 @endcode
-
-@note If option -t is not specified, UTM projection (WGS 84 coordinate system) will be inferred
-from bounding box center.
 
 @todo Set date in provenance to file modification date
 """
@@ -79,6 +76,7 @@ import textwrap
 from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
 from ecohydrolib.metadata import AssetProvenance
+from ecohydrolib.spatialdata.utils import bboxFromString
 from ecohydrolib.spatialdata.utils import RASTER_RESAMPLE_METHOD
 from ecohydrolib.spatialdata.utils import copyRasterToGeoTIFF
 from ecohydrolib.spatialdata.utils import resampleRaster
@@ -144,10 +142,9 @@ if args.force:
 
 # Get study area parameters
 studyArea = GenericMetadata.readStudyAreaEntries(context)
-bbox = studyArea['bbox_wgs84'].split()
-bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
-demResolutionX = studyArea['dem_res_x']
-demResolutionY = studyArea['dem_res_y']
+bbox = bboxFromString(studyArea['bbox_wgs84'])
+demResolutionX = float(studyArea['dem_res_x'])
+demResolutionY = float(studyArea['dem_res_y'])
 demColumns = studyArea['dem_columns']
 demRows = studyArea['dem_rows']
 srs = studyArea['dem_srs']
@@ -162,8 +159,8 @@ if os.path.exists(rasterFilepath):
 resample = False
 rasterMetadata = getSpatialReferenceForRaster(inRasterPath)
 rasterSrs = rasterMetadata[5]
-rasterX = rasterMetadata[0]
-rasterY = rasterMetadata[1]
+rasterX = float(rasterMetadata[0])
+rasterY = float(rasterMetadata[1])
 if (rasterSrs != srs):
     resample = True
 elif (not args.noresample) and ( (rasterX != demResolutionX) or (rasterY != demResolutionY) ):
@@ -171,16 +168,18 @@ elif (not args.noresample) and ( (rasterX != demResolutionX) or (rasterY != demR
     
 if resample:
     # Reproject raster, copying into project directory in the process
-    sys.stdout.write("Reprojecting %s raster from %s to %s, spatial resolution (%.2f, %.2f) to (%.2f, %.2f)..." % \
-                     (args.type, rasterSrs, srs, rasterX, rasterX,
-                      demResolutionX, demResolutionY) )
+    processingNotes = "Resampling %s raster from %s to %s, spatial resolution (%.2f, %.2f) to (%.2f, %.2f)" % \
+        (args.type, rasterSrs, srs, rasterX, rasterX,
+         demResolutionX, demResolutionY) 
+    sys.stdout.write("%s..." % (processingNotes,) )
     resampleRaster(context.config, context.projectDir, inRasterPath, rasterFilepath, \
                    s_srs=rasterSrs, t_srs=srs, \
                    trX=demResolutionX, trY=demResolutionY, \
                    resampleMethod=args.resampleMethod)
 else:
     # Copy the raster in to the project directory
-    sys.stdout.write("Importing %s raster..." % (args.type, ) )
+    processingNotes = "Importing %s raster from %s without resampling" % (args.type, inRasterPath)
+    sys.stdout.write("%s..." % (processingNotes,) )
     sys.stdout.flush()
     copyRasterToGeoTIFF(context.config, context.projectDir, inRasterPath, rasterFilename)
 sys.stdout.write('done\n')
@@ -205,6 +204,7 @@ asset.dcSource = "file://%s" % (inRasterPath,)
 asset.dcTitle = args.type
 asset.dcPublisher = publisher
 asset.dcDescription = cmdline
+asset.processingNotes = processingNotes
 asset.writeToMetadata(context)
 
 # Write processing history
