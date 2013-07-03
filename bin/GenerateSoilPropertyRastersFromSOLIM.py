@@ -110,10 +110,14 @@ outputrasterresolutionX = studyArea['dem_res_x']
 outputrasterresolutionY = studyArea['dem_res_y']
 
 # Truncate attributes to 10 characters because shapefiles rely on ancient technology
+sys.stdout.write('Generating soil property maps using SOLIM...')
+sys.stdout.flush()
 attrList = [elem[:10] for elem in ecohydrolib.ssurgo.attributequery.attributeListNumeric] 
 rasterFiles = inferSoilPropertiesForSSURGOAndTerrainData(config=context.config, outputDir=context.projectDir, \
                                                          shpFilepath=shpFilepath, demFilepath=demFilepath, \
                                                          featureAttrList=attrList)
+sys.stdout.write('done\n')
+
 # Write metadata entries
 for attr in rasterFiles.keys():
     asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)

@@ -71,6 +71,7 @@ import os
 import sys
 import argparse
 import textwrap
+import shutil
 
 from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
@@ -141,33 +142,47 @@ else:
     t_srs = getEPSGStringForUTMZone(utmZone, isNorth)
 
 # Get DEM from DEMExplorer
+sys.stdout.write('Downloading DEM from DEMExplorer...')
+sys.stdout.flush()
 tmpDEMFilename = "%s-TEMP.tif" % (outfile)
 (returnCode, demURL) = getDEMForBoundingBox(context.config, context.projectDir, tmpDEMFilename, bbox=bbox, coverage=args.demType, srs=t_srs)
 assert(returnCode)
+sys.stdout.write('done\n')
 tmpDEMFilepath = os.path.join(context.projectDir, tmpDEMFilename)
+
+demSrs = getSpatialReferenceForRaster(tmpDEMFilepath)
+resample = False
 
 if args.demResolution:
     demResolutionX = args.demResolution[0]
     demResolutionY = args.demResolution[1]
+    
+    if demSrs[0] != demResolutionX or demSrs[1] != demResolutionY:
+        resample = True
 else:
-    demSrs = getSpatialReferenceForRaster(tmpDEMFilepath)
     demResolutionX = demSrs[0]
     demResolutionY = demSrs[1]
 
 # Resample DEM to target srs and resolution
-resampleRaster(context.config, context.projectDir, tmpDEMFilepath, demFilename, \
-               s_srs=t_srs, t_srs=t_srs, \
-               trX=demResolutionX, trY=demResolutionY)
+if resample:
+    sys.stdout.write("Resampling DEM to resolution %.2f x %.2f..." % (demResolutionX, demResolutionY) )
+    sys.stdout.flush()
+    resampleRaster(context.config, context.projectDir, tmpDEMFilepath, demFilename, \
+                   s_srs=t_srs, t_srs=t_srs, \
+                   trX=demResolutionX, trY=demResolutionY)
+    sys.stdout.write('done\n')
+else:
+    shutil.move(tmpDEMFilepath, demFilepath)
 
 # Write metadata
-GenericMetadata.writeStudyAreaEntry(context, "dem_res_x", demResolutionX)
-GenericMetadata.writeStudyAreaEntry(context, "dem_res_y", demResolutionY)
-GenericMetadata.writeStudyAreaEntry(context, "dem_srs", t_srs)
+GenericMetadata.writeStudyAreaEntry(context, 'dem_res_x', demResolutionX)
+GenericMetadata.writeStudyAreaEntry(context, 'dem_res_y', demResolutionY)
+GenericMetadata.writeStudyAreaEntry(context, 'dem_srs', t_srs)
 
 # Get rows and columns for DEM
 (columns, rows) = getDimensionsForRaster(demFilepath)
-GenericMetadata.writeStudyAreaEntry(context, "dem_columns", columns)
-GenericMetadata.writeStudyAreaEntry(context, "dem_rows", rows)
+GenericMetadata.writeStudyAreaEntry(context, 'dem_columns', columns)
+GenericMetadata.writeStudyAreaEntry(context, 'dem_rows', rows)
 
 # Write provenance
 asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)

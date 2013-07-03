@@ -125,7 +125,10 @@ demFilename = manifest['dem']
 demFilepath = os.path.join(context.projectDir, demFilename)
 demFilepath = os.path.abspath(demFilepath)
 
+sys.stdout.write('Extracting tile from local NLCD data...')
+sys.stdout.flush()
 extractTileFromRasterByRasterExtent(context.config, context.projectDir, demFilepath, nlcdRaster, tileFilename)
+sys.stdout.write('done\n')
 
 # Write metadata
 GenericMetadata.writeStudyAreaEntry(context, "landcover_type", "NLCD2006")
