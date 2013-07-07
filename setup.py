@@ -5,11 +5,11 @@ def readme():
         return f.read()
 
 setup(name='ecohydrolib',
-      version='0.975',
+      version='1.0',
       description='Libraries and command-line scripts for performing ecohydrology data preparation workflows.',
       long_description=readme(),
       classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: BSD License',
@@ -51,6 +51,9 @@ setup(name='ecohydrolib',
                'bin/GetHYDRO1kDEMForBoundingbox.py',
                'bin/GetNHDStreamflowGageIdentifiersAndLocation.py',
                'bin/GetNLCDForDEMExtent.py',
-               'bin/GetSSURGOFeaturesForBoundingbox.py'
+               'bin/GetSSURGOFeaturesForBoundingbox.py',
+               'bin/RegisterDEM.py',
+               'bin/RegisterGage.py',
+               'bin/RegisterRaster.py'
       ],
       zip_safe=False)

@@ -46,19 +46,17 @@ Federation Consortium.
 
 Introduction 
 ------------ 
-EcohydroLib provides a series of Python scripts for
-performing ecohydrology data preparation workflows.  Workflow
-sub-components are orchestrated via a metadata persistence store
-provided by the ecohydrolib.metadata package.  These scripts
-are built on top of a series of task-oriented APIs defined in the
-Python package EcohydroLib.  The workflow scripts provide
-information needed to run a ecohydrology models, information such as:
-digital elevation model (DEM), soils, land cover, and vegetation leaf
-area index (LAI; NOT YET IMPLEMENTED), hydrology/meteorology point
-time series (e.g. streamflow discharge, precipitation, temperature;
-NOT YET IMPLEMENTED).  By default these data are taken from national
-spatial data infrastructure (NLCD, SSURGO).  However it is also
-possible to register custom datasets with the workflow metadata.
+EcohydroLib provides a series of Python scripts for performing
+ecohydrology data preparation workflows.  Workflow sub-components are
+orchestrated via a metadata persistence store provided by the
+ecohydrolib.metadata package.  These scripts are built on top of a
+series of task-oriented APIs defined in the Python package
+EcohydroLib.  The workflow scripts provide tools for downloading and
+manipulating geospatial data needed to run a ecohydrology models,
+information such as: digital elevation model (DEM), soils, land cover,
+and vegetation leaf area index.  These data can be drawn both from
+national spatial data infrastructure (NLCD, SSURGO) as well as custom
+local datasets.
 
 A metadata store is used to orchestrate a series of workflow scripts
 used to prepare data for an ecohydrology model.  The current
@@ -80,29 +78,29 @@ metadata and provenance information that will be registered into the
 formal workflow environment.
 
 The fundamental operation for any ecohydrology modeling workflow is to
-define the study region of interest (ROI).  In EcohydroLib
-the ROI is simply defined as a bounding box of WGS84 latitude and
-longitude coordinates (e.g. coordinates for the upper- left and
-lower-right corners).  For workflows using the National Hydrography
-Dataset (NHD), the ROI bounding box can be derived using catchment
-polygons associated with the stream reaches upstream of a particular
-gage.  The user begins by picking a streamflow discharge gage listed
-in the NHD dataset.  EcohydroLib can then determine the
-stream reaches upstream of the data, and then select the catchment
-polygons associated with each upstream reach.  From these polygons,
-the bounding box of the land area draining through the streamflow gage
-can easily be calculated.
+define the study region of interest (ROI).  In EcohydroLib the ROI is
+simply defined as a bounding box of WGS84 latitude and longitude
+coordinates (e.g. coordinates for the upper- left and lower-right
+corners).  For workflows using the National Hydrography Dataset (NHD),
+the ROI bounding box can be derived using catchment polygons
+associated with the stream reaches upstream of a particular gage.  The
+user begins by picking a streamflow discharge gage listed in the NHD
+dataset.  EcohydroLib can then determine the stream reaches upstream
+of the data, and then select the catchment polygons associated with
+each upstream reach.  From these polygons, the bounding box of the
+land area draining through the streamflow gage can easily be
+calculated.
 
-Once the ROI is known, EcohydroLib can extract datasets
-(DEM, soils, etc.)  specific to the study area.  Some of these
-datasets are extracted from static local copies of national spatial
-data (e.g. NLCD), while other are retrieved via web services
-interfaces from federal agency data centers (e.g. SSURGO soils data
-from USDA) or from third-party data centers (GeoBrain's DEM Explorer).
-However it is also possible for the user to upload their own custom
-data for a given datatype (e.g. local LIDAR-based DEM).
+Once the ROI is known, EcohydroLib can extract datasets (DEM, soils,
+etc.)  specific to the study area.  Some of these datasets are
+extracted from static local copies of national spatial data
+(e.g. NLCD), while other are retrieved via web services interfaces
+from federal agency data centers (e.g. SSURGO soils data from USDA) or
+from third-party data centers (GeoBrain's DEM Explorer).  However it
+is also possible for the user to register their own custom data for a
+given datatype (e.g. local LIDAR-based DEM).
 
-![Fig. 1 Ecohydrology model data preparation workflow software stack depicting EcohydroLib's role as an intermediary between raw data, derived data subsets, and specific ecohydrology models](RHESSysWorkflowImpl-20130318.png)
+![Fig. 1 Ecohydrology model data preparation workflow software stack depicting EcohydroLib's role as an intermediary between raw data, derived data subsets, and specific ecohydrology models](EcohydroLib-Architecture.png)
 
 
 Source code
@@ -151,9 +149,9 @@ Libraries (with headers):
 Binaries:
 - GDAL/OGR 1.9 or later (throughout)
 - SQLite3 (throughout)
-- Seven Zip (if using NHDPlus)
+- Seven Zip (if using NHDPlusV2Setup/NHDPlusV2Setup.py)
 - Spatialite (if using GHCNDSetup.py/GetGHCNDailyClimateData*.py)
-- Unix find (if using NHDPlus)
+- Unix find (if using NHDPlusV2Setup/NHDPlusV2Setup.py)
 
 
 Data stored locally
@@ -165,12 +163,26 @@ Data stored locally
 
 NHDPlus V2 database setup
 -------------------------
-Before EcohydroLib is able to extract study area ROI
-using the NHDPlus dataset, it is necessary to download and build a 
-custom SQLite3-based implementation of the NHDPlus V2 dataset.  A 
-script for building the dataset from downloaded NHDPlus V2 7z 
-archives is provided in bin/NHDPlusV2Setup/NHDPlusV2Setup.py.  
-The following NHDPlus V2 datasets are required:
+Before EcohydroLib is able to extract study area ROI using the NHDPlus
+dataset, it is necessary to have a local copy of the NHDPlus dataset.
+Owing to the large size of the NHDPlus dataset, these data are
+distributed as as series of compressed archives broken into several
+regions for the continental U.S.  There are two choices for obtaining
+NHDPlus in a format usable by EcohydroLib (as several SQLite3
+databases).  A national-scale dataset (i.e. covering the entire
+continental U.S.) is available for download here:
+
+http://...
+
+Once downloaded, extract the archive and record its location in your
+EcohydroLib configuation file; see the 'Configuration files' section
+for more information.
+
+If you wish to build you own copy of the database (i.e. for a subset
+of U.S. country) a script for building the dataset from downloaded
+NHDPlus V2 7z archives is provided in
+bin/NHDPlusV2Setup/NHDPlusV2Setup.py.  The following NHDPlus V2
+datasets are required:
 
 - NHDPlusV21_NationalData_GageInfo_02.7z
 - NHDPlusV21_NationalData_GageLoc_01.7z
@@ -298,8 +310,6 @@ following order:
 1. GetCatchmentShapefileForHYDRO1kBasins.py
 2. GetBoundingboxFromStudyAreaShapefile.py
 3. GetHYDRO1kDEMForBoundingbox.py
-4. GetNLDASLandcoverForBoundingbox.py (not yet implemented)
-5. GetNLDASSoilsDataForBoundingbox.py (not yet implemented)
 6. GetGHCNDailyClimateDataForBoundingboxCentroid.py OR GetGHCNDailyClimateDataForStationsInBoundingbox.py
 
 
@@ -307,6 +317,6 @@ A workflow using custom local data sources will consist of running the
 follow scripts in the following order:
 1. RegisterDEM.py
 2. RegisterGage.py
-3. RegisterLandcover.py
+3. RegisterRaster.py
 4. GetSSURGOFeaturesForBoundingbox.py
 
