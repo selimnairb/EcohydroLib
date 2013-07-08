@@ -32,7 +32,7 @@ setup(name='ecohydrolib',
                 'ecohydrolib.wcs4dem' 
                 ],
       install_requires=[
-        'GDAL',
+        #'GDAL', # GDAL does not build under OS X easy_install/PIP
         'pyproj==1.9.2',
         'numpy',
         'lxml',

@@ -45,7 +45,7 @@ import ogr
 from ecohydrolib.spatialdata.utils import getBoundingBoxForShapefile
 from ecohydrolib.spatialdata.utils import deleteShapefile
 
-
+OGR_UPDATE_MODE = False
 NORTH = 0
 EAST = 90
 OGR_SHAPEFILE_DRIVER_NAME = "ESRI Shapefile"
@@ -62,9 +62,9 @@ def getNHDReachcodeAndMeasureForGageSourceFea(config, source_fea):
          
         @return A tuple(string, float) representing the reachcode and measure; None if no gage was found.
         
-        @exception ConfigParser.NoSectionError
-        @exception ConfigParser.NoOptionError
-        @exception IOError(errno.EACCES) if NHDPlus2 DB is not readable
+        @raise ConfigParser.NoSectionError
+        @raise ConfigParser.NoOptionError
+        @raise IOError(errno.EACCES) if NHDPlus2 DB is not readable
     """
     nhddbPath = config.get('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB')
     if not os.access(nhddbPath, os.R_OK):
@@ -133,9 +133,10 @@ def getLocationForStreamGage(config, whereFilter):
          
         @return A tuple with (x,y) coordinates in 'EPSG:4326' (WGS 84); None if gage was not found
         
-        @exception ConfigParser.NoSectionError
-        @exception ConfigParser.NoOptionError
-        @exception IOError(errno.ENOTDIR) if GageLoc is not readable
+        @raise ConfigParser.NoSectionError
+        @raise ConfigParser.NoOptionError
+        @raise Exception if unable to open gage database
+        @raise IOError(errno.ENOTDIR) if GageLoc is not readable
     """
     gageLocPath = config.get('NHDPLUS2', 'PATH_OF_NHDPLUS2_GAGELOC')
     if not os.access(gageLocPath, os.R_OK):
@@ -143,7 +144,9 @@ def getLocationForStreamGage(config, whereFilter):
                       gageLocPath)
     gageLocPath = os.path.abspath(gageLocPath)
     
-    poDS = ogr.Open(gageLocPath, True)
+    poDS = ogr.Open(gageLocPath, OGR_UPDATE_MODE)
+    if not poDS:
+        raise Exception("Unable to open gage database %s" (gageLocPath,))
     assert(poDS.GetLayerCount() > 0)
     poLayer = poDS.GetLayer(0)
     assert(poLayer)
@@ -255,10 +258,10 @@ def getBoundingBoxForCatchmentsForGage(config, outputDir, reachcode, measure, de
          
         @return A dictionary with keys: minX, minY, maxX, maxY, srs. The key srs is set to 'EPSG:4326' (WGS 84)
         
-        @exception ConfigParser.NoSectionError
-        @exception ConfigParser.NoOptionError
-        @exception IOError(errno.ENOTDIR) if outputDir is not a directory
-        @exception IOError(errno.EACCESS) if outputDir is not writable
+        @raise ConfigParser.NoSectionError
+        @raise ConfigParser.NoOptionError
+        @raise IOError(errno.ENOTDIR) if outputDir is not a directory
+        @raise IOError(errno.EACCESS) if outputDir is not writable
     """
     nhddbPath = config.get('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB')
     if not os.access(nhddbPath, os.R_OK):
@@ -334,10 +337,10 @@ def getCatchmentShapefileForGage(config, outputDir, catchmentFilename, reachcode
             in percent from downstream end of the one or more NHDFlowline features that are 
             assigned to the ReachCode (see NHDPlusV21 GageLoc table)
          
-        @exception ConfigParser.NoSectionError
-        @exception ConfigParser.NoOptionError
-        @exception IOError(errno.ENOTDIR) if outputDir is not a directory
-        @exception IOError(errno.EACCESS) if outputDir is not writable
+        @raise ConfigParser.NoSectionError
+        @raise ConfigParser.NoOptionError
+        @raise IOError(errno.ENOTDIR) if outputDir is not a directory
+        @raise IOError(errno.EACCESS) if outputDir is not writable
     """
     nhddbPath = config.get('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB')
     if not os.access(nhddbPath, os.R_OK):
@@ -374,7 +377,9 @@ def getCatchmentShapefileForGage(config, outputDir, catchmentFilename, reachcode
     
     # Open input layer
     ogr.UseExceptions()
-    poDS = ogr.Open(catchmentFeatureDBPath, True)
+    poDS = ogr.Open(catchmentFeatureDBPath, OGR_UPDATE_MODE)
+    if not poDS:
+        raise Exception("Unable to open catchment feature database %s" (catchmentFeatureDBPath,))
     assert(poDS.GetLayerCount() > 0)
     poLayer = poDS.GetLayer(0)
     assert(poLayer)
