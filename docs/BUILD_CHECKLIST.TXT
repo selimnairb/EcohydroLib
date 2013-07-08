@@ -1,10 +1,11 @@
-1. Change version number in ecohydrolib/__init__.py
-
-2. Edit setup.py:
-	- Change version number to match that in ecohydrolib/__init__.py
+1. Edit setup.py:
+	- Change version number
 	- Make sure packages list is up to date
 	- Make sure install_requires is up to date
 	- Make sure scripts is up to date
+	
+2. Change version number in ecohydrolib/__init__.py to match setup.py if changes will break
+   compatibility to previous versions' metadata
 
 3. Update PROJECT_NUMBER in Doxyfile matches version in above.
 	

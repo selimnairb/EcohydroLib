@@ -147,7 +147,7 @@ def extractTileFromRasterByRasterExtent(config, outputDir, extentRasterFilepath,
     """ Extract a tile from a raster using the extent of another raster as the tile bounds.
         
         @note Output raster will be in LZW-compressed GeoTIFF file.
-        @note Will silently return if output raster already exists.
+        @note Will delete existing output raster if it already exists, then perform the extraction
         
         @param config Python ConfigParser containing the section 'GDAL/OGR' and option 'PATH_OF_GDAL_WARP'
         @param outputDir String representing the absolute/relative path of the directory into which output raster
@@ -176,33 +176,35 @@ def extractTileFromRasterByRasterExtent(config, outputDir, extentRasterFilepath,
     outRasterFilepath = os.path.join(outputDir, outRasterFilename)
     outRasterFilepath = os.path.abspath(outRasterFilepath)
 
-    if not os.path.exists(outRasterFilepath):
-        extentImg = _readImageGDAL(extentRasterFilepath)
-        t_srs = extentImg['srs']
-        inImg = _readImageGDAL(inRasterFilepath)
-        s_srs = inImg['srs']
+    if os.path.exists(outRasterFilepath):
+        os.unlink(outRasterFilepath)
         
-        rows = extentImg['rows']
-        cols = extentImg['cols']
-        targetResX = abs(extentImg['trans'][1])
-        targetResY = abs(extentImg['trans'][5])
-        xmin = extentImg['trans'][0]
-        ymax = extentImg['trans'][3]
-        xmax = xmin + (targetResX * cols)
-        ymin = ymax - (targetResY * rows)
-        
-        targetExtent = [xmin, ymin, xmax, ymax]
-        targetExtent = [str(x) for x in targetExtent]
-        targetExtent = ' '.join(targetExtent)
-        
-        targetRes = "%f %f" % (targetResX, targetResY)
-        
-        gdalCommand = "%s -s_srs %s -t_srs %s -te %s -tr %s -r %s %s %s" \
-            % (gdalCmdPath, s_srs, t_srs, targetExtent, targetRes, resampleMethod, inRasterFilepath, outRasterFilepath)
-        #print gdalCommand
-        returnCode = os.system(gdalCommand)
-        if returnCode != 0:
-            raise Exception("GDAL command %s failed." % (gdalCommand,)) 
+    extentImg = _readImageGDAL(extentRasterFilepath)
+    t_srs = extentImg['srs']
+    inImg = _readImageGDAL(inRasterFilepath)
+    s_srs = inImg['srs']
+    
+    rows = extentImg['rows']
+    cols = extentImg['cols']
+    targetResX = abs(extentImg['trans'][1])
+    targetResY = abs(extentImg['trans'][5])
+    xmin = extentImg['trans'][0]
+    ymax = extentImg['trans'][3]
+    xmax = xmin + (targetResX * cols)
+    ymin = ymax - (targetResY * rows)
+    
+    targetExtent = [xmin, ymin, xmax, ymax]
+    targetExtent = [str(x) for x in targetExtent]
+    targetExtent = ' '.join(targetExtent)
+    
+    targetRes = "%f %f" % (targetResX, targetResY)
+    
+    gdalCommand = "%s -s_srs %s -t_srs %s -te %s -tr %s -r %s %s %s" \
+        % (gdalCmdPath, s_srs, t_srs, targetExtent, targetRes, resampleMethod, inRasterFilepath, outRasterFilepath)
+    #print gdalCommand
+    returnCode = os.system(gdalCommand)
+    if returnCode != 0:
+        raise Exception("GDAL command %s failed." % (gdalCommand,)) 
             
 
 def extractTileFromRaster(config, outputDir, inRasterFilename, outRasterFilename, bbox):
