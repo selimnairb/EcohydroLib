@@ -39,6 +39,13 @@ import shutil
 import tempfile
 import importlib
 
+GRASS_RASTER_RESAMPLE_NEAREST = 'nearest'
+GRASS_RASTER_RESAMPLE_BILINEAR = 'bilinear'
+GRASS_RASTER_RESAMPLE_BICUBIC = 'bicubic'
+GRASS_RASTER_RESAMPLE_METHODS = [GRASS_RASTER_RESAMPLE_NEAREST, 
+                                 GRASS_RASTER_RESAMPLE_BILINEAR,
+                                 GRASS_RASTER_RESAMPLE_BICUBIC]
+
 DEFAULT_LOCATION = 'default'
 DEFAULT_MAPSET = 'PERMANENT'
 

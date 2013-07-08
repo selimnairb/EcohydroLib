@@ -128,6 +128,9 @@ outFilepath = os.path.join(context.projectDir, outFilename)
 if os.path.exists(outFilepath):
     deleteShapefile(outFilepath)
 
+sys.stdout.write('Importing streamflow gage...')
+sys.stdout.flush()
+
 gageIDs = [args.idValue]
 coords = getCoordinatesOfPointsFromShapefile(inGagePath, args.layerName,
                                              args.idAttribute, gageIDs)
@@ -141,6 +144,8 @@ if not isCoordinatePairInBoundingBox(bbox, coordinates):
              ( str(gage_lon), str(gage_lat), str(bbox['minX']), str(bbox['minY']), str(bbox['maxX']), str(bbox['maxY']) ) )
 
 shpFilename = writeCoordinatePairsToPointShapefile(context.projectDir, outfile, "gage_id", gageIDs, [coordinates])
+
+sys.stdout.write('done\n')
 
 # Write metadata
 GenericMetadata.writeStudyAreaEntry(context, 'gage_id_attr', 'gage_id')
