@@ -125,8 +125,6 @@ class GRASSLib(object):
         gsetup.init(self.grassConfig.gisbase, \
                     self.grassConfig.dbase, self.grassConfig.location, \
                     self.grassConfig.mapset)
-#        gsetup.init(self.grassConfig.gisbase, \
-#                    self.grassConfig.dbase, self.grassConfig.location)
 
         self.script = importlib.import_module('grass.script')
         return self.script
