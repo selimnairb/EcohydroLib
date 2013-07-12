@@ -33,15 +33,25 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Authors
 -------
 Brian Miles <brian_miles@unc.edu>
+
 Lawrence E. Band <lband@email.unc.edu>
+
+For questions or support contact [Brian Miles](brian_miles@unc.edu)
 
 
 Funding
 -------
-This work was supported by NSF grant #1239678 EAGER: Collaborative
-Research: Interoperability Testbed-Assessing a Layered Architecture for
-Integration of Existing Capabilities, and NSF grant #0940841 DataNet
-Federation Consortium.
+This work was supported by the following NSF grants
+
+- #1239678 EAGER: Collaborative Research: Interoperability
+   Testbed-Assessing a Layered Architecture for Integration of
+   Existing Capabilities
+
+- #0940841 DataNet Federation Consortium.
+
+- #1148090 Collaborative Research: SI2-SSI: An Interactive Software
+   Infrastructure for Sustaining Collaborative Innovation in the
+   Hydrologic Sciences
 
 
 Introduction 
@@ -105,7 +115,8 @@ given datatype (e.g. local LIDAR-based DEM).
 
 Source code
 -----------
-Source code can be found at https://github.com/selimnairb/EcohydroLib.
+Source code can be found at: https://github.com/selimnairb/EcohydroLib.
+Documentation can be found at:
 
 
 Installation
@@ -140,6 +151,8 @@ done before or after installing EcohydroLib):
 
 Required runtime software
 -------------------------
+Python 2.7
+
 Libraries (with headers):
 - libxml2
 - libxslt
