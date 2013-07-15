@@ -33,8 +33,10 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 @author Brian Miles <brian_miles@unc.edu>
 """
-import os, errno
+import os, sys, errno
+import socket
 import httplib
+import textwrap
 
 from ecohydrolib.spatialdata.utils import deleteGeoTiff
 
@@ -45,6 +47,7 @@ SUPPORTED_FORMATS = ['image/geotiff', 'image/netcdf', 'image/PNG', 'image/JPEG',
 # Example URL /cgi-bin/gbwcs-dem?service=wcs&version=1.0.0&request=getcoverage&coverage=SRTM_90m_Global&bbox=-90,38,-89,39&crs=epsg:4326&format=image/geotiff&store=true
 HOST = 'geobrain.laits.gmu.edu'
 URL_PROTO = '/cgi-bin/gbwcs-dem?service=wcs&version=1.0.0&request=getcoverage&coverage={coverage}&crs={crs}&bbox={bbox}&response_crs={response_crs}&format={format}&store={store}'
+CONTENT_TYPE_ERROR = 'text/xml'
 
 _DEFAULT_CRS = 'EPSG:4326'
 _BUFF_LEN = 4096 * 10
@@ -52,6 +55,7 @@ _BUFF_LEN = 4096 * 10
 
 def getDEMForBoundingBox(config, outputDir, outDEMFilename, bbox, coverage='SRTM_30m_USA', srs='EPSG:4326', format='image/geotiff', overwrite=True):
     """ Fetch a digital elevation model (DEM) from the GeoBrain WCS4DEM WCS-compliant web service.
+        Will write any error returned by query to sys.stderr.
     
         @param config A Python ConfigParser (not currently used)
         @param outputDir String representing the absolute/relative path of the directory into which output DEM should be written
@@ -98,24 +102,53 @@ def getDEMForBoundingBox(config, outputDir, outDEMFilename, bbox, coverage='SRTM
  
     url = URL_PROTO.format(coverage=coverage, crs=crs, bbox=bboxStr, response_crs=srs, format=format, store=False)
     #print "WCS4DEM URL: %s" % (url,)
+    urlFecthed = "http://%s%s\n" % (HOST, url)
     
     conn = httplib.HTTPConnection(HOST)
-    conn.request('GET', url)
-    res = conn.getresponse(buffering=True)
-    #sys.stderr.write("WCS4DEMLib URL: http://%s%s\n" % (HOST, url))
-    #sys.stderr.write("HTTP response: %s %s\n" % (res.status, httplib.responses[int(res.status)]))
-    assert(200 == res.status)
+    try:
+        conn.request('GET', url)
+        res = conn.getresponse(buffering=True)
+    except socket.error as e:
+        msg = "Encountered the following error when trying to read DEM from %s. Error: %s.  Please try again later or contact the developer." % \
+            (urlFecthed, str(e) )
+        sys.stderr.write( textwrap.fill(msg) )
+        return ( dataFetched, urlFecthed )
+  
+    if 200 != res.status:
+        msg = "HTTP response %d %s encountered when querying %s.  Please try again later or contact the developer." % \
+            (res.status, res.reason, urlFecthed)
+        sys.stderr.write( textwrap.fill(msg) ) 
+        return ( dataFetched, urlFecthed )
+     
+    contentType = res.getheader('Content-Type')
     
-    data = res.read(_BUFF_LEN)
-    if data: 
-        demOut = open(outDEMFilepath, 'wb')
-        dataFetched = True
-        while data:
-            demOut.write(data)
+    if contentType == format:
+        # The data returned were of the type expected, read the data
+        data = res.read(_BUFF_LEN)
+        if data: 
+            demOut = open(outDEMFilepath, 'wb')
+            dataFetched = True
+            while data:
+                demOut.write(data)
+                data = res.read(_BUFF_LEN)
+            demOut.close()
+    elif contentType == CONTENT_TYPE_ERROR:
+        # Read the error and print to stderr
+        msg = "The following error was encountered reading URL %s\n" %\
+            (urlFecthed, )
+        sys.stderr.write( textwrap.fill(msg) )
+        data = res.read(_BUFF_LEN)
+        while data: 
+            sys.stderr.write(data)
+            sys.stderr.flush()
             data = res.read(_BUFF_LEN)
-        demOut.close()
+        sys.stderr.write('\n')
+    else:
+        msg = "Query for DEM from URL %s returned content type %s, was expecting type %s.  Operation failed." % \
+            (urlFecthed, format, contentType)
+        sys.stderr.write( textwrap.fill(msg) )
         
-    return ( dataFetched, "http://%s%s\n" % (HOST, url) )
+    return ( dataFetched, urlFecthed )
 
     
     
