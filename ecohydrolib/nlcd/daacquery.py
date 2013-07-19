@@ -1,6 +1,7 @@
-"""@package ecohydrolib.wcs4dem.demquery
+"""@package ecohydrolib.nlcd.daacquery
     
-@brief Query NASA EOS Education Alliance (NEHEA) GeoBrain for DEM data
+@brief Query NLCD data from ORNL Distributed Active Archive Center for 
+Biogeochemical Dynamics
 
 This software is provided free of charge under the New BSD License. Please see
 the following license information:
@@ -35,37 +36,43 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 from ecohydrolib.wcslib import getRasterForBoundingBox
 
-SUPPORTED_COVERAGE = ['SRTM_30m_USA', 'SRTM_90m_Global', 'GTOPO_30arc_Global']
-SUPPORTED_FORMATS = ['image/geotiff', 'image/netcdf', 'image/PNG', 'image/JPEG', 'image/JPEG2000', 'image/HDF4IMAGE']
-MIME_TYPE = 'application/image'
+SUPPORTED_COVERAGE = { 'NLCD2001': '10009_1',
+              'NLCD2006': '10009_14' }
 
-# Example URL /cgi-bin/gbwcs-dem?service=wcs&version=1.0.0&request=getcoverage&coverage=SRTM_90m_Global&bbox=-90,38,-89,39&crs=epsg:4326&format=image/geotiff&store=true
-HOST = 'geobrain.laits.gmu.edu'
-URL_PROTO = '/cgi-bin/gbwcs-dem?service=wcs&version=1.0.0&request=getcoverage&coverage={coverage}&crs={crs}&bbox={bbox}&response_crs={response_crs}&format={format}&store={store}'
+SUPPORTED_FORMATS = ['GeoTIFF_BYTE']
+MIME_TYPE = 'image/tiff'
+INTERPOLATION = 'NEAREST'
 
-def getDEMForBoundingBox(config, outputDir, outDEMFilename, bbox, coverage='SRTM_30m_USA', srs='EPSG:4326', format='image/geotiff', overwrite=True):
-    """ Fetch a digital elevation model (DEM) from the GeoBrain WCS4DEM WCS-compliant web service.
+# Example URL http://webmap.ornl.gov/ogcbroker/wcs?originator=SDAT&service=WCS&version=1.0.0&request=GetCoverage&coverage=10009_14&crs=EPSG:1020031&bbox=1220972.0103093,1646432.4742268,1250882.0103093,1671362.4742268&resx=30&resy=30&format=GeoTIFF_BYTE&interpolation=NEAREST
+HOST = 'webmap.ornl.gov'
+URL_PROTO = '/ogcbroker/wcs?originator=SDAT&service=WCS&version=1.0.0&request=GetCoverage&coverage={coverage}&crs={crs}&bbox={bbox}&response_crs={response_crs}&resx={resx}&resy={resy}&format={format}&interpolation={interpolation}'
+
+def getNLCDForBoundingBox(config, outputDir, outNLCDFilename, bbox, resx, resy, coverage='NLCD2006', srs='EPSG:4326', format='GeoTIFF_BYTE', overwrite=True):
+    """ Fetch a NLCD land cover data from ORNL Distributed Active Archive Center for 
+        Biogeochemical Dynamics WCS-compliant web service.
+        
         Will write any error returned by query to sys.stderr.
     
         @param config A Python ConfigParser (not currently used)
         @param outputDir String representing the absolute/relative path of the directory into which output DEM should be written
-        @param outDEMFilename String representing the name of the DEM file to be written
+        @param outNLCDFilename String representing the name of the NLCD raster file to be written
         @param bbox Dict representing the lat/long coordinates and spatial reference of the bounding box area
-            for which the DEM is to be extracted.  The following keys must be specified: minX, minY, maxX, maxY, srs.
-        @param coverage String representing the DEM source from which to get the DEM coverage.  Must be a value listed in SUPPORTED_COVERAGE
+            for which the NLCD data are to be extracted.  The following keys must be specified: minX, minY, maxX, maxY, srs.
+        @param resx Float representing X resolution of NLCD data to be returned in units of srs
+        @param resy Float representing Y resolution of NLCD data to be returned in units of srs
+        @param coverage String representing the NLCD version to get.  Must be a value listed in SUPPORTED_COVERAGE
         @param srs String representing the spatial reference of the raster to be returned.
-        @param format String representing the MIME type of the raster format to be returned.  Must be a value listed in 
+        @param format String representing the type of the raster format to be returned.  Must be a value listed in 
             SUPPORTED_FORMATS
         @param overwrite Boolean value indicating whether or not the file indicated by filename should be overwritten.
             If False and filename exists, IOError exception will be thrown with errno.EEXIST
     
         @raise IOError if outputDir is not a writable directory
-        @raise IOError if outDEMFilename already exists and overwrite is False (see above)
+        @raise IOError if outNLCDFilename already exists and overwrite is False (see above)
     
         @return Tuple(True if DEM data were fetched and False if not, URL of DEM fetched)
     """
     assert(format in SUPPORTED_FORMATS)
-    assert(coverage in SUPPORTED_COVERAGE)
-    return getRasterForBoundingBox(config, outputDir, outDEMFilename, HOST, URL_PROTO, MIME_TYPE, bbox, coverage, srs, format,
-                                   response_crs=srs, store=False, overwrite=overwrite)
-    
+    assert(coverage in SUPPORTED_COVERAGE.keys())
+    return getRasterForBoundingBox(config, outputDir, outNLCDFilename, HOST, URL_PROTO, MIME_TYPE, bbox, SUPPORTED_COVERAGE[coverage], srs, format,
+                                   response_crs=srs, store=None, resx=resx, resy=resy, interpolation=INTERPOLATION, overwrite=overwrite)

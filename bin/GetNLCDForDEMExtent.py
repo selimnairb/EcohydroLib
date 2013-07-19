@@ -77,6 +77,7 @@ from ecohydrolib.spatialdata.utils import extractTileFromRaster
 from ecohydrolib.spatialdata.utils import extractTileFromRasterByRasterExtent
 from ecohydrolib.spatialdata.utils import resampleRaster
 from ecohydrolib.spatialdata.utils import deleteGeoTiff
+from ecohydrolib.nlcd.daacquery import getNLCDForBoundingBox
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get NLCD data (in GeoTIFF format) for DEM extent from a local copy of the entire NLCD 2006 dataset.')
@@ -84,8 +85,10 @@ parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory to which metadata, intermediate, and final files should be saved')
+parser.add_argument('-s', '--source', dest='source', required=False, choices=['local', 'wcs'], default='local',
+                    help='Source for NLCD data')
 parser.add_argument('-f', '--outfile', dest='outfile', required=False,
-                    help='The name of the DEM file to be written.  File extension ".tif" will be added.')
+                    help='The name of the NLCD file to be written.  File extension ".tif" will be added.')
 args = parser.parse_args()
 cmdline = GenericMetadata.getCommandLine()
 
@@ -103,11 +106,7 @@ if args.outfile:
     outfile = args.outfile
 else:
     outfile = "NLCD"
-
-nlcdRaster = context.config.get('NLCD', 'PATH_OF_NLCD2006')
-if not os.access(nlcdRaster, os.R_OK):
-    raise IOError(errno.EACCES, "Not allowed to read NLCD raster %s" % (nlcdRaster,))
-nlcdRaster = os.path.abspath(nlcdRaster)
+tileFilename = "%s.tif" % (outfile)
 
 # Get study area parameters
 studyArea = GenericMetadata.readStudyAreaEntries(context)
@@ -117,18 +116,34 @@ outputrasterresolutionX = studyArea['dem_res_x']
 outputrasterresolutionY = studyArea['dem_res_y']
 srs = studyArea['dem_srs']
 
-tileFilename = "%s.tif" % (outfile)
+if args.source == 'local':
 
-# Get name of DEM raster
-manifest = GenericMetadata.readManifestEntries(context)
-demFilename = manifest['dem']
-demFilepath = os.path.join(context.projectDir, demFilename)
-demFilepath = os.path.abspath(demFilepath)
+    nlcdURL = 'http://gisdata.usgs.gov/TDDS/DownloadFile.php?TYPE=nlcd2006&FNAME=NLCD2006_landcover_4-20-11_se5.zip'
+    nlcdRaster = context.config.get('NLCD', 'PATH_OF_NLCD2006')
+    if not os.access(nlcdRaster, os.R_OK):
+        raise IOError(errno.EACCES, "Not allowed to read NLCD raster %s" % (nlcdRaster,))
+    nlcdRaster = os.path.abspath(nlcdRaster)
+    
+    # Get name of DEM raster
+    manifest = GenericMetadata.readManifestEntries(context)
+    demFilename = manifest['dem']
+    demFilepath = os.path.join(context.projectDir, demFilename)
+    demFilepath = os.path.abspath(demFilepath)
+    
+    sys.stdout.write('Extracting tile from local NLCD data...')
+    sys.stdout.flush()
+    extractTileFromRasterByRasterExtent(context.config, context.projectDir, demFilepath, nlcdRaster, tileFilename)
+    sys.stdout.write('done\n')
 
-sys.stdout.write('Extracting tile from local NLCD data...')
-sys.stdout.flush()
-extractTileFromRasterByRasterExtent(context.config, context.projectDir, demFilepath, nlcdRaster, tileFilename)
-sys.stdout.write('done\n')
+else:
+    # Download NLCD from WCS
+    sys.stdout.write('Downloading NLCD via WCS...')
+    sys.stdout.flush()
+    (returnCode, nlcdURL) = getNLCDForBoundingBox(context.config, context.projectDir, tileFilename, bbox=bbox, 
+                                                  resx=outputrasterresolutionX, resy=outputrasterresolutionY, 
+                                                  coverage='NLCD2006', srs=srs)
+    assert(returnCode)
+    sys.stdout.write('done\n')
 
 # Write metadata
 GenericMetadata.writeStudyAreaEntry(context, "landcover_type", "NLCD2006")
@@ -137,7 +152,7 @@ GenericMetadata.writeStudyAreaEntry(context, "landcover_type", "NLCD2006")
 asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
 asset.name = 'landcover'
 asset.dcIdentifier = tileFilename
-asset.dcSource = 'http://gisdata.usgs.gov/TDDS/DownloadFile.php?TYPE=nlcd2006&FNAME=NLCD2006_landcover_4-20-11_se5.zip'
+asset.dcSource = nlcdURL
 asset.dcTitle = 'The National Landcover Database 2006'
 asset.dcPublisher = 'USGS'
 asset.dcDescription = cmdline
