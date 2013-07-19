@@ -77,7 +77,9 @@ from ecohydrolib.spatialdata.utils import extractTileFromRaster
 from ecohydrolib.spatialdata.utils import extractTileFromRasterByRasterExtent
 from ecohydrolib.spatialdata.utils import resampleRaster
 from ecohydrolib.spatialdata.utils import deleteGeoTiff
+from ecohydrolib.spatialdata.utils import getRasterExtentAsBbox
 from ecohydrolib.nlcd.daacquery import getNLCDForBoundingBox
+from ecohydrolib.nlcd.daacquery import HOST
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get NLCD data (in GeoTIFF format) for DEM extent from a local copy of the entire NLCD 2006 dataset.')
@@ -108,10 +110,15 @@ else:
     outfile = "NLCD"
 tileFilename = "%s.tif" % (outfile)
 
+# Get name of DEM raster
+manifest = GenericMetadata.readManifestEntries(context)
+demFilename = manifest['dem']
+demFilepath = os.path.join(context.projectDir, demFilename)
+demFilepath = os.path.abspath(demFilepath)
+bbox = getRasterExtentAsBbox(demFilepath)
+
 # Get study area parameters
 studyArea = GenericMetadata.readStudyAreaEntries(context)
-bbox = bboxFromString(studyArea['bbox_wgs84'])
-
 outputrasterresolutionX = studyArea['dem_res_x']
 outputrasterresolutionY = studyArea['dem_res_y']
 srs = studyArea['dem_srs']
@@ -124,12 +131,6 @@ if args.source == 'local':
         raise IOError(errno.EACCES, "Not allowed to read NLCD raster %s" % (nlcdRaster,))
     nlcdRaster = os.path.abspath(nlcdRaster)
     
-    # Get name of DEM raster
-    manifest = GenericMetadata.readManifestEntries(context)
-    demFilename = manifest['dem']
-    demFilepath = os.path.join(context.projectDir, demFilename)
-    demFilepath = os.path.abspath(demFilepath)
-    
     sys.stdout.write('Extracting tile from local NLCD data...')
     sys.stdout.flush()
     extractTileFromRasterByRasterExtent(context.config, context.projectDir, demFilepath, nlcdRaster, tileFilename)
@@ -137,7 +138,7 @@ if args.source == 'local':
 
 else:
     # Download NLCD from WCS
-    sys.stdout.write('Downloading NLCD via WCS...')
+    sys.stdout.write("Downloading NLCD via WCS from %s..." % (HOST,) )
     sys.stdout.flush()
     (returnCode, nlcdURL) = getNLCDForBoundingBox(context.config, context.projectDir, tileFilename, bbox=bbox, 
                                                   resx=outputrasterresolutionX, resy=outputrasterresolutionY, 

@@ -78,7 +78,7 @@ def bboxFromString(bboxStr):
         '-76.769782 39.273610 -76.717498 39.326008'
     
         @param bboxStr String representing bounding box in WGS84 coordinates
-        @return Dict representing bounding box
+        @return Dict representing bounding box with keys: minX, minY, maxX, maxY, and srs
     """
     bbox = bboxStr.split()
     bbox = dict({'minX': float(bbox[0]), 'minY': float(bbox[1]), 'maxX': float(bbox[2]), 'maxY': float(bbox[3]), 'srs': 'EPSG:4326'})
@@ -143,6 +143,43 @@ def transformCoordinates(sourceX, sourceY, t_srs, s_srs="EPSG:4326"):
     return transform(p_in, p_out, sourceX, sourceY)
 
 
+def getRasterExtentAsBbox(extentRasterFilepath):
+    """ Determine raster extent and store it in a bbox along with the spatial 
+        reference system of the raster
+    
+        @param extentRasterFilepath String representing the path of the raster
+        whose extent we are interested in
+        @return Dict representing bounding box with keys: minX, minY, maxX, maxY, and srs
+        
+        @raise IOError(errno.ENOENT) if extentRasterFilepath does not exist
+        @raise IOError(errno.EACCESS) if extentRasterFilepath is not readable
+    """
+    extentRasterFilepath = os.path.abspath(extentRasterFilepath)
+    if not os.path.exists(extentRasterFilepath):
+        raise IOError(errno.ENOENT, "Raster %s does not exist" % (extentRasterFilepath,) )
+    if not os.access(extentRasterFilepath, os.R_OK):
+        raise IOError(errno.EACCES, "Raster %s is not readable" % (extentRasterFilepath,) )
+    
+    extentImg = _readImageGDAL(extentRasterFilepath)
+    
+    rows = extentImg['rows']
+    cols = extentImg['cols']
+    targetResX = abs(extentImg['trans'][1])
+    targetResY = abs(extentImg['trans'][5])
+    xmin = extentImg['trans'][0]
+    ymax = extentImg['trans'][3]
+    xmax = xmin + (targetResX * cols)
+    ymin = ymax - (targetResY * rows)
+    
+    # TODO: Refactor: This is inefficient because we are reading raster twice
+    # But _readImageGDAL gives us SRS in WKT, whereas getSpatialReferenceForRaster
+    # give us SRS in EPSG, which is what we need.
+    srs = getSpatialReferenceForRaster(extentRasterFilepath)[5]
+    
+    bbox = dict({'minX': float(xmin), 'minY': float(ymin), 'maxX': float(xmax), 'maxY': float(ymax), 'srs': srs})
+    return bbox
+
+
 def extractTileFromRasterByRasterExtent(config, outputDir, extentRasterFilepath, inRasterFilepath, outRasterFilename, resampleMethod='near'):
     """ Extract a tile from a raster using the extent of another raster as the tile bounds.
         
@@ -178,7 +215,7 @@ def extractTileFromRasterByRasterExtent(config, outputDir, extentRasterFilepath,
 
     if os.path.exists(outRasterFilepath):
         os.unlink(outRasterFilepath)
-        
+    
     extentImg = _readImageGDAL(extentRasterFilepath)
     t_srs = extentImg['srs']
     inImg = _readImageGDAL(inRasterFilepath)
