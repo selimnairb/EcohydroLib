@@ -48,8 +48,12 @@ from ecohydrolib.spatialdata.utils import deleteShapefile
 OGR_UPDATE_MODE = False
 NORTH = 0
 EAST = 90
-OGR_SHAPEFILE_DRIVER_NAME = "ESRI Shapefile"
 UPSTREAM_SEARCH_THRESHOLD = 998
+
+OGR_SHAPEFILE_DRIVER_NAME = "ESRI Shapefile"
+OGR_GEOJSON_DRIVER_NAME = "GeoJSON"
+OGR_DRIVERS = {OGR_SHAPEFILE_DRIVER_NAME: 'shp', 
+               OGR_GEOJSON_DRIVER_NAME: 'geojson'}
 
 
 def getNHDReachcodeAndMeasureForGageSourceFea(config, source_fea):
@@ -319,28 +323,45 @@ def getBoundingBoxForCatchmentsForGage(config, outputDir, reachcode, measure, de
     return bbox
  
  
-def getCatchmentShapefileForGage(config, outputDir, catchmentFilename, reachcode, measure, deleteIntermediateFiles=True):
-    """ Get shapefile (in WGS 84) for the drainage area associated with a given NHD 
-        (National Hydrography Dataset) streamflow gage identified by a reach code and measure.
+def getCatchmentFeaturesForGage(config, outputDir,
+                                catchmentFilename, reachcode, measure, 
+                                format=OGR_SHAPEFILE_DRIVER_NAME, deleteIntermediateFiles=True):
+    """ Get features (in WGS 84) for the drainage area associated with a
+        given NHD (National Hydrography Dataset) streamflow gage
+        identified by a reach code and measure.
         
         @note Capable of handling gages with more than 1000 upstream reaches 
-        @note No return value. catchmentFilename will be written to outputDir if successful
         
-        @param config A Python ConfigParser containing the following sections and options:
-            'NHDPLUS2' and option 'PATH_OF_NHDPLUS2_DB' (absolute path to SQLite3 DB of NHDFlow data)
-            'NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT' (absolute path to NHD catchment shapefile)
-        @param outputDir String representing the absolute/relative path of the directory into which output 
-            rasters should be written
-        @param catchmentFilename String representing name of file to save catchment shapefile to
+        @note No return value. catchmentFilename will be written to
+        outputDir if successful
+        
+        @param config A Python ConfigParser containing the following
+        sections and options:
+            'NHDPLUS2' and option 'PATH_OF_NHDPLUS2_DB' (absolute path to
+            SQLite3 DB of NHDFlow data)
+
+            'NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT' (absolute path to
+            NHD catchment shapefile)
+        @param outputDir String representing the absolute/relative
+        path of the directory into which output rasters should be
+        written
+        @param format String representing OGR driver to use
+        @param catchmentFilename String representing name of file to
+        save catchment features to.  The appropriate extension will be added to the file name
         @param reachcode String representing NHD streamflow gage 
-        @param measure Float representing the measure along reach where Stream Gage is located 
-            in percent from downstream end of the one or more NHDFlowline features that are 
-            assigned to the ReachCode (see NHDPlusV21 GageLoc table)
+        @param measure Float representing the measure along reach
+        where Stream Gage is located in percent from downstream
+        end of the one or more NHDFlowline features that are
+        assigned to the ReachCode (see NHDPlusV21 GageLoc table)
+        
+        @return String representing the name of the dataset in outputDir created to hold
+        the features
          
         @raise ConfigParser.NoSectionError
         @raise ConfigParser.NoOptionError
         @raise IOError(errno.ENOTDIR) if outputDir is not a directory
         @raise IOError(errno.EACCESS) if outputDir is not writable
+        @raise Exception if output format is not known
     """
     nhddbPath = config.get('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB')
     if not os.access(nhddbPath, os.R_OK):
@@ -360,7 +381,11 @@ def getCatchmentShapefileForGage(config, outputDir, catchmentFilename, reachcode
         raise IOError(errno.EACCES, "Not allowed to write to output directory %s" % (outputDir,))
     outputDir = os.path.abspath(outputDir)
     
-    catchmentFilename = os.path.join(outputDir, catchmentFilename)
+    if not format in OGR_DRIVERS.keys():
+        raise Exception("Output format '%s' is not known" % (format,) )
+    
+    catchmentFilename ="%s%s%s" % ( catchmentFilename, os.extsep, OGR_DRIVERS[format] )
+    catchmentFilepath = os.path.join(outputDir, catchmentFilename)
     
     # Connect to DB
     conn = sqlite3.connect(nhddbPath)
@@ -385,9 +410,9 @@ def getCatchmentShapefileForGage(config, outputDir, catchmentFilename, reachcode
     assert(poLayer)
     
     # Create output data source
-    poDriver = ogr.GetDriverByName(OGR_SHAPEFILE_DRIVER_NAME)
+    poDriver = ogr.GetDriverByName(format)
     assert(poDriver)
-    poODS = poDriver.CreateDataSource(catchmentFilename)
+    poODS = poDriver.CreateDataSource(catchmentFilepath)
     assert(poODS != None)
     poOLayer = poODS.CreateLayer("catchment", poLayer.GetSpatialRef(), poLayer.GetGeomType())
     
@@ -431,3 +456,4 @@ def getCatchmentShapefileForGage(config, outputDir, catchmentFilename, reachcode
         inFeature.Destroy()
         inFeature = poLayer.GetNextFeature()
         
+    return catchmentFilename

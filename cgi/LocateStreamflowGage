@@ -1,0 +1,66 @@
+#!/usr/bin/env python
+# - * - coding: UTF-8  -*-
+
+import cgi, json
+import os, sys
+import re
+
+# enable debugging
+#import cgitb
+#cgitb.enable()
+
+from ecohydrolib.context import Context
+from ecohydrolib.nhdplus2.networkanalysis import getNHDReachcodeAndMeasureForGageSourceFea
+from ecohydrolib.nhdplus2.networkanalysis import getLocationForStreamGageByGageSourceFea
+
+CONFIG_FILE = os.path.join( os.environ['DOCUMENT_ROOT'], 'ecohydro.cfg' )
+PROJECT_DIR = '/tmp'
+
+CONTENT_TYPE = 'application/json'
+RESPONSE_OK = 'OK'
+
+context = Context(PROJECT_DIR, CONFIG_FILE) 
+
+if not context.config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'):
+    sys.exit("LocateStreamfowGage.py: Config file %s does not define option %s in section %s\n" & \
+          (CONFIG_FILE, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'))
+
+if not context.config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_GAGELOC'):
+    sys.exit("LocateStreamfowGage.py: Config file %s does not define option %s in section %s\n" & \
+          (CONFIG_FILE, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_GAGELOC'))
+
+response = {}
+
+gageFound = False
+gageid = None
+params = cgi.FieldStorage()
+try:
+    gageid = params['gageid'].value
+    if not re.match('^[0-9]+$', gageid):
+        response['message'] = "Illegal gageid '%s'" % (gageid,)
+        gageid = None
+except KeyError:
+    response['message'] = "You must specify a 'gageid' parameter."
+
+if gageid:
+    result = getNHDReachcodeAndMeasureForGageSourceFea(context.config, gageid)
+    if result:
+        response['reachcode'] = result[0]
+        response['measure'] = result[1]
+        gageFound = True
+    else:
+        response['message'] = "Reachcode for gage '%s' not found" % (gageid,)
+        
+if gageFound:
+    result = getLocationForStreamGageByGageSourceFea(context.config, gageid)
+    if result:
+        response['gage_lat'] = result[1]
+        response['gage_lon'] = result[0]
+        response['message'] = RESPONSE_OK
+    else:
+        response['message'] = "Location for gage '%s' not found" % (gageid,)
+
+sys.stdout.write( "Content-Type: %s;charset=utf-8\n\n" % (CONTENT_TYPE,) )
+json.dump(response, sys.stdout)
+
+

@@ -66,7 +66,9 @@ import argparse
 from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
 from ecohydrolib.metadata import AssetProvenance
-from ecohydrolib.nhdplus2.networkanalysis import getCatchmentShapefileForGage
+from ecohydrolib.nhdplus2.networkanalysis import getCatchmentFeaturesForGage
+from ecohydrolib.nhdplus2.networkanalysis import OGR_DRIVERS
+from ecohydrolib.nhdplus2.networkanalysis import OGR_SHAPEFILE_DRIVER_NAME
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get shapefile for the drainage area of an NHDPlus2 streamflow gage')
@@ -107,10 +109,12 @@ studyArea = GenericMetadata.readStudyAreaEntries(context)
 reachcode = studyArea['nhd_gage_reachcode']
 measure = studyArea['nhd_gage_measure_pct']
 
-shapeFilename = "%s.shp" % (outfile)
-shapeFilepath = os.path.join(context.projectDir, shapeFilename)
+tmpFilename = "%s%s%s" % (outfile, os.extsep, OGR_DRIVERS[OGR_SHAPEFILE_DRIVER_NAME])
+shapeFilepath = os.path.join(context.projectDir, tmpFilename)
 if not os.path.exists(shapeFilepath):
-    getCatchmentShapefileForGage(context.config, context.projectDir, shapeFilename, reachcode, measure)
+    shapeFilename = getCatchmentFeaturesForGage(context.config, context.projectDir, outfile, 
+                                                reachcode, measure,
+                                                format=OGR_SHAPEFILE_DRIVER_NAME)
     
     # Write provenance
     asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
