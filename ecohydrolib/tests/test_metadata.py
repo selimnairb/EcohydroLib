@@ -1,6 +1,6 @@
 """@package ecohydrolib.tests.test_metadata
     
-    @brief Test methods for ecohydrologyworkflowlib.metadata
+    @brief Test methods for ecohydrolib.metadata
     
     This software is provided free of charge under the New BSD License. Please see
     the following license information:
@@ -42,6 +42,7 @@
 from unittest import TestCase
 import os
 from datetime import datetime
+import tempfile, shutil
 
 from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
@@ -52,7 +53,7 @@ from ecohydrolib.metadata import MetadataVersionError
 class TestMetadata(TestCase):
     
     def setUp(self):
-        self.projectDir = '/tmp'
+        self.projectDir = tempfile.mkdtemp()
         self.testMetadataPath = os.path.join(self.projectDir, GenericMetadata.METADATA_FILENAME)
         if os.path.exists(self.testMetadataPath):
             os.unlink(self.testMetadataPath)
@@ -67,6 +68,7 @@ class TestMetadata(TestCase):
         lockFilePath = os.path.join("/tmp", GenericMetadata.METADATA_LOCKFILE)
         if os.path.exists(lockFilePath):
             os.unlink(lockFilePath)
+        shutil.rmtree(self.projectDir)
     
     
     def test_empty_read(self):

@@ -102,7 +102,7 @@ def getRasterForBoundingBox(config, outputDir, outFilename, host, urlProto, mime
     # coverage, crs, bbox, format. May have the following fields: response_srs, store, resx, resy, interpolation
     url = urlProto.format(coverage=coverage, crs=crs, bbox=bboxStr, format=format, 
                           response_crs=srs, store=store, resx=resx, resy=resy, interpolation=interpolation)
-    urlFetched = "http://%s%s\n" % (host, url)
+    urlFetched = "http://%s%s" % (host, url)
 
     conn = httplib.HTTPConnection(host)
     try:

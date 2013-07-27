@@ -42,6 +42,8 @@ import re
 
 import ogr
 
+from ecohydrolib.spatialdata.utils import OGR_SHAPEFILE_DRIVER_NAME
+from ecohydrolib.spatialdata.utils import OGR_DRIVERS
 from ecohydrolib.spatialdata.utils import getBoundingBoxForShapefile
 from ecohydrolib.spatialdata.utils import deleteShapefile
 
@@ -49,11 +51,6 @@ OGR_UPDATE_MODE = False
 NORTH = 0
 EAST = 90
 UPSTREAM_SEARCH_THRESHOLD = 998
-
-OGR_SHAPEFILE_DRIVER_NAME = "ESRI Shapefile"
-OGR_GEOJSON_DRIVER_NAME = "GeoJSON"
-OGR_DRIVERS = {OGR_SHAPEFILE_DRIVER_NAME: 'shp', 
-               OGR_GEOJSON_DRIVER_NAME: 'geojson'}
 
 
 def getNHDReachcodeAndMeasureForGageSourceFea(config, source_fea):
@@ -325,7 +322,7 @@ def getBoundingBoxForCatchmentsForGage(config, outputDir, reachcode, measure, de
  
 def getCatchmentFeaturesForGage(config, outputDir,
                                 catchmentFilename, reachcode, measure, 
-                                format=OGR_SHAPEFILE_DRIVER_NAME, deleteIntermediateFiles=True):
+                                format=OGR_SHAPEFILE_DRIVER_NAME):
     """ Get features (in WGS 84) for the drainage area associated with a
         given NHD (National Hydrography Dataset) streamflow gage
         identified by a reach code and measure.

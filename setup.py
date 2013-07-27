@@ -37,7 +37,7 @@ setup(name='ecohydrolib',
         'pyproj==1.9.2',
         'numpy',
         'lxml',
-        'PySimpleSOAP',
+        'PySimpleSOAP==1.05a',
         'OWSLib',
         'oset',
         'httplib2'

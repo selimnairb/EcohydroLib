@@ -44,11 +44,14 @@ Pre conditions
 
 Post conditions
 ---------------
-1. Will write the following entry(ies) to the manifest section of metadata associated with the project directory:
+1. Will write the following entry(ies) to the manifest section of
+metadata associated with the project directory:
    gage [the name of the streamflow gage shapefile]  
    
-2. Will write the following entry(ies) to the study area section of metadata associated with the project directory:
-   gage_id_attr [the name of the attribute in the gage shapefile that uniquely identifies a streamflow gage]
+2. Will write the following entry(ies) to the study area section of
+metadata associated with the project directory:
+   gage_id_attr [the name of the attribute in the gage shapefile that
+     uniquely identifies a streamflow gage]
    gage_id
    nhd_gage_reachcode
    nhd_gage_measure_pct
