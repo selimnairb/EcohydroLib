@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='ecohydrolib',
-      version='1.01',
+      version='1.02',
       description='Libraries and command-line scripts for performing ecohydrology data preparation workflows.',
       long_description=readme(),
       classifiers=[
@@ -60,6 +60,8 @@ setup(name='ecohydrolib',
                'bin/RegisterGage.py',
                'bin/RegisterRaster.py',
                'bin/GHCNDSetup/GHCNDSetup.py',
-               'bin/NHDPlusV2Setup/NHDPlusV2Setup.py'
+               'bin/NHDPlusV2Setup/NHDPlusV2Setup.py',
+               'cgi/GetCatchmentFeaturesForStreamflowGage',
+               'cgi/LocateStreamflowGage'
       ],
       zip_safe=False)
