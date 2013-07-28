@@ -98,7 +98,7 @@ def isValidSrs(srsString):
         
         @return True if valid, False if invalid
     """   
-    m =  EPSG_RE.match(srsString.lower())
+    m = EPSG_RE.match(srsString.lower())
     return m != None
     
 

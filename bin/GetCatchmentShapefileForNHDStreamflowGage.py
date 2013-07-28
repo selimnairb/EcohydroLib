@@ -62,10 +62,13 @@ or -i option must be specified.
 import os
 import sys
 import argparse
+import textwrap
 
 from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
 from ecohydrolib.metadata import AssetProvenance
+
+from ecohydrolib.spatialdata.utils import deleteShapefile
 
 from ecohydrolib.nhdplus2.webservice import getCatchmentFeaturesForStreamflowGage
 from ecohydrolib.nhdplus2.networkanalysis import getCatchmentFeaturesForGage
@@ -81,7 +84,10 @@ parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
 parser.add_argument('-s', '--source', dest='source', required=False, choices=['local', 'webservice'], default='webservice',
                     help='Source to query NHDPlusV2 dataset')
 parser.add_argument('-f', '--outfile', dest='outfile', required=False,
-                    help='The name of the catchment shapefile to be written.  File extension ".shp" will be added.  If a file of this name exists, program will silently exit.')
+                    help='The name of the catchment shapefile to be written.  File extension ".shp" will be added. ' +
+                    ' If a file of this name exists, program will silently exit.')
+parser.add_argument('--overwrite', dest='overwrite', action='store_true', required=False,
+                    help='Overwrite existing catchment shapefile in project directory.  If not specified, program will halt if a dataset already exists.')
 args = parser.parse_args()
 cmdline = GenericMetadata.getCommandLine()
 
@@ -98,6 +104,14 @@ else:
 
 tmpFilename = "%s%s%s" % (outfile, os.extsep, OGR_DRIVERS[OGR_SHAPEFILE_DRIVER_NAME])
 shapeFilepath = os.path.join(context.projectDir, tmpFilename)
+
+if not args.overwrite:
+    if os.path.exists(shapeFilepath):
+        sys.exit( textwrap.fill("Catchment shapefile already exists in project directory %s.  Use --overwrite option to overwrite." % \
+                 args.projectDir ) )
+elif os.path.exists(shapeFilepath):
+    # Overwrite was specified
+    deleteShapefile(shapeFilepath)
 
 # Get provenance data for gage
 gageProvenance = [i for i in GenericMetadata.readAssetProvenanceObjects(context) if i.name == 'gage'][0]
@@ -119,26 +133,24 @@ if args.source == 'local':
     if not context.config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT'):
         sys.exit("Config file %s does not define option %s in section %s" % \
               (args.configfile, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT')) 
-    
-    if not os.path.exists(shapeFilepath):
-        shapeFilename = getCatchmentFeaturesForGage(context.config, context.projectDir, outfile, 
-                                                    reachcode, measure,
-                                                    format=OGR_SHAPEFILE_DRIVER_NAME)
-        source = 'http://www.horizon-systems.com/NHDPlus/NHDPlusV2_home.php'
-        writeMetadata = True
+
+    shapeFilename = getCatchmentFeaturesForGage(context.config, context.projectDir, outfile, 
+                                                reachcode, measure,
+                                                format=OGR_SHAPEFILE_DRIVER_NAME)
+    source = 'http://www.horizon-systems.com/NHDPlus/NHDPlusV2_home.php'
+    writeMetadata = True
     sys.stdout.write('done\n')
 else:
     sys.stdout.write('Geting catchment area draining through gage using NHDPlus webservice...')
     sys.stdout.flush()
     
-    if not os.path.exists(shapeFilepath):
-        try:
-            (shapeFilename, source) = getCatchmentFeaturesForStreamflowGage(context.config, context.projectDir,
-                                                                           outfile, reachcode, measure,
-                                                                           format=OGR_SHAPEFILE_DRIVER_NAME)
-            writeMetadata = True
-        except Exception as e:
-            sys.exit( str(e) )
+    try:
+        (shapeFilename, source) = getCatchmentFeaturesForStreamflowGage(context.config, context.projectDir,
+                                                                       outfile, reachcode, measure,
+                                                                       format=OGR_SHAPEFILE_DRIVER_NAME)
+        writeMetadata = True
+    except Exception as e:
+        sys.exit( str(e) )
     
     sys.stdout.write('done\n')
 
