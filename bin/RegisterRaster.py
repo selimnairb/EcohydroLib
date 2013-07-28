@@ -171,7 +171,7 @@ if resample:
     processingNotes = "Resampling %s raster from %s to %s, spatial resolution (%.2f, %.2f) to (%.2f, %.2f)" % \
         (args.type, rasterSrs, srs, rasterX, rasterX,
          demResolutionX, demResolutionY) 
-    sys.stdout.write("%s..." % (processingNotes,) )
+    sys.stdout.write( textwrap.fill("%s..." % (processingNotes,) ) )
     resampleRaster(context.config, context.projectDir, inRasterPath, rasterFilepath, \
                    s_srs=rasterSrs, t_srs=srs, \
                    trX=demResolutionX, trY=demResolutionY, \
@@ -179,7 +179,7 @@ if resample:
 else:
     # Copy the raster in to the project directory
     processingNotes = "Importing %s raster from %s without resampling" % (args.type, inRasterPath)
-    sys.stdout.write("%s..." % (processingNotes,) )
+    sys.stdout.write( textwrap.fill("%s..." % (processingNotes,) ) )
     sys.stdout.flush()
     copyRasterToGeoTIFF(context.config, context.projectDir, inRasterPath, rasterFilename)
 sys.stdout.write('done\n')
