@@ -72,6 +72,9 @@ import argparse
 from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
 from ecohydrolib.metadata import AssetProvenance
+
+from ecohydrolib.nhdplus2.webservice import locateStreamflowGage
+from ecohydrolib.nhdplus2.webservice import RESPONSE_OK
 from ecohydrolib.nhdplus2.networkanalysis import getNHDReachcodeAndMeasureForGageSourceFea
 from ecohydrolib.nhdplus2.networkanalysis import getLocationForStreamGageByGageSourceFea
 from ecohydrolib.spatialdata.utils import writeCoordinatePairsToPointShapefile
@@ -82,6 +85,8 @@ parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                   help='The directory to which metadata, intermediate, and final files should be saved')
+parser.add_argument('-s', '--source', dest='source', required=False, choices=['local', 'webservice'], default='webservice',
+                    help='Source to query NHDPlusV2 dataset')
 parser.add_argument('-g', '--gageid', dest='gageid', required=True,
                     help='An integer representing the USGS site identifier')
 args = parser.parse_args()
@@ -93,27 +98,48 @@ if args.configfile:
 
 context = Context(args.projectDir, configFile) 
 
-if not context.config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'):
-    sys.exit("Config file %s does not define option %s in section %s" & \
-          (args.configfile, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'))
-
-if not context.config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_GAGELOC'):
-    sys.exit("Config file %s does not define option %s in section %s" & \
-          (args.configfile, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_GAGELOC'))
-
-result = getNHDReachcodeAndMeasureForGageSourceFea(context.config, args.gageid)
-if result:
-    reachcode = result[0]
-    measure = result[1]
+if args.source == 'local':
+    sys.stdout.write('Getting identifiers and location from local NHDPlus dataset...')
+    sys.stdout.flush()
+    if not context.config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'):
+        sys.exit("Config file %s does not define option %s in section %s" & \
+              (args.configfile, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'))
+    
+    if not context.config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_GAGELOC'):
+        sys.exit("Config file %s does not define option %s in section %s" & \
+              (args.configfile, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_GAGELOC'))
+    
+    result = getNHDReachcodeAndMeasureForGageSourceFea(context.config, args.gageid)
+    if result:
+        reachcode = result[0]
+        measure = result[1]
+    else:
+        sys.exit("Gage '%s' not found" % (args.gageid,) )
+    
+    result = getLocationForStreamGageByGageSourceFea(context.config, args.gageid)
+    if result:
+        gage_lat = result[1]
+        gage_lon = result[0]
+    else:
+        sys.exit("Gage '%s' not found" % (args.gageid,) )
+        
+    source = 'http://www.horizon-systems.com/NHDPlus/NHDPlusV2_home.php'
+    sys.stdout.write('done\n')
 else:
-    reachcode = measure = "Gage not found"
-
-result = getLocationForStreamGageByGageSourceFea(context.config, args.gageid)
-if result:
-    gage_lat = result[1]
-    gage_lon = result[0]
-else:
-    gage_lat = gage_lon = "Gage not found"
+    # Query NHDPlusV2 dataset via web service
+    sys.stdout.write('Geting identifiers and location via NHDPlus webservice...')
+    sys.stdout.flush()
+    (response, source) = locateStreamflowGage(context.config, args.gageid)
+    if response['message'] != RESPONSE_OK:
+        sys.exit("Failed to get gage identifiers/location for gage '%s', webservice response: %s" % \
+                 (args.gageid, response['message']) )
+    else:
+        reachcode = response['reachcode']
+        measure = response['measure']
+        gage_lat = response['gage_lat']
+        gage_lon = response['gage_lon']
+        
+    sys.stdout.write('done\n')    
 
 # Write gage coordinates to a shapefile in the project directory
 shpFilename = writeCoordinatePairsToPointShapefile(context.projectDir, "gage", 
@@ -131,7 +157,7 @@ GenericMetadata.writeStudyAreaEntry(context, 'gage_lon_wgs84', gage_lon)
 asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
 asset.name = 'gage'
 asset.dcIdentifier = shpFilename
-asset.dcSource = 'http://www.horizon-systems.com/NHDPlus/NHDPlusV2_home.php'
+asset.dcSource = source
 asset.dcTitle = 'Streamflow gage'
 asset.dcPublisher = 'USGS'
 asset.dcDescription = cmdline

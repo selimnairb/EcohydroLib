@@ -86,8 +86,8 @@ class Test(unittest.TestCase):
         # Bad reachcode
         exceptionThrown = False
         try:
-            shapefileName = getCatchmentFeaturesForStreamflowGage(self.context.config, self.projectDir,
-                                                                  'catchment', badReachcode, goodMeasure)
+            (shapefileName, url) = getCatchmentFeaturesForStreamflowGage(self.context.config, self.projectDir,
+                                                                         'catchment', badReachcode, goodMeasure)
         except WebserviceError:
             exceptionThrown = True
         except Exception:
@@ -98,8 +98,8 @@ class Test(unittest.TestCase):
         # Bad measure
         exceptionThrown = False
         try:
-            shapefileName = getCatchmentFeaturesForStreamflowGage(self.context.config, self.projectDir,
-                                                                  'catchment', goodReachcode, badMeasure)
+            (shapefileName, url) = getCatchmentFeaturesForStreamflowGage(self.context.config, self.projectDir,
+                                                                         'catchment', goodReachcode, badMeasure)
         except WebserviceError:
             exceptionThrown = True
         except Exception:
@@ -110,8 +110,8 @@ class Test(unittest.TestCase):
         # Good case
         exceptionThrown = False
         try:
-            shapefileName = getCatchmentFeaturesForStreamflowGage(self.context.config, self.projectDir,
-                                                                  'catchment', goodReachcode, goodMeasure)
+            (shapefileName, url) = getCatchmentFeaturesForStreamflowGage(self.context.config, self.projectDir,
+                                                                         'catchment', goodReachcode, goodMeasure)
         except:
             traceback.print_exc(file=sys.stdout)
             exceptionThrown = True

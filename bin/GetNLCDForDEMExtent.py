@@ -87,7 +87,7 @@ parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory to which metadata, intermediate, and final files should be saved')
-parser.add_argument('-s', '--source', dest='source', required=False, choices=['local', 'wcs'], default='local',
+parser.add_argument('-s', '--source', dest='source', required=False, choices=['local', 'wcs'], default='wcs',
                     help='Source for NLCD data')
 parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the NLCD file to be written.  File extension ".tif" will be added.')

@@ -66,6 +66,8 @@ import argparse
 from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
 from ecohydrolib.metadata import AssetProvenance
+
+from ecohydrolib.nhdplus2.webservice import getCatchmentFeaturesForStreamflowGage
 from ecohydrolib.nhdplus2.networkanalysis import getCatchmentFeaturesForGage
 from ecohydrolib.nhdplus2.networkanalysis import OGR_DRIVERS
 from ecohydrolib.nhdplus2.networkanalysis import OGR_SHAPEFILE_DRIVER_NAME
@@ -76,6 +78,8 @@ parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory to which metadata, intermediate, and final files should be saved')
+parser.add_argument('-s', '--source', dest='source', required=False, choices=['local', 'webservice'], default='webservice',
+                    help='Source to query NHDPlusV2 dataset')
 parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the catchment shapefile to be written.  File extension ".shp" will be added.  If a file of this name exists, program will silently exit.')
 args = parser.parse_args()
@@ -87,17 +91,13 @@ if args.configfile:
 
 context = Context(args.projectDir, configFile) 
 
-if not context.config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'):
-    sys.exit("Config file %s does not define option %s in section %s" % \
-          (args.configfile, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'))
-if not context.config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT'):
-    sys.exit("Config file %s does not define option %s in section %s" % \
-          (args.configfile, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT'))  
-
 if args.outfile:
     outfile = args.outfile
 else:
-    outfile = "catchment"
+    outfile = "catchment" 
+
+tmpFilename = "%s%s%s" % (outfile, os.extsep, OGR_DRIVERS[OGR_SHAPEFILE_DRIVER_NAME])
+shapeFilepath = os.path.join(context.projectDir, tmpFilename)
 
 # Get provenance data for gage
 gageProvenance = [i for i in GenericMetadata.readAssetProvenanceObjects(context) if i.name == 'gage'][0]
@@ -109,20 +109,47 @@ studyArea = GenericMetadata.readStudyAreaEntries(context)
 reachcode = studyArea['nhd_gage_reachcode']
 measure = studyArea['nhd_gage_measure_pct']
 
-tmpFilename = "%s%s%s" % (outfile, os.extsep, OGR_DRIVERS[OGR_SHAPEFILE_DRIVER_NAME])
-shapeFilepath = os.path.join(context.projectDir, tmpFilename)
-if not os.path.exists(shapeFilepath):
-    shapeFilename = getCatchmentFeaturesForGage(context.config, context.projectDir, outfile, 
-                                                reachcode, measure,
-                                                format=OGR_SHAPEFILE_DRIVER_NAME)
+writeMetadata = False
+if args.source == 'local':
+    sys.stdout.write('Getting catchment area draining through gage using local NHDPlus dataset...')
+    sys.stdout.flush()
+    if not context.config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'):
+        sys.exit("Config file %s does not define option %s in section %s" % \
+              (args.configfile, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_DB'))
+    if not context.config.has_option('NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT'):
+        sys.exit("Config file %s does not define option %s in section %s" % \
+              (args.configfile, 'NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT')) 
     
+    if not os.path.exists(shapeFilepath):
+        shapeFilename = getCatchmentFeaturesForGage(context.config, context.projectDir, outfile, 
+                                                    reachcode, measure,
+                                                    format=OGR_SHAPEFILE_DRIVER_NAME)
+        source = 'http://www.horizon-systems.com/NHDPlus/NHDPlusV2_home.php'
+        writeMetadata = True
+    sys.stdout.write('done\n')
+else:
+    sys.stdout.write('Geting catchment area draining through gage using NHDPlus webservice...')
+    sys.stdout.flush()
+    
+    if not os.path.exists(shapeFilepath):
+        try:
+            (shapeFilename, source) = getCatchmentFeaturesForStreamflowGage(context.config, context.projectDir,
+                                                                           outfile, reachcode, measure,
+                                                                           format=OGR_SHAPEFILE_DRIVER_NAME)
+            writeMetadata = True
+        except Exception as e:
+            sys.exit( str(e) )
+    
+    sys.stdout.write('done\n')
+
+if writeMetadata:
     # Write provenance
     asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
     asset.name = 'study_area_shapefile'
     asset.dcIdentifier = shapeFilename
-    asset.dcSource = gageProvenance.dcSource # Take from gage
+    asset.dcSource = source
     asset.dcTitle = 'Study area shapefile'
-    asset.dcPublisher = gageProvenance.dcPublisher
+    asset.dcPublisher = 'USGS'
     asset.dcDescription = cmdline
     asset.writeToMetadata(context)
 

@@ -49,7 +49,8 @@ _DEFAULT_CRS = 'EPSG:4326'
 _BUFF_LEN = 4096 * 10
 
 #HOST = 'ga-dev-wssi.renci.org'
-HOST = '127.0.0.1'
+#HOST = '127.0.0.1'
+HOST = '192.168.1.2'
 URL_PROTO_GAGE_LOC = '/cgi-bin/LocateStreamflowGage?gageid={gageid}'
 URL_PROTO_CATCHMENT = '/cgi-bin/GetCatchmentFeaturesForStreamflowGage?reachcode={reachcode}&measure={measure}'
 
@@ -128,8 +129,8 @@ def getCatchmentFeaturesForStreamflowGage(config, outputDir,
         end of the one or more NHDFlowline features that are
         assigned to the ReachCode (see NHDPlusV21 GageLoc table)
         
-        @return String representing the name of the dataset in outputDir created to hold
-        the features
+        @return Tuple(String representing the name of the dataset in outputDir created to hold
+        the features, URL of the request)
          
         @raise IOError(errno.EACCESS) if OGR binary is not executable
         @raise IOError(errno.ENOTDIR) if outputDir is not a directory
@@ -201,4 +202,4 @@ def getCatchmentFeaturesForStreamflowGage(config, outputDir,
         error = "Recieved content type %s but expected type %s" % (contentType, CONTENT_TYPE)
         raise WebserviceError(urlFetched, error)
     
-    return catchmentFilename
+    return (catchmentFilename, urlFetched)
