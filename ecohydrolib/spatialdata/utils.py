@@ -61,6 +61,11 @@ RASTER_RESAMPLE_METHOD = ['near', 'bilinear', 'cubic', 'cubicspline', 'lanczos',
 WGS84_EPSG = 4326
 WGS84_EPSG_STR = "EPSG:4326"
 
+OGR_SHAPEFILE_DRIVER_NAME = "ESRI Shapefile"
+OGR_GEOJSON_DRIVER_NAME = "GeoJSON"
+OGR_DRIVERS = {OGR_SHAPEFILE_DRIVER_NAME: 'shp', 
+               OGR_GEOJSON_DRIVER_NAME: 'geojson'}
+
 EPSG_RE = re.compile('^epsg:\d+$')
 
 def _readImageGDAL(filePath):
