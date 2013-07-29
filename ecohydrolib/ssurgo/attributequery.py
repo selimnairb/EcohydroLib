@@ -40,11 +40,14 @@ import xml.sax
 import numpy as np
 from lxml import etree
 from pysimplesoap.client import SoapClient
+from oset import oset
 
 from saxhandlers import SSURGOMUKEYQueryHandler
 
-attributeList = ['avgKsat', 'avgClay', 'avgSilt', 'avgSand', 'avgPorosity','pmgroupname','texture','tecdesc']
-attributeListNumeric = ['avgKsat', 'avgClay', 'avgSilt', 'avgSand', 'avgPorosity']
+attributeList = ['avgKsat', 'avgClay', 'avgSilt', 'avgSand', 'avgPorosity','pmgroupname','texture','tecdesc', 'avgFieldCapacity', 'avgAvailWaterCap', 'brockdepmin']
+attributeListNumeric = ['avgKsat', 'avgClay', 'avgSilt', 'avgSand', 'avgPorosity', 'avgFieldCap', 'avgAvailWaterCap', 'brockdepmin']
+# derivedAttributes must be a dictionary whose values are valid Python expressions combining members of attributeListNumeric
+derivedAttributes = { 'avgDrainableMoistureContent': 'avgPorosity - avgFieldCap' }
 
 def strListToString(strList):
     """ Converts a Python list of string values into a string containing quoted, 
@@ -76,11 +79,11 @@ def computeWeightedAverageKsatClaySandSilt(soilAttrTuple):
     """
     data = list()
     representativeComponentDict = dict()
+    derivedSet = oset()
     idx = 0
     
     # Convert numbers as text to numbers
     for row in soilAttrTuple[1]:
-        #print row
         mukey = int(row[0])
         comppct_r = int(row[2])
         try:
@@ -113,8 +116,18 @@ def computeWeightedAverageKsatClaySandSilt(soilAttrTuple):
             wsatiated_r = float(row[12]) # a.k.a. porosity
         except ValueError:
             wsatiated_r = -1
+        try:
+            wthirdbar_r = float(row[13]) # a.k.a. field capacity
+        except ValueError:
+            wthirdbar_r = -1
+        try:
+            awc_r = float(row[14]) # a.k.a. plant available water capacity
+        except ValueError:
+            awc_r = -1
     
-        data.append([mukey, row[1], comppct_r, row[3], row[4], row[5], row[6], hzdept_r, ksat_r, claytotal_r, silttotal_r, sandtotal_r, wsatiated_r])
+        data.append([mukey, row[1], comppct_r, row[3], row[4], row[5], row[6], hzdept_r, 
+                     ksat_r, claytotal_r, silttotal_r, sandtotal_r, wsatiated_r,
+                     wthirdbar_r, awc_r])
         idx = idx + 1
 
     mukeyCol = [row[0] for row in data]
@@ -124,14 +137,15 @@ def computeWeightedAverageKsatClaySandSilt(soilAttrTuple):
     siltCol = [row[10] for row in data]
     sandCol = [row[11] for row in data]
     porosityCol = [row[12] for row in data]
+    fieldCapCol = [row[13] for row in data]
+    availWaterCapCol = [row[14] for row in data]
 
     # Put values into Numpy 2-D array    
-    npdata = np.array([mukeyCol, comppctCol, ksatCol, clayCol, siltCol, sandCol, porosityCol]).transpose()
-    #print np.shape(npdata)
+    npdata = np.array([mukeyCol, comppctCol, ksatCol, clayCol, siltCol, sandCol, 
+                       porosityCol, fieldCapCol, availWaterCapCol]).transpose()
     # Remove duplicate rows 
     #   (which will arise because there can be multiple parent material groups for a given component)
     npdata = np.array([np.array(x) for x in set(tuple(x) for x in npdata)])
-    #print np.shape(npdata)
     # Register NoData values
     npdata = np.ma.masked_where(npdata == -1, npdata)
 
@@ -145,13 +159,17 @@ def computeWeightedAverageKsatClaySandSilt(soilAttrTuple):
         myClay = mySubSet[:,3]
         mySilt = mySubSet[:,4]
         mySand = mySubSet[:,5]
-        myPorosity =  mySubSet[:,6]
+        myPorosity = mySubSet[:,6]
+        myFieldCap = mySubSet[:,7]
+        myAvailWaterCap = mySubSet[:,8]
         # Calculate weighted averages, ignoring NoData values
         avgKsat = np.ma.average(myKsat, weights=myComppct)
         avgClay = np.ma.average(myClay, weights=myComppct)
         avgSilt = np.ma.average(mySilt, weights=myComppct)
         avgSand = np.ma.average(mySand, weights=myComppct)
         avgPorosity = np.ma.average(myPorosity, weights=myComppct)
+        avgFieldCap = np.ma.average(myFieldCap, weights=myComppct)
+        avgAvailWaterCap = np.ma.average(myAvailWaterCap, weights=myComppct)
         
         # Get modal value for qualitative values (pmgroupname, texture, tecdesc)
         maxRepIdx = representativeComponentDict[mukey][0]
@@ -159,9 +177,21 @@ def computeWeightedAverageKsatClaySandSilt(soilAttrTuple):
         texture = data[maxRepIdx][4]
         texdesc = data[maxRepIdx][5]
         
-        avgSoilAttr.append([mukey, avgKsat, avgClay, avgSilt, avgSand, avgPorosity, pmgroupname, texture, texdesc])
+        attrList = [mukey, avgKsat, avgClay, avgSilt, avgSand, avgPorosity, pmgroupname, texture, texdesc,
+                    avgFieldCap, avgAvailWaterCap]
+        # Generate derived variables
+        for attr in derivedAttributes.keys():
+            derivedAttr = eval( derivedAttributes[attr] )
+            derivedSet.add(attr)
+            attrList.append(derivedAttr) 
+        
+        avgSoilAttr.append(attrList)
     avgSoilHeaders = list(attributeList)
     avgSoilHeaders.insert(0, 'mukey')
+    for derived in derivedSet:
+        print("Computed derived attribute %s = %s" % \
+              (derived, derivedAttributes[derived]) )
+        avgSoilHeaders.append(derived)
     
     return (avgSoilHeaders, avgSoilAttr)
 
@@ -237,7 +267,8 @@ def getParentMatKsatTexturePercentClaySiltSandForComponentsInMUKEYs(mukeyList):
     # Will select first non-organic horizon (i.e. horizon names that do not start with O, L, or F)
     QUERY_PROTO = """
 SELECT c.mukey, c.cokey, c.comppct_r, p.pmgroupname, tg.texture, tg.texdesc, 
-ch.hzname, ch.hzdept_r, ch.ksat_r, ch.claytotal_r, ch.silttotal_r, ch.sandtotal_r, ch.wsatiated_r
+ch.hzname, ch.hzdept_r, ch.ksat_r, ch.claytotal_r, ch.silttotal_r, ch.sandtotal_r, ch.wsatiated_r,
+ch.wthirdbar_r, ch.awc_r
 FROM component c
 LEFT JOIN copmgrp p ON c.cokey=p.cokey AND p.rvindicator='yes'
 INNER JOIN chorizon ch ON c.cokey=ch.cokey 
