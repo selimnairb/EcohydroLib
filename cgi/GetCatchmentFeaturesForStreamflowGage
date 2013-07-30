@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# - * - coding: UTF-8  -*-
+# -*- coding: UTF-8  -*-
 
 import cgi, json
 import os, sys
@@ -7,8 +7,8 @@ import re
 import tempfile, shutil
 
 # enable debugging
-import cgitb
-cgitb.enable()
+#import cgitb
+#cgitb.enable()
 
 from ecohydrolib.context import Context
 from ecohydrolib.nhdplus2.networkanalysis import getCatchmentFeaturesForGage
