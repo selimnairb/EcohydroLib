@@ -1,0 +1,12 @@
+before_install:
+    - sudo apt-get update -qq
+    - sudo apt-get install -qq python python-dev python-pip libxml2-dev libxslt-dev python-gdal
+
+language: python
+python:
+    - "2.7"
+    - "pypy"
+    - pip install ecohydrolib
+
+script:
+    - python -m unittest discover
