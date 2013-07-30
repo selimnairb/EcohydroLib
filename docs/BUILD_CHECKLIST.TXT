@@ -15,7 +15,7 @@
 
 6. Generate zip of new documentation: cd docs/html; zip -r ~/Desktop/ecohydrodocs.zip *
 
-7. Publish package to PyPi: sudo python setup.py register sdist upload
+7. Publish package to PyPi: python setup.py register sdist upload
 
 8. Check on PyPi to make sure the new version is the only non-hidden version
 
