@@ -67,11 +67,11 @@ import argparse
 from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
 from ecohydrolib.metadata import AssetProvenance
-from ecohydrolib.ssurgo.rasterize import rasterizeSSURGOFeatures
+from ecohydrolib.ssurgo import rasterize
 import ecohydrolib.ssurgo.attributequery     
 
 # Handle command line options
-parser = argparse.ArgumentParser(description='Get SSURGO features for a bounding box')
+parser = argparse.ArgumentParser(description="Get SSURGO features for a bounding box. The following attributes will be rasterized: %s. Features with null values for a particular attribute will receive a raster value of 0." % (rasterize.RASTER_ATTRIBUTES,) )
 parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
@@ -107,8 +107,8 @@ outputrasterresolutionY = studyArea['dem_res_y']
 # Truncate attributes to 10 characters because shapefiles rely on ancient technology
 sys.stdout.write('Generating soil property maps by rasterizing SURGO features...')
 sys.stdout.flush()
-attrList = [elem[:10] for elem in ecohydrolib.ssurgo.attributequery.attributeListNumeric] 
-rasterFiles = rasterizeSSURGOFeatures(config=context.config, outputDir=context.projectDir, featureFilename=shpFilename, featureLayername=layerName, \
+attrList = [elem[:10] for elem in rasterize.RASTER_ATTRIBUTES] 
+rasterFiles = rasterize.rasterizeSSURGOFeatures(config=context.config, outputDir=context.projectDir, featureFilename=shpFilename, featureLayername=layerName, \
                                       featureAttrList=attrList, \
                                       rasterResolutionX=outputrasterresolutionX, rasterResolutionY=outputrasterresolutionY)
 sys.stdout.write('done\n')

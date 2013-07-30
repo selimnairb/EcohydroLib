@@ -100,7 +100,7 @@ outputrasterresolutionX = studyArea['dem_res_x']
 outputrasterresolutionY = studyArea['dem_res_y']
 srs = studyArea['dem_srs']
 
-gmlFilename = getMapunitFeaturesForBoundingBox(context.projectDir, bbox, mapunitExtended=True, tileBbox=False)[0]
+gmlFilename = getMapunitFeaturesForBoundingBox(context.projectDir, bbox)[0]
     
 # Convert from gml to shp and then rasterize
 gmlFilepath = os.path.join(context.projectDir, gmlFilename)

@@ -52,19 +52,17 @@ MAX_SSURGO_EXTENT = MAX_SSURGO_EXTENT / 10
 
 WFS_URL = 'http://SDMDataAccess.nrcs.usda.gov/Spatial/SDMWGS84Geographic.wfs'
 
-def getMapunitFeaturesForBoundingBox(outputDir, bbox, \
-                                     mapunitExtended=False, tileBbox=False):
-    """ Query USDA Soil Data Mart for SSURGO Mapunit features with a given bounding box.
+def getMapunitFeaturesForBoundingBox(outputDir, bbox, tileBbox=False):
+    """ Query USDA Soil Data Mart for SSURGO MapunitPolyExtended features with a given bounding box.
         Features will be written to one or more GML files, one file for each bboxTile tile,
         stored in the specified output directory. The filename will be returned as a string.
-        Will fetch SSURGO tabular data (see ssurgolib.attributequery.attributeList for a list
+        Will fetch SSURGO tabular data (see ssurgolib.attributequery.ATTRIBUTE_LIST for a list
         of attributes) and join those data to the features in the GML files(s).
     
         @note Will silently exit if features already exist.
     
         @param outputDir String representing the absolute/relative path of the directory into which features should be written
         @param bbox A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
-        @param mapunitExtended True if extended mapunit features should be fetched.
         @param tileBoundingBox True if bounding box should be tiled if extent exceeds featurequery.MAX_SSURGO_EXTENT
         
         @return A list of strings representing the name of the GML file(s) to which the mapunit features were saved.
@@ -79,10 +77,7 @@ def getMapunitFeaturesForBoundingBox(outputDir, bbox, \
         raise IOError(errno.EACCES, "Not allowed to write to output directory %s" % (outputDir,))
     outputDir = os.path.abspath(outputDir)
 
-    if mapunitExtended:
-        typeName = 'MapunitPolyExtended'
-    else:
-        typeName = 'MapunitPoly'
+    typeName = 'MapunitPolyExtended'
 
     if tileBbox:
         bboxes = tileBoundingBox(bbox, MAX_SSURGO_EXTENT)

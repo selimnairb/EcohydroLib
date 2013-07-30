@@ -44,10 +44,14 @@ from oset import oset
 
 from saxhandlers import SSURGOMUKEYQueryHandler
 
-attributeList = ['avgKsat', 'avgClay', 'avgSilt', 'avgSand', 'avgPorosity','pmgroupname','texture','tecdesc', 'avgFieldCapacity', 'avgAvailWaterCap', 'brockdepmin']
-attributeListNumeric = ['avgKsat', 'avgClay', 'avgSilt', 'avgSand', 'avgPorosity', 'avgFieldCap', 'avgAvailWaterCap', 'brockdepmin']
-# derivedAttributes must be a dictionary whose values are valid Python expressions combining members of attributeListNumeric
-derivedAttributes = { 'avgDrainableMoistureContent': 'avgPorosity - avgFieldCap' }
+ATTRIBUTE_LIST = ['avgKsat', 'avgClay', 'avgSilt', 'avgSand', 'avgPorosity',
+                 'pmgroupname', 'texture', 'tecdesc', 'avgFieldCapacity', 
+                 'avgAvailWaterCap']
+ATTRIBUTE_LIST_NUMERIC = ['avgKsat', 'avgClay', 'avgSilt', 'avgSand', 'avgPorosity', 
+                        'avgFieldCap', 'avgAvailWaterCap']
+# DERIVED_ATTRIBUTES must be a dictionary whose values are valid Python expressions combining members of ATTRIBUTE_LIST_NUMERIC
+DERIVED_ATTRIBUTES = { 'avgDrainableMoistureContent': 'avgPorosity - avgFieldCap' }
+ATTRIBUTE_LIST_NUMERIC.extend( DERIVED_ATTRIBUTES.keys() )
 
 def strListToString(strList):
     """ Converts a Python list of string values into a string containing quoted, 
@@ -68,6 +72,7 @@ def strListToString(strList):
     returnStr = output.getvalue()
     output.close()
     return returnStr
+
 
 def computeWeightedAverageKsatClaySandSilt(soilAttrTuple):
     """ Computes weighted average for Ksat, %clay/silt/sand for a SSURGO mukey based on values
@@ -180,20 +185,21 @@ def computeWeightedAverageKsatClaySandSilt(soilAttrTuple):
         attrList = [mukey, avgKsat, avgClay, avgSilt, avgSand, avgPorosity, pmgroupname, texture, texdesc,
                     avgFieldCap, avgAvailWaterCap]
         # Generate derived variables
-        for attr in derivedAttributes.keys():
-            derivedAttr = eval( derivedAttributes[attr] )
+        for attr in DERIVED_ATTRIBUTES.keys():
+            derivedAttr = eval( DERIVED_ATTRIBUTES[attr] )
             derivedSet.add(attr)
             attrList.append(derivedAttr) 
         
         avgSoilAttr.append(attrList)
-    avgSoilHeaders = list(attributeList)
+    avgSoilHeaders = list(ATTRIBUTE_LIST)
     avgSoilHeaders.insert(0, 'mukey')
     for derived in derivedSet:
         print("Computed derived attribute %s = %s" % \
-              (derived, derivedAttributes[derived]) )
+              (derived, DERIVED_ATTRIBUTES[derived]) )
         avgSoilHeaders.append(derived)
     
     return (avgSoilHeaders, avgSoilAttr)
+
 
 def joinSSURGOAttributesToFeaturesByMUKEY(gmlFile, typeName, ssurgoAttributes):
     """ Join SSURGO tabular attributes to MapunitPoly or MapunitPolyExtended features based on
@@ -283,10 +289,6 @@ WHERE c.mukey IN (%s) ORDER BY c.cokey"""
     
     result = client.RunQuery(query)
     resultXmlStr = result['RunQueryResult'].as_xml()
-
-    #debugOut = open('SSURGOAttributesForFeatures.xml', 'w')
-    #debugOut.write(resultXmlStr)
-    #debugOut.close()
 
     # Parse results
     handler = SSURGOMUKEYQueryHandler()

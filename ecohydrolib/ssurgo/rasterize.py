@@ -36,10 +36,15 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import os.path, errno
 import osr
 
-
 from ecohydrolib.spatialdata.utils import getSpatialReferenceForRaster
 from ecohydrolib.spatialdata.utils import getMeterConversionFactorForLinearUnitOfShapefile
 from ecohydrolib.spatialdata.utils import getMeterConversionFactorForLinearUnitOfGMLfile
+
+import attributequery
+
+RASTER_ATTRIBUTES = attributequery.ATTRIBUTE_LIST_NUMERIC
+# Depth to bed rock from MapunitPolyExtended
+RASTER_ATTRIBUTES.append('brockdepmin')
 
 def rasterizeSSURGOFeatures(config, outputDir, featureFilename, featureLayername, featureAttrList, \
                             getResolutionFromRasterFileNamed=None, rasterResolutionX=None, rasterResolutionY=None):
