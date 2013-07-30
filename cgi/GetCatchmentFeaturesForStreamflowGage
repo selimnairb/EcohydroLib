@@ -12,7 +12,7 @@ cgitb.enable()
 
 from ecohydrolib.context import Context
 from ecohydrolib.nhdplus2.networkanalysis import getCatchmentFeaturesForGage
-from ecohydrolib.nhdplus2.networkanalysis import OGR_GEOJSON_DRIVER_NAME
+from ecohydrolib.spatialdata.utils import OGR_GEOJSON_DRIVER_NAME
 
 CONFIG_FILE = os.path.join( os.environ['DOCUMENT_ROOT'], 'ecohydro.cfg' )
 PROJECT_DIR = '/tmp'
