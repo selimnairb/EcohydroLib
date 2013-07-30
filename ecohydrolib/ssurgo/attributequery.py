@@ -44,13 +44,13 @@ from oset import oset
 
 from saxhandlers import SSURGOMUKEYQueryHandler
 
-ATTRIBUTE_LIST = ['avgKsat', 'avgClay', 'avgSilt', 'avgSand', 'avgPorosity',
-                 'pmgroupname', 'texture', 'tecdesc', 'avgFieldCapacity', 
-                 'avgAvailWaterCap']
-ATTRIBUTE_LIST_NUMERIC = ['avgKsat', 'avgClay', 'avgSilt', 'avgSand', 'avgPorosity', 
-                        'avgFieldCap', 'avgAvailWaterCap']
+ATTRIBUTE_LIST = ['ksat', 'pctClay', 'pctSilt', 'pctSand', 'porosity',
+                 'pmgroupname', 'texture', 'tecdesc', 'fieldCap', 
+                 'avlWatCap']
+ATTRIBUTE_LIST_NUMERIC = ['ksat', 'pctClay', 'pctSilt', 'pctSand', 'porosity', 
+                        'fieldCap', 'avlWatCap']
 # DERIVED_ATTRIBUTES must be a dictionary whose values are valid Python expressions combining members of ATTRIBUTE_LIST_NUMERIC
-DERIVED_ATTRIBUTES = { 'avgDrainableMoistureContent': 'avgPorosity - avgFieldCap' }
+DERIVED_ATTRIBUTES = { 'drnWatCont': 'porosity - fieldCap' }
 ATTRIBUTE_LIST_NUMERIC.extend( DERIVED_ATTRIBUTES.keys() )
 
 def strListToString(strList):
@@ -168,13 +168,14 @@ def computeWeightedAverageKsatClaySandSilt(soilAttrTuple):
         myFieldCap = mySubSet[:,7]
         myAvailWaterCap = mySubSet[:,8]
         # Calculate weighted averages, ignoring NoData values
-        avgKsat = np.ma.average(myKsat, weights=myComppct)
-        avgClay = np.ma.average(myClay, weights=myComppct)
-        avgSilt = np.ma.average(mySilt, weights=myComppct)
-        avgSand = np.ma.average(mySand, weights=myComppct)
-        avgPorosity = np.ma.average(myPorosity, weights=myComppct)
-        avgFieldCap = np.ma.average(myFieldCap, weights=myComppct)
-        avgAvailWaterCap = np.ma.average(myAvailWaterCap, weights=myComppct)
+        # These variable names MUST match values in ATTRIBUTE_LIST_NUMERIC
+        ksat = np.ma.average(myKsat, weights=myComppct)
+        pctClay = np.ma.average(myClay, weights=myComppct)
+        pctSilt = np.ma.average(mySilt, weights=myComppct)
+        pctSand = np.ma.average(mySand, weights=myComppct)
+        porosity = np.ma.average(myPorosity, weights=myComppct)
+        fieldCap = np.ma.average(myFieldCap, weights=myComppct)
+        avlWatCap = np.ma.average(myAvailWaterCap, weights=myComppct)
         
         # Get modal value for qualitative values (pmgroupname, texture, tecdesc)
         maxRepIdx = representativeComponentDict[mukey][0]
@@ -182,8 +183,8 @@ def computeWeightedAverageKsatClaySandSilt(soilAttrTuple):
         texture = data[maxRepIdx][4]
         texdesc = data[maxRepIdx][5]
         
-        attrList = [mukey, avgKsat, avgClay, avgSilt, avgSand, avgPorosity, pmgroupname, texture, texdesc,
-                    avgFieldCap, avgAvailWaterCap]
+        attrList = [mukey, ksat, pctClay, pctSilt, pctSand, porosity, pmgroupname, texture, texdesc,
+                    fieldCap, avlWatCap]
         # Generate derived variables
         for attr in DERIVED_ATTRIBUTES.keys():
             derivedAttr = eval( DERIVED_ATTRIBUTES[attr] )
