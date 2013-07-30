@@ -36,6 +36,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import os.path, errno
 import osr
 
+from ecohydrolib.spatialdata.utils import deleteGeoTiff
 from ecohydrolib.spatialdata.utils import getSpatialReferenceForRaster
 from ecohydrolib.spatialdata.utils import getMeterConversionFactorForLinearUnitOfShapefile
 from ecohydrolib.spatialdata.utils import getMeterConversionFactorForLinearUnitOfGMLfile
@@ -45,6 +46,21 @@ import attributequery
 RASTER_ATTRIBUTES = attributequery.ATTRIBUTE_LIST_NUMERIC
 # Depth to bed rock from MapunitPolyExtended
 RASTER_ATTRIBUTES.append('brockdepmin')
+
+
+def deleteSoilRasters(context, manifest):
+    """ Delete soil raster maps stored in a project
+    
+        @param context Context object containing projectDir, the path of the project whose 
+        metadata store is to be read from
+        @param manifest Dict containing manifest entries.  Files associted with entries
+        whose key begins with 'soil_raster_' will be deleted
+    """
+    for entry in manifest.keys():
+        if entry.find('soil_raster_') == 0:
+            filePath = os.path.join( context.projectDir, manifest[entry] )
+            deleteGeoTiff(filePath)
+
 
 def rasterizeSSURGOFeatures(config, outputDir, featureFilename, featureLayername, featureAttrList, \
                             getResolutionFromRasterFileNamed=None, rasterResolutionX=None, rasterResolutionY=None):

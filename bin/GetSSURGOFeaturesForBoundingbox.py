@@ -50,7 +50,6 @@ Post conditions
 ---------------
 1. Will write the following entry(ies) to the manifest section of metadata associated with the project directory:
    soil_features [the name of the vector file containing the soil features]
-   soil_raster_<attr> [the name of the raster file for each soil property raster]
 
 Usage:
 @code
@@ -63,22 +62,26 @@ or -i option must be specified.
 import os
 import sys
 import argparse
+import textwrap
 
 from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
 from ecohydrolib.metadata import AssetProvenance
+
+from ecohydrolib.spatialdata.utils import deleteShapefile
 from ecohydrolib.spatialdata.utils import bboxFromString
 from ecohydrolib.spatialdata.utils import convertGMLToShapefile
 from ecohydrolib.ssurgo.featurequery import getMapunitFeaturesForBoundingBox
 from ecohydrolib.ssurgo import featurequery
    
-
 # Handle command line options
 parser = argparse.ArgumentParser(description='Get SSURGO features for a bounding box')
 parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory to which metadata, intermediate, and final files should be saved')
+parser.add_argument('--overwrite', dest='overwrite', action='store_true', required=False,
+                    help='Overwrite existing SSURGO features shapefile in project directory.  If not specified, program will halt if a dataset already exists.')
 args = parser.parse_args()
 cmdline = GenericMetadata.getCommandLine()
 
@@ -92,6 +95,17 @@ if not context.config.has_option('GDAL/OGR', 'PATH_OF_OGR2OGR'):
     sys.exit("Config file %s does not define option %s in section %s" & \
           (args.configfile, 'GDAL/OGR', 'PATH_OF_OGR2OGR'))
 
+# Check if features shapefile already exists
+manifest = GenericMetadata.readManifestEntries(context)
+if 'soil_features' in manifest:
+    if args.overwrite:
+        sys.stdout.write('Deleting existing SSURGO features shapefile\n')
+        sys.stdout.flush()
+        shpFilepath = os.path.join( context.projectDir, manifest['soil_features'] )
+        deleteShapefile(shpFilepath)
+    else:
+        sys.exit( textwrap.fill('SSURGO features already exist in project directory.  Use --overwrite option to overwrite.') )
+
 # Get study area parameters
 studyArea = GenericMetadata.readStudyAreaEntries(context)
 bbox = bboxFromString(studyArea['bbox_wgs84'])
@@ -100,6 +114,8 @@ outputrasterresolutionX = studyArea['dem_res_x']
 outputrasterresolutionY = studyArea['dem_res_y']
 srs = studyArea['dem_srs']
 
+sys.stdout.write('Downloading SSURGO features for study area from USDA Soil Data mart...\n')
+sys.stdout.flush()
 gmlFilename = getMapunitFeaturesForBoundingBox(context.projectDir, bbox)[0]
     
 # Convert from gml to shp and then rasterize

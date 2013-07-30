@@ -76,6 +76,8 @@ parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory to which metadata, intermediate, and final files should be saved')
+parser.add_argument('--overwrite', dest='overwrite', action='store_true', required=False,
+                    help='Overwrite existing soil property rasters in project directory.')
 args = parser.parse_args()
 cmdline = GenericMetadata.getCommandLine()
 
@@ -98,6 +100,11 @@ if ssurgoProvenance is None:
 manifest = GenericMetadata.readManifestEntries(context)
 shpFilename = manifest['soil_features']
 layerName = os.path.splitext(shpFilename)[0]
+
+if args.overwrite:
+    sys.stdout.write('Deleting existing soil property rasters...')
+    rasterize.deleteSoilRasters(context, manifest)
+    sys.stdout.write('done\n')
 
 # Get study area parameters
 studyArea = GenericMetadata.readStudyAreaEntries(context)
