@@ -1,7 +1,14 @@
 #!/usr/bin/env python
 """@package GetSSURGOFeaturesForBoundingbox
 
-@brief Query USDA soil datamart for SSURGO features and attributes
+@brief Query USDA soil datamart for SSURGO MapunitPolyExtended features and the following 
+attributes, computed as a weighted average of the components in each mapunit, for the first 
+soil horizon of each mapunit: ksat (chorizon.ksat_r), pctClay (chorizon.claytotal_r), 
+pctSilt (chorizon.silttotal_r), pctSand (chorizon.andtotal_r), porosity (chorizon.wsatiated_r), 
+'fieldCap' (chorizon.wthirdbar_r), 'avlWatCap' (plant available water capacity; chorizon.awc_r), 
+and drnWatCont (drainable water capacity; porosity - fieldCap).  
+
+@note For information on SSURGO attributes see: http://soildatamart.nrcs.usda.gov/SSURGOMetadata.aspx
 
 This software is provided free of charge under the New BSD License. Please see
 the following license information:
