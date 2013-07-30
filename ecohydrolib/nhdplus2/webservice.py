@@ -48,9 +48,7 @@ from ecohydrolib.spatialdata.utils import OGR_DRIVERS
 _DEFAULT_CRS = 'EPSG:4326'
 _BUFF_LEN = 4096 * 10
 
-#HOST = 'ga-dev-wssi.renci.org'
-#HOST = '127.0.0.1'
-HOST = '192.168.1.2'
+HOST = 'ga-dev-wssi.renci.org'
 URL_PROTO_GAGE_LOC = '/cgi-bin/LocateStreamflowGage?gageid={gageid}'
 URL_PROTO_CATCHMENT = '/cgi-bin/GetCatchmentFeaturesForStreamflowGage?reachcode={reachcode}&measure={measure}'
 
