@@ -1,3 +1,8 @@
+apt-get install aptitude
+aptitude install build-essential git subversion p7zip-full \
 aptitude install python python-dev python-pip \
 libxml2-dev libxslt-dev \
-python-gdal \
+gdal gdal-bin python-gdal \
+grass grass-dev \
+libbsd-dev
+
