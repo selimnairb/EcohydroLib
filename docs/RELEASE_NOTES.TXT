@@ -1,9 +1,3 @@
-# 1.0 - 7/12/2013
-  - Initial release
-
-# 1.01 - 7/19/2013
-  - Added ability to download NLCD 2006 data from http://webmap.ornl.gov/
-  
 # 1.1 - 7/30/2013
   - Added ability to query NHDPlus2 dataset for streamflow gage location using
     new EcohydroLib CGI hosted at RENCI
@@ -14,4 +8,13 @@
   - Added isohyet raster type
   - Note: Version number is 1.1 indicating that metadata from this version is not compatible
     with previous versions
+
+# 1.01 - 7/19/2013
+  - Added ability to download NLCD 2006 data from http://webmap.ornl.gov/
+
+# 1.0 - 7/12/2013
+  - Initial release
+
+  
+
   
