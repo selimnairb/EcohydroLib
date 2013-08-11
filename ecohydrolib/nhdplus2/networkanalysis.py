@@ -238,9 +238,74 @@ def getUpstreamReachesSQL(conn, comID, allUpstreamReaches):
     for u in upstream_reaches:
         # Record the upstream reach
         allUpstreamReaches.append(u)
-        # Fine reaches upstream of it
+        # Find reaches upstream of it
         getUpstreamReachesSQL(conn, u, allUpstreamReaches)
+
+
+def getFirstOrderUpstreamReachesInSet(config, comID, comIdsInSet, maxdepth=30):
+    """ Recursively search for first upstream reach in the specified set.
     
+        @param config A Python ConfigParser containing the following
+        sections and options:
+            'NHDPLUS2' and option 'PATH_OF_NHDPLUS2_DB' (absolute path to
+            SQLite3 DB of NHDFlow data)
+        @param comID The ComID of the reach whose first upstream reach is to be discovered
+        @param comIdsInSet A set containing candidate comids
+        @param upstreamReaches List containing integers representing comIDs of upstream reaches in set comIdsInSet
+        @param maxdepth Integer representing maximum depth of recursion
+        
+        @return Set containing first order upstream reaches in set
+        
+        @raise ConfigParser.NoSectionError
+        @raise ConfigParser.NoOptionError
+    """
+    nhddbPath = config.get('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB')
+    if not os.access(nhddbPath, os.R_OK):
+        raise IOError(errno.EACCES, "The database at %s is not readable" %
+                      nhddbPath)
+    nhddbPath = os.path.abspath(nhddbPath)
+    
+    # Connect to DB
+    conn = sqlite3.connect(nhddbPath)
+    
+    upstreamReaches = set()
+    depth = 0
+    getFirstOrderUpstreamReachesInSetSQL(conn, comID, comIdsInSet, upstreamReaches, depth, maxdepth)
+    return list(upstreamReaches)
+
+
+def getFirstOrderUpstreamReachesInSetSQL(conn, comID, comIdsInSet, upstreamReaches, depth, maxdepth):
+    """ Recursively search for first upstream reach in the specified set.
+    
+        @param conn An sqlite3 connection to a database that has NHDPlus2 tables
+        @param comID The ComID of the reach whose first upstream reach is to be discovered
+        @param comIdsInSet A set containing candidate comids
+        @param upstreamReaches Set containing integers representing comIDs of upstream reaches in set comIdsInSet
+        @param depth Integer current depth
+        @param maxdepth Integer representing maximum depth of recursion
+        
+    """
+    if depth > maxdepth:
+        return
+    
+    upstream_reaches = getPlusFlowPredecessors(conn, comID)
+    if len(upstream_reaches) == 0:
+        return
+    
+    if len(upstream_reaches) == 1 and upstream_reaches[0] == 0:
+        # We're at a headwater reach
+        return
+
+    # Foreach reach upstream of this reach
+    for u in upstream_reaches:
+        #print("\timmediate upstream: %s" % (type(u),) )
+        # Record the upstream reach if it is in set
+        if u in comIdsInSet:
+            upstreamReaches.add(u)
+        else:
+            # Keep looking in other upstream branches for first order reaches in set
+            getFirstOrderUpstreamReachesInSetSQL(conn, u, comIdsInSet, upstreamReaches, depth + 1, maxdepth)
+
         
 def getBoundingBoxForCatchmentsForGage(config, outputDir, reachcode, measure, deleteIntermediateFiles=True):
     """ Get bounding box coordinates (in WGS 84) for the drainage area associated with a given NHD 
@@ -318,38 +383,31 @@ def getBoundingBoxForCatchmentsForGage(config, outputDir, reachcode, measure, de
     conn.close()
 
     return bbox
- 
- 
-def getCatchmentFeaturesForGage(config, outputDir,
-                                catchmentFilename, reachcode, measure, 
+
+
+def getCatchmentFeaturesForComid(config, outputDir,
+                                catchmentFilename, comID,
                                 format=OGR_SHAPEFILE_DRIVER_NAME):
     """ Get features (in WGS 84) for the drainage area associated with a
-        given NHD (National Hydrography Dataset) streamflow gage
-        identified by a reach code and measure.
+        given NHD (National Hydrography Dataset) stream reach.
         
-        @note Capable of handling gages with more than 1000 upstream reaches 
+        @note Capable of handling comid with more than 1000 upstream reaches 
         
         @note No return value. catchmentFilename will be written to
         outputDir if successful
         
         @param config A Python ConfigParser containing the following
         sections and options:
-            'NHDPLUS2' and option 'PATH_OF_NHDPLUS2_DB' (absolute path to
-            SQLite3 DB of NHDFlow data)
-
             'NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT' (absolute path to
             NHD catchment shapefile)
         @param outputDir String representing the absolute/relative
         path of the directory into which output rasters should be
         written
-        @param format String representing OGR driver to use
         @param catchmentFilename String representing name of file to
         save catchment features to.  The appropriate extension will be added to the file name
-        @param reachcode String representing NHD streamflow gage 
-        @param measure Float representing the measure along reach
-        where Stream Gage is located in percent from downstream
-        end of the one or more NHDFlowline features that are
-        assigned to the ReachCode (see NHDPlusV21 GageLoc table)
+        @param comID String representing comid of stream reach whose upstream
+        catchment area is to be determined
+        @param format String representing OGR driver to use
         
         @return String representing the name of the dataset in outputDir created to hold
         the features
@@ -365,7 +423,7 @@ def getCatchmentFeaturesForGage(config, outputDir,
         raise IOError(errno.EACCES, "The database at %s is not readable" %
                       nhddbPath)
     nhddbPath = os.path.abspath(nhddbPath)
-        
+    
     catchmentFeatureDBPath = config.get('NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT')
     if not os.access(catchmentFeatureDBPath, os.R_OK):
         raise IOError(errno.EACCES, "The catchment feature DB at %s is not readable" %
@@ -386,9 +444,6 @@ def getCatchmentFeaturesForGage(config, outputDir,
     
     # Connect to DB
     conn = sqlite3.connect(nhddbPath)
-    
-    comID = getComIdForStreamGage(conn, reachcode, measure)
-    #sys.stderr.write("Gage with reachcode %s, measure %f has ComID %d" % (reachcode, measure, comID))
     
     # Get upstream reaches
     reaches = [comID]
@@ -454,3 +509,60 @@ def getCatchmentFeaturesForGage(config, outputDir,
         inFeature = poLayer.GetNextFeature()
         
     return catchmentFilename
+
+ 
+def getCatchmentFeaturesForGage(config, outputDir,
+                                catchmentFilename, reachcode, measure, 
+                                format=OGR_SHAPEFILE_DRIVER_NAME):
+    """ Get features (in WGS 84) for the drainage area associated with a
+        given NHD (National Hydrography Dataset) streamflow gage
+        identified by a reach code and measure.
+        
+        @note Capable of handling gages with more than 1000 upstream reaches 
+        
+        @note No return value. catchmentFilename will be written to
+        outputDir if successful
+        
+        @param config A Python ConfigParser containing the following
+        sections and options:
+            'NHDPLUS2' and option 'PATH_OF_NHDPLUS2_DB' (absolute path to
+            SQLite3 DB of NHDFlow data)
+
+            'NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT' (absolute path to
+            NHD catchment shapefile)
+        @param outputDir String representing the absolute/relative
+        path of the directory into which output rasters should be
+        written
+        @param catchmentFilename String representing name of file to
+        save catchment features to.  The appropriate extension will be added to the file name
+        @param reachcode String representing NHD streamflow gage 
+        @param measure Float representing the measure along reach
+        where Stream Gage is located in percent from downstream
+        end of the one or more NHDFlowline features that are
+        assigned to the ReachCode (see NHDPlusV21 GageLoc table)
+        @param format String representing OGR driver to use
+        
+        @return String representing the name of the dataset in outputDir created to hold
+        the features
+         
+        @raise ConfigParser.NoSectionError
+        @raise ConfigParser.NoOptionError
+        @raise IOError(errno.ENOTDIR) if outputDir is not a directory
+        @raise IOError(errno.EACCESS) if outputDir is not writable
+        @raise Exception if output format is not known
+    """
+    nhddbPath = config.get('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB')
+    if not os.access(nhddbPath, os.R_OK):
+        raise IOError(errno.EACCES, "The database at %s is not readable" %
+                      nhddbPath)
+    nhddbPath = os.path.abspath(nhddbPath)
+    
+    # Connect to DB
+    conn = sqlite3.connect(nhddbPath)
+    
+    comID = getComIdForStreamGage(conn, reachcode, measure)
+    #sys.stderr.write("Gage with reachcode %s, measure %f has ComID %d" % (reachcode, measure, comID))
+    
+    return getCatchmentFeaturesForComid(config, outputDir,
+                                catchmentFilename, comID,
+                                format)
