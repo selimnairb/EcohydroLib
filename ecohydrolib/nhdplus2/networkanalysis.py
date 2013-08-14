@@ -41,6 +41,9 @@ import sqlite3
 import re
 
 import ogr
+from shapely.geometry import Polygon
+from shapely.wkb import loads, dumps
+from shapely.ops import *
 
 from ecohydrolib.spatialdata.utils import OGR_SHAPEFILE_DRIVER_NAME
 from ecohydrolib.spatialdata.utils import OGR_DRIVERS
@@ -466,7 +469,8 @@ def getCatchmentFeaturesForComid(config, outputDir,
     assert(poDriver)
     poODS = poDriver.CreateDataSource(catchmentFilepath)
     assert(poODS != None)
-    poOLayer = poODS.CreateLayer("catchment", poLayer.GetSpatialRef(), poLayer.GetGeomType())
+#    poOLayer = poODS.CreateLayer("catchment", poLayer.GetSpatialRef(), poLayer.GetGeomType())
+    poOLayer = poODS.CreateLayer("catchment", poLayer.GetSpatialRef(), ogr.wkbMultiPolygon )
     
     # Create fields in output layer
     layerDefn = poLayer.GetLayerDefn()
@@ -477,7 +481,10 @@ def getCatchmentFeaturesForComid(config, outputDir,
         poOLayer.CreateField(fieldDefn)
         i = i + 1
 
-    # Copy features
+    # Create single geometry to hold catchment polygon in output shapefile
+    outGeom = ogr.Geometry( poOLayer.GetGeomType() )
+
+    # Copy features, unioning them as we go
     numReaches = len(reaches)
     # Copy features in batches of UPSTREAM_SEARCH_THRESHOLD to overcome limit in 
     #   OGR driver for input layer
@@ -490,10 +497,11 @@ def getCatchmentFeaturesForComid(config, outputDir,
         # Copy features
         assert(poLayer.SetAttributeFilter(whereFilter) == 0)
         inFeature = poLayer.GetNextFeature()
+        # Union geometry of input feature to output feature
         while inFeature:
-            poOLayer.CreateFeature(inFeature)
+            outGeom = outGeom.Union( inFeature.GetGeometryRef() )
             inFeature.Destroy()
-            inFeature = poLayer.GetNextFeature()
+            inFeature = poLayer.GetNextFeature() 
         start = end
         end = end + UPSTREAM_SEARCH_THRESHOLD
     # Copy remaining features
@@ -504,9 +512,19 @@ def getCatchmentFeaturesForComid(config, outputDir,
     assert(poLayer.SetAttributeFilter(whereFilter) == 0)
     inFeature = poLayer.GetNextFeature()
     while inFeature:
-        poOLayer.CreateFeature(inFeature)
+        outGeom = outGeom.Union( inFeature.GetGeometryRef() )
         inFeature.Destroy()
         inFeature = poLayer.GetNextFeature()
+    
+    # Create a new polygon that only contains exterior points
+    polygon = loads( outGeom.ExportToWkb() )
+    coords = polygon.exterior.coords
+    newPolygon = Polygon(coords)
+    
+    # Write new feature to output feature data source
+    outFeat = ogr.Feature( poOLayer.GetLayerDefn() )
+    outFeat.SetGeometry( ogr.CreateGeometryFromWkb( dumps(newPolygon) ) )
+    poOLayer.CreateFeature(outFeat)
         
     return catchmentFilename
 

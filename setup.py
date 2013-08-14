@@ -40,7 +40,8 @@ setup(name='ecohydrolib',
         'PySimpleSOAP==1.05a',
         'OWSLib',
         'oset',
-        'httplib2'
+        'httplib2',
+        'shapely'
       ],
       scripts=['bin/DumpClimateStationInfo.py',
                'bin/DumpMetadataToiRODSXML.py',
