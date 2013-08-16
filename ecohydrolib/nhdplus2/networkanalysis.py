@@ -245,14 +245,83 @@ def getUpstreamReachesSQL(conn, comID, allUpstreamReaches):
         getUpstreamReachesSQL(conn, u, allUpstreamReaches)
 
 
-def getFirstOrderUpstreamReachesInSet(config, comID, comIdsInSet, maxdepth=30):
-    """ Recursively search for first upstream reach in the specified set.
+def getFirstOrderUpstreamReachesNotInSet(config, comID, comIdsInSet, maxdepth=30):
+    """ Search for upstream reaches downstream of reaches in the specified set.
     
         @param config A Python ConfigParser containing the following
         sections and options:
             'NHDPLUS2' and option 'PATH_OF_NHDPLUS2_DB' (absolute path to
             SQLite3 DB of NHDFlow data)
-        @param comID The ComID of the reach whose first upstream reach is to be discovered
+        @param comID The ComID of the reach whose upstream reaches downstream of those in the set
+        are to be discovered
+        @param comIdsInSet A set containing candidate comids
+        @param upstreamReaches List containing integers representing comIDs of upstream reaches in set comIdsInSet
+        @param maxdepth Integer representing maximum depth of recursion
+        
+        @return Set containing first order upstream reaches in set
+        
+        @raise ConfigParser.NoSectionError
+        @raise ConfigParser.NoOptionError
+    """
+    nhddbPath = config.get('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB')
+    if not os.access(nhddbPath, os.R_OK):
+        raise IOError(errno.EACCES, "The database at %s is not readable" %
+                      nhddbPath)
+    nhddbPath = os.path.abspath(nhddbPath)
+    
+    # Connect to DB
+    conn = sqlite3.connect(nhddbPath)
+    
+    upstreamReaches = set()
+    depth = 0
+    getFirstOrderUpstreamReachesNotInSetSQL(conn, comID, comIdsInSet, upstreamReaches, depth, maxdepth)
+    return list(upstreamReaches)
+
+
+def getFirstOrderUpstreamReachesNotInSetSQL(conn, comID, comIdsInSet, upstreamReaches, depth, maxdepth):
+    """ Recursively search for upstream reaches downstream of reaches in the specified set.
+    
+        @param conn An sqlite3 connection to a database that has NHDPlus2 tables
+        @param comID The ComID of the reach whose upstream reaches downstream of those in the set
+        are to be discovered
+        @param comIdsInSet A set containing candidate comids
+        @param upstreamReaches Set containing integers representing comIDs of upstream reaches in set comIdsInSet
+        @param depth Integer current depth
+        @param maxdepth Integer representing maximum depth of recursion
+        
+    """
+    if depth > maxdepth:
+        return
+    
+    upstream_reaches = getPlusFlowPredecessors(conn, comID)
+    if len(upstream_reaches) == 0:
+        return
+    
+    if len(upstream_reaches) == 1 and upstream_reaches[0] == 0:
+        # We're at a headwater reach
+        return
+
+    # Foreach reach upstream of this reach
+    for u in upstream_reaches:
+        #print("\timmediate upstream: %s" % (type(u),) )
+        # Return if upstream reach is in set
+        if u in comIdsInSet:
+            return
+        else:
+            # Keep looking in other upstream branches for first order reaches in set
+            upstreamReaches.add(u)
+            getFirstOrderUpstreamReachesNotInSetSQL(conn, u, comIdsInSet, upstreamReaches, depth + 1, maxdepth)
+
+
+
+def getFirstOrderUpstreamReachesInSet(config, comID, comIdsInSet, maxdepth=30):
+    """ Search for first-order upstream reaches in the specified set.
+    
+        @param config A Python ConfigParser containing the following
+        sections and options:
+            'NHDPLUS2' and option 'PATH_OF_NHDPLUS2_DB' (absolute path to
+            SQLite3 DB of NHDFlow data)
+        @param comID The ComID of the reach whose first-order upstream reaches are to be discovered
         @param comIdsInSet A set containing candidate comids
         @param upstreamReaches List containing integers representing comIDs of upstream reaches in set comIdsInSet
         @param maxdepth Integer representing maximum depth of recursion
@@ -278,10 +347,10 @@ def getFirstOrderUpstreamReachesInSet(config, comID, comIdsInSet, maxdepth=30):
 
 
 def getFirstOrderUpstreamReachesInSetSQL(conn, comID, comIdsInSet, upstreamReaches, depth, maxdepth):
-    """ Recursively search for first upstream reach in the specified set.
+    """ Recursively search for first-order upstream reaches in the specified set.
     
         @param conn An sqlite3 connection to a database that has NHDPlus2 tables
-        @param comID The ComID of the reach whose first upstream reach is to be discovered
+        @param comID The ComID of the reach whose first-order upstream reaches are to be discovered
         @param comIdsInSet A set containing candidate comids
         @param upstreamReaches Set containing integers representing comIDs of upstream reaches in set comIdsInSet
         @param depth Integer current depth
@@ -388,28 +457,22 @@ def getBoundingBoxForCatchmentsForGage(config, outputDir, reachcode, measure, de
     return bbox
 
 
-def getCatchmentFeaturesForComid(config, outputDir,
-                                catchmentFilename, comID,
-                                format=OGR_SHAPEFILE_DRIVER_NAME):
+def getCatchmentFeaturesForReaches(config, outputDir,
+                                   catchmentFilename, reaches,
+                                   format=OGR_SHAPEFILE_DRIVER_NAME):
     """ Get features (in WGS 84) for the drainage area associated with a
-        given NHD (National Hydrography Dataset) stream reach.
-        
-        @note Capable of handling comid with more than 1000 upstream reaches 
-        
-        @note No return value. catchmentFilename will be written to
-        outputDir if successful
+        set of NHD (National Hydrography Dataset) stream reaches.
         
         @param config A Python ConfigParser containing the following
         sections and options:
-            'NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT' (absolute path to
+            'PATH_OF_NHDPLUS2_CATCHMENT' (absolute path to
             NHD catchment shapefile)
         @param outputDir String representing the absolute/relative
         path of the directory into which output rasters should be
         written
         @param catchmentFilename String representing name of file to
         save catchment features to.  The appropriate extension will be added to the file name
-        @param comID String representing comid of stream reach whose upstream
-        catchment area is to be determined
+        @param reaches List representing catchment features to be output
         @param format String representing OGR driver to use
         
         @return String representing the name of the dataset in outputDir created to hold
@@ -420,13 +483,19 @@ def getCatchmentFeaturesForComid(config, outputDir,
         @raise IOError(errno.ENOTDIR) if outputDir is not a directory
         @raise IOError(errno.EACCESS) if outputDir is not writable
         @raise Exception if output format is not known
-    """
-    nhddbPath = config.get('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB')
-    if not os.access(nhddbPath, os.R_OK):
-        raise IOError(errno.EACCES, "The database at %s is not readable" %
-                      nhddbPath)
-    nhddbPath = os.path.abspath(nhddbPath)
+        
+        @todo Detect and fix non-closed geometries, e.g.
+        kalisti:archive miles$ ./GetCatchmentsForComidsSP.py -p test -c 10462287
+        Traceback (most recent call last):
+          File "./GetCatchmentsForComidsSP.py", line 29, in <module>
+            catchmentFilename, comid)
+          File "/Users/miles/Dropbox/EarthCube-Multilayered/RHESSys-workflow/eclipse/EcohydroWorkflowLib/ecohydrolib/nhdplus2/networkanalysis.py", line 506, in getCatchmentFeaturesForComid
+            outGeom = outGeom.Union( inGeom )
+          File "/usr/local/Cellar/python/2.7.5/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/osgeo/ogr.py", line 4065, in Union
+            return _ogr.Geometry_Union(self, *args)
+        RuntimeError: TopologyException: found non-noded intersection between LINESTRING (-77.9145 37.0768, -77.9147 37.0768) and LINESTRING (-77.9147 37.0768, -77.9145 37.0768) at -77.914621661942761 37.076822779115943
     
+    """
     catchmentFeatureDBPath = config.get('NHDPLUS2', 'PATH_OF_NHDPLUS2_CATCHMENT')
     if not os.access(catchmentFeatureDBPath, os.R_OK):
         raise IOError(errno.EACCES, "The catchment feature DB at %s is not readable" %
@@ -445,16 +514,6 @@ def getCatchmentFeaturesForComid(config, outputDir,
     catchmentFilename ="%s%s%s" % ( catchmentFilename, os.extsep, OGR_DRIVERS[format] )
     catchmentFilepath = os.path.join(outputDir, catchmentFilename)
     
-    # Connect to DB
-    conn = sqlite3.connect(nhddbPath)
-    
-    # Get upstream reaches
-    reaches = [comID]
-    getUpstreamReachesSQL(conn, comID, reaches)
-    #sys.stderr.write("Upstream reaches: ")
-    #sys.stderr.write(upstream_reaches)
-    conn.close()
-    
     # Open input layer
     ogr.UseExceptions()
     poDS = ogr.Open(catchmentFeatureDBPath, OGR_UPDATE_MODE)
@@ -471,6 +530,7 @@ def getCatchmentFeaturesForComid(config, outputDir,
     assert(poODS != None)
 #    poOLayer = poODS.CreateLayer("catchment", poLayer.GetSpatialRef(), poLayer.GetGeomType())
     poOLayer = poODS.CreateLayer("catchment", poLayer.GetSpatialRef(), ogr.wkbMultiPolygon )
+#    poOLayer = poODS.CreateLayer("catchment", poLayer.GetSpatialRef(), ogr.wkbPolygon )
     
     # Create fields in output layer
     layerDefn = poLayer.GetLayerDefn()
@@ -483,6 +543,7 @@ def getCatchmentFeaturesForComid(config, outputDir,
 
     # Create single geometry to hold catchment polygon in output shapefile
     outGeom = ogr.Geometry( poOLayer.GetGeomType() )
+#    polygon = Polygon()
 
     # Copy features, unioning them as we go
     numReaches = len(reaches)
@@ -499,7 +560,11 @@ def getCatchmentFeaturesForComid(config, outputDir,
         inFeature = poLayer.GetNextFeature()
         # Union geometry of input feature to output feature
         while inFeature:
-            outGeom = outGeom.Union( inFeature.GetGeometryRef() )
+#            inGeom = inFeature.GetGeometryRef().SimplifyPreserveTopology(0.0001)
+            inGeom = inFeature.GetGeometryRef()
+            outGeom = outGeom.Union( inGeom )
+#            polygon = polygon.union( loads( inGeom.ExportToWkb() ) )
+#            polygon = cascaded_union( [polygon, loads( inGeom.ExportToWkb() )] )
             inFeature.Destroy()
             inFeature = poLayer.GetNextFeature() 
         start = end
@@ -509,17 +574,26 @@ def getCatchmentFeaturesForComid(config, outputDir,
     for reach in reaches[start+1:end]:
         whereFilter = whereFilter + " OR featureid=%s" % (reach,)
     # Copy features
+    poLayer.SetAttributeFilter(whereFilter)
     assert(poLayer.SetAttributeFilter(whereFilter) == 0)
     inFeature = poLayer.GetNextFeature()
     while inFeature:
-        outGeom = outGeom.Union( inFeature.GetGeometryRef() )
+#        inGeom = inFeature.GetGeometryRef().SimplifyPreserveTopology(0.0001)
+        inGeom = inFeature.GetGeometryRef()
+        outGeom = outGeom.Union( inGeom )
+#        polygon = polygon.union( loads( inGeom.ExportToWkb() ) )
+#        polygon = cascaded_union( [polygon, loads( inGeom.ExportToWkb() )] )
         inFeature.Destroy()
         inFeature = poLayer.GetNextFeature()
     
     # Create a new polygon that only contains exterior points
+    outGeom = ogr.ForceToPolygon( outGeom )
     polygon = loads( outGeom.ExportToWkb() )
-    coords = polygon.exterior.coords
-    newPolygon = Polygon(coords)
+    if polygon.exterior:
+        coords = polygon.exterior.coords
+        newPolygon = Polygon(coords)
+    else:
+        newPolygon = Polygon()
     
     # Write new feature to output feature data source
     outFeat = ogr.Feature( poOLayer.GetLayerDefn() )
@@ -527,6 +601,55 @@ def getCatchmentFeaturesForComid(config, outputDir,
     poOLayer.CreateFeature(outFeat)
         
     return catchmentFilename
+
+
+def getCatchmentFeaturesForComid(config, outputDir,
+                                catchmentFilename, comID,
+                                format=OGR_SHAPEFILE_DRIVER_NAME):
+    """ Get features (in WGS 84) for the drainage area associated with a
+        given NHD (National Hydrography Dataset) stream reach.
+         
+        @param config A Python ConfigParser containing the following
+        sections and options:
+            'NHDPLUS2',
+        @param outputDir String representing the absolute/relative
+        path of the directory into which output rasters should be
+        written
+        @param catchmentFilename String representing name of file to
+        save catchment features to.  The appropriate extension will be added to the file name
+        @param comID String representing comid of stream reach whose upstream
+        catchment area is to be determined
+        @param format String representing OGR driver to use
+        
+        @return String representing the name of the dataset in outputDir created to hold
+        the features
+         
+        @raise ConfigParser.NoSectionError
+        @raise ConfigParser.NoOptionError
+        @raise IOError(errno.ENOTDIR) if outputDir is not a directory
+        @raise IOError(errno.EACCESS) if outputDir is not writable
+        @raise Exception if output format is not known
+        
+    """
+    nhddbPath = config.get('NHDPLUS2', 'PATH_OF_NHDPLUS2_DB')
+    if not os.access(nhddbPath, os.R_OK):
+        raise IOError(errno.EACCES, "The database at %s is not readable" %
+                      nhddbPath)
+    nhddbPath = os.path.abspath(nhddbPath)
+    
+    # Connect to DB
+    conn = sqlite3.connect(nhddbPath)
+    
+    # Get upstream reaches
+    reaches = [comID]
+    getUpstreamReachesSQL(conn, comID, reaches)
+    #sys.stderr.write("Upstream reaches: ")
+    #sys.stderr.write(upstream_reaches)
+    conn.close()
+    
+    return getCatchmentFeaturesForReaches(config, outputDir,
+                                   catchmentFilename, reaches,
+                                   format)
 
  
 def getCatchmentFeaturesForGage(config, outputDir,
