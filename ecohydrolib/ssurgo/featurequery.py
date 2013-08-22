@@ -70,6 +70,7 @@ def getMapunitFeaturesForBoundingBox(outputDir, bbox, tileBbox=False):
         @exception IOError if output directory is not a directory
         @exception IOError if output directory is not writable
         @exception Exception if bounding box area is greater than MAX_SSURGO_EXTENT
+        @exception Exception if no MUKEYs were returned
     """
     if not os.path.isdir(outputDir):
         raise IOError(errno.ENOTDIR, "Output directory %s is not a directory" % (outputDir,))
@@ -116,6 +117,9 @@ def getMapunitFeaturesForBoundingBox(outputDir, bbox, tileBbox=False):
             xml.sax.parse(gmlFile, ssurgoFeatureHandler)
             gmlFile.close()
             mukeys = ssurgoFeatureHandler.mukeys
+            
+            if len(mukeys) < 1:
+                raise Exception("No SSURGO features returned from WFS query.  SSURGO GML format may have changed.\nPlease contact the developer.")
             
             # Get attributes (ksat, texture, %clay, %silt, and %sand) for all components in MUKEYS
             attributes = getParentMatKsatTexturePercentClaySiltSandForComponentsInMUKEYs(mukeys)
