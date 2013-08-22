@@ -49,7 +49,7 @@ class SSURGOFeatureHandler(xml.sax.ContentHandler):
     gml_featureMember = "gml:featureMember"
     ms_MapunitPoly = "ms:MapunitPoly"
     ms_MapunitPolyExtended = "ms:MapunitPolyExtended"
-    ms_MUKEY = "ms:MUKEY"
+    ms_MUKEY = "ms:mukey"
     
     inWfsFeatureCollection = False
     inGmlFeatureMember = False
@@ -85,7 +85,7 @@ class SSURGOFeatureHandler(xml.sax.ContentHandler):
             @param attrs Attributes of the element
         """
         #print "startElement: " + name
-        if (self.inMapunitPolyExtended or self.inMapunitPoly) and (self.ms_MUKEY == name):
+        if (self.inMapunitPolyExtended or self.inMapunitPoly) and ( self.ms_MUKEY == name.lower() ):
             self.getMukey = True
         elif self.inGmlFeatureMember and (self.ms_MapunitPolyExtended == name):
             self.inMapunitPolyExtended = True
