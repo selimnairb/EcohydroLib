@@ -77,7 +77,7 @@ def inferSoilPropertiesForSSURGOAndTerrainData(config, outputDir, shpFilepath, d
         raise IOError(errno.ENOENT, "Terrain DEM file %s does not exist" % (demFilepath,))
     demFilepath = os.path.abspath(demFilepath)
     
-    solimCommand = "%s %s MUKEY %s %s %s" % \
+    solimCommand = "%s %s mukey %s %s %s" % \
         (solimCmdPath, shpFilepath, demFilepath, outputDir, ATTRIBUTE_SEP.join(featureAttrList))
     #print solimCommand
     returnCode = os.system(solimCommand)

@@ -229,7 +229,7 @@ def joinSSURGOAttributesToFeaturesByMUKEY(gmlFile, typeName, ssurgoAttributes):
     # Find all MUKEY elements
     # /wfs:FeatureCollection/gml:featureMember/ms:MapunitPolyExtended/ms:MUKEY
     # /wfs:FeatureCollection/gml:featureMember/ms:MapunitPoly/ms:MUKEY
-    mukeyElems = tree.xpath("/wfs:FeatureCollection/gml:featureMember/ms:%s/ms:MUKEY" % (typeName,),
+    mukeyElems = tree.xpath("/wfs:FeatureCollection/gml:featureMember/ms:%s/ms:mukey" % (typeName,),
                         namespaces={'wfs': 'http://www.opengis.net/wfs',
                                     'gml': 'http://www.opengis.net/gml',
                                     'ms': 'http://mapserver.gis.umn.edu/mapserver'})
@@ -237,11 +237,11 @@ def joinSSURGOAttributesToFeaturesByMUKEY(gmlFile, typeName, ssurgoAttributes):
     for mukeyElem in mukeyElems:
         mukey = int(mukeyElem.text)
         parent = mukeyElem.getparent()
-        # Locate insertion point (i.e. before ms:SHAPE element)
-        shapeElem = parent.find('ms:SHAPE',
+        # Locate insertion point (i.e. after ms:mukey element)
+        preInsertElem = parent.find('ms:mukey',
                                 namespaces=nsMap) 
-        shapeElemIdx = parent.index(shapeElem)
-        insertIdx = shapeElemIdx - 1
+        preInsertElemIdx = parent.index(preInsertElem)
+        insertIdx = preInsertElemIdx + 1
         
         try:
             mukeyIdx = attributeDict[mukey]
