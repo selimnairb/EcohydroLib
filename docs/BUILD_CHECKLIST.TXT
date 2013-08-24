@@ -12,6 +12,7 @@
 4. Remove old documentation: rm -rf docs/html
 
 5. Generate new documentation: doxygen
+  - Note: Requires that you have doxypy installed: pip install doxypy
 
 6. Generate zip of new documentation: cd docs/html; zip -r ~/Desktop/ecohydrodocs.zip *
 
