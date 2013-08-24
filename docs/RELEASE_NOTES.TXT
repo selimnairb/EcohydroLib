@@ -1,3 +1,10 @@
+# 1.11 - 8/23/2013
+  - Fixed GetSSURGOFeaturesForBoundingbox.py and GenerateSoilPropertyRastersFrom* to support
+    newly modified GML format returned by USDA's Soil Data Mart WFS
+  - Added API calls to ecohydrolib.nhdplus2.networkanalysis for finding first-order upstream stream reaches
+  - Updated ecohydrolib.nhdplus2.networkanalysis.getCatchmentFeaturesForGage to return a catchment polygon
+    with internal rings dissolved into the exterior polygon 
+
 # 1.1 - 7/30/2013
   - Added ability to query NHDPlus2 dataset for streamflow gage location using
     new EcohydroLib CGI hosted at RENCI
