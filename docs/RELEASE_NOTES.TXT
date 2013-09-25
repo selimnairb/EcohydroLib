@@ -1,3 +1,7 @@
+# 1.12 - 9/25/2013
+  - Added workflow command RunCmd.py for capturing arbitrary commands in the processing history
+    of the metadata associated with a project
+
 # 1.11 - 8/23/2013
   - Fixed GetSSURGOFeaturesForBoundingbox.py and GenerateSoilPropertyRastersFrom* to support
     newly modified GML format returned by USDA's Soil Data Mart WFS
