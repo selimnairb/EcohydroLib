@@ -44,7 +44,10 @@ from datetime import datetime
 import ecohydrolib
 import ecohydrolib.util
 
-class MetadataEntity:
+class MetadataEntity(object):
+    
+    FMT_DATE = '%Y-%m-%d %H:%M:%S'
+    
     """ Abstract class for encoding structured data to be written to a metadata store
     """
     def writeToMetadata(self, context):
@@ -72,7 +75,6 @@ class MetadataEntity:
 
 class ClimatePointStation(MetadataEntity):
     
-    FMT_DATE = '%Y-%m-%d %H:%M:%S'
     VAR_PRECIP = 'prcp'
     VAR_SNOW = 'snow'
     VAR_TMIN = 'tmin'
@@ -204,9 +206,96 @@ class ClimatePointStation(MetadataEntity):
         return newInstance
 
 
-class AssetProvenance(MetadataEntity):
+class ModelRun(MetadataEntity):
+
+    def __init__(self, modelType=None):
+        self.modelType = modelType
+        self.runNumber = None
+        self.description = None
+        self.date = None
+        self.command = None
+        self.output = None
+        
+    def writeToMetadata(self, context):
+        """ Write ModelRun data to model run section of metadata for
+            a given project directory
+            
+            @note Will set run number to value to be stored in metadata
+        
+            @param context Context object containing projectDir, the path of the project whose 
+            metadata store is to be written to
+            @exception Exception if model type has not known
+            @exception Exception if section is not a valid GenericMetadata section
+        """
+        if self.modelType not in GenericMetadata.MODEL_TYPES:
+            raise Exception("Model type %s is not among known model types: %s" % (self.modelType, str(GenericMetadata.MODEL_TYPES) ) )
+        
+        modelRunEntries = GenericMetadata.readModelRunEntries(context)
+        try:
+            runs = modelRunEntries['runs'].split(GenericMetadata.VALUE_DELIM)
+        except KeyError:
+            runs = []
+        
+        # Collected model entry and keys and values into lists so we can write to metadata store in batch
+        keys = []
+        values = []
+            
+        # Generate unique identifier for this model run.  Unique ID is a combination of model type and a number
+        entryNumber = 1
+        fqId = self.modelType + GenericMetadata.KEY_SEP + str(entryNumber)
+        while fqId in runs:
+            entryNumber += 1
+            fqId = self.modelType + GenericMetadata.KEY_SEP + str(entryNumber)
+        self.runNumber = entryNumber
+        # Add new run to list of runs
+        runs.append(fqId)
+        runsStr = GenericMetadata.VALUE_DELIM.join(runs)
+        keys.append('runs'); values.append(runsStr)
+        # Write attributes for run
+        keyProto = fqId + GenericMetadata.KEY_SEP
+        runDate = keyProto + 'date_utc'
+        keys.append(runDate); values.append( self.date.strftime(ModelRun.FMT_DATE) )
+        runDesc = keyProto + 'description'
+        keys.append(runDesc); values.append(self.description)
+        runCmd = keyProto + 'command'
+        keys.append(runCmd); values.append(self.command)
+        runOutput = keyProto + 'output'
+        keys.append(runOutput); values.append(self.output)
+        # Write to metadata
+        GenericMetadata.writeModelRunEntries(context, keys, values)
+        
+    @classmethod
+    def readFromMetadata(cls, context, fqId):
+        """ Read ModelRun data from model run section of metadata for
+            a given project directory
+        
+            @param context Context object containing projectDir, the path of the project whose 
+            metadata store is to be read from
+            @param fqId String representing the fully qualified ID of the model run: <model_type>_<run_number>
+            
+            @return A new ModelRun instance with data populated from metadata
+            
+            @raise KeyError if required field is not in metadata
+        """      
+        newInstance = ModelRun()
+        (newInstance.modelType, newInstance.runNumber) = fqId.split(GenericMetadata.KEY_SEP)
+        
+        modelRunEntries = GenericMetadata.readModelRunEntries(context)
+        keyProto = fqId + GenericMetadata.KEY_SEP
+        
+        runDate = keyProto + 'date_utc'
+        newInstance.date = datetime.strptime(modelRunEntries[runDate], ModelRun.FMT_DATE)
+        runDesc = keyProto + 'description'
+        newInstance.description = modelRunEntries[runDesc]
+        runCmd = keyProto + 'command'
+        newInstance.command = modelRunEntries[runCmd]
+        runOutput = keyProto + 'output'
+        newInstance.output = modelRunEntries[runOutput]
+        
+        return newInstance
     
-    FMT_DATE = '%Y-%m-%d %H:%M:%S'
+
+class AssetProvenance(MetadataEntity):
     
     def __init__(self, section=None):
         self.section = section
@@ -309,7 +398,7 @@ class MetadataVersionError(ConfigParser.Error):
         return repr("Version %s of EcohydroLib was used to write the metadata, but you are running version %s of EcohydroLib" %\
                     (self.metadataVersion, self._ecohydrolibVersion) )    
 
-class GenericMetadata:
+class GenericMetadata(object):
     """ Handles metadata persistance.
     
         @note All keys are stored in lower case.
@@ -335,12 +424,14 @@ class GenericMetadata:
     GRASS_SECTION = 'grass'
     CLIMATE_POINT_SECTION = 'climate_point'
     CLIMATE_GRID_SECTION = 'climate_grid'
+    MODEL_RUN_SECTION = 'model_run'
     SECTIONS = [ECOHYDROLIB_SECION, MANIFEST_SECTION, PROVENANCE_SECTION, HISTORY_SECTION,
-                STUDY_AREA_SECTION, GRASS_SECTION, CLIMATE_POINT_SECTION, CLIMATE_GRID_SECTION]
+                STUDY_AREA_SECTION, GRASS_SECTION, CLIMATE_POINT_SECTION, CLIMATE_GRID_SECTION,
+                MODEL_RUN_SECTION]
     
     HISTORY_PROTO = "processing%sstep%s" % (KEY_SEP, KEY_SEP)
 
-    # This should probably be a dict
+    # Raster type list (this should probably be a dict)
     RASTER_TYPE_LC = 'landcover'
     RASTER_TYPE_ROOF = 'roof_connectivity'
     RASTER_TYPE_SOIL = 'soil'
@@ -350,6 +441,9 @@ class GenericMetadata:
     RASTER_TYPE_ISOHYET = 'isohyet'
     RASTER_TYPES = [RASTER_TYPE_LC, RASTER_TYPE_ROOF, RASTER_TYPE_SOIL, RASTER_TYPE_LAI, 
                     RASTER_TYPE_PATCH, RASTER_TYPE_ZONE, RASTER_TYPE_ISOHYET]
+
+    # Model type list
+    MODEL_TYPES = []
 
     @staticmethod
     def getCommandLine():
@@ -794,6 +888,23 @@ class GenericMetadata:
     
     
     @staticmethod 
+    def writeModelRunEntries(context, keys, values):
+        """ Write model run entries to the metadata store for a given project.
+            
+            @note Will overwrite the values of keys that already exist
+        
+            @param context Context object containing projectDir, the path of the project whose 
+            metadata store is to be written to
+            @param keys The keys to be written to the model run section of the project metadata
+            @param values The values to be written for keys stored in the model run section of the project metadata
+            
+            @exception IOError(errno.EACCES) if the metadata store for the project is not writable
+            @exception Exception if len(keys) != len(values)
+        """
+        GenericMetadata._writeEntriesToSection(context.projectDir, GenericMetadata.MODEL_RUN_SECTION, keys, values)
+    
+    
+    @staticmethod 
     def writeProvenanceEntries(context, keys, values):
         """ Write provenance entries to the metadata store for a given project.
             
@@ -870,6 +981,37 @@ class GenericMetadata:
         """
         return GenericMetadata._readEntriesForSection(context.projectDir, GenericMetadata.GRASS_SECTION)
     
+    
+    @staticmethod
+    def readModelRunEntries(context):
+        """ Read all point model run entries from the metadata store for a given project
+        
+            @param context Context object containing projectDir, the path of the project whose 
+            metadata store is to be read from
+            @return A dictionary of key/value pairs from the model run section of the project metadata
+        """
+        return GenericMetadata._readEntriesForSection(context.projectDir, GenericMetadata.MODEL_RUN_SECTION)
+    
+    
+    @staticmethod
+    def readModelRuns(context):
+        """ Read all model runs from metadata and store in ModelRun 
+            instances.
+            
+            @param context Context object containing projectDir, the path of the project whose 
+            metadata store is to be read from
+            @return A list of ModelRun objects
+        """
+        modelRunObjects = []
+        modelRuns = GenericMetadata.readModelRunEntries(context)
+        try:
+            runs = modelRuns['runs'].split(GenericMetadata.VALUE_DELIM)
+            for run in runs:
+                modelRunObjects.append(ModelRun.readFromMetadata(context, run))
+        except KeyError:
+            pass
+        return modelRunObjects
+
     
     @staticmethod
     def readClimatePointEntries(context):
