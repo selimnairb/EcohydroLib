@@ -42,6 +42,7 @@ import ConfigParser
 from datetime import datetime
 
 import ecohydrolib
+import ecohydrolib.util
 
 class MetadataEntity:
     """ Abstract class for encoding structured data to be written to a metadata store
@@ -360,16 +361,9 @@ class GenericMetadata:
             @return String with each element of sys.argv separated by a space
         """
         import sys, os
-        cmdline = os.path.abspath(sys.argv[0]) + ' '
+        cmdline = os.path.abspath(sys.argv[0])
         for elem in sys.argv[1:]:
-            if os.path.exists(elem):
-                cmdline += os.path.abspath(elem) + ' '
-            else:
-                if elem.find(' ') != -1:
-                    # If a non-path element has spaces in it, quote them
-                    cmdline += '"' + elem + '"' + ' '
-                else:
-                    cmdline += elem + ' '
+            cmdline += ' ' + ecohydrolib.util.getAbsolutePathOfItem(elem)
         return cmdline 
 
 

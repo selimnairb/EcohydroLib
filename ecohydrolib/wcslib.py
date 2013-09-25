@@ -1,4 +1,4 @@
-"""@package ecohydrolib.nlcd.daacquery
+"""@package ecohydrolib.wcslib
     
 @brief Make WCS query for a raster data set
 
