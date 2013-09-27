@@ -439,8 +439,11 @@ class GenericMetadata(object):
     RASTER_TYPE_PATCH = 'patch'
     RASTER_TYPE_ZONE = 'zone'
     RASTER_TYPE_ISOHYET = 'isohyet'
+    RASTER_TYPE_LEAFC = 'leafc'
+    RASTER_TYPE_ROOTDEPTH = 'rootdepth'
     RASTER_TYPES = [RASTER_TYPE_LC, RASTER_TYPE_ROOF, RASTER_TYPE_SOIL, RASTER_TYPE_LAI, 
-                    RASTER_TYPE_PATCH, RASTER_TYPE_ZONE, RASTER_TYPE_ISOHYET]
+                    RASTER_TYPE_PATCH, RASTER_TYPE_ZONE, RASTER_TYPE_ISOHYET,
+                    RASTER_TYPE_LEAFC, RASTER_TYPE_ROOTDEPTH]
 
     # Model type list
     MODEL_TYPES = []
