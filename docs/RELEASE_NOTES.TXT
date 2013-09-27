@@ -1,3 +1,8 @@
+# 1.13 - 9/27/2013
+  - Made NED 30m the default coverage type to download via GetDEMExplorerDEMForBoundingBox
+    (previous default was SRTM 30m USA)
+  - Added leafc and rootdepth raster map types
+
 # 1.12 - 9/25/2013
   - Added workflow command RunCmd.py for capturing arbitrary commands in the processing history
     of the metadata associated with a project
