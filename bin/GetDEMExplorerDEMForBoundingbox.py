@@ -2,7 +2,7 @@
 """@package GetDEMExplorerDEMForBoundingbox
 
 @brief Query GeoBrain WCS4DEM (http://geobrain.laits.gmu.edu/wcs4dem.htm) for digital elevation
-model (DEM) data.  Will get DEM from SRTM 30m coverage by default, see --help for other choices.  
+model (DEM) data.  Will get DEM from NED 30m coverage by default, see --help for other choices.  
 
 This software is provided free of charge under the New BSD License. Please see
 the following license information:

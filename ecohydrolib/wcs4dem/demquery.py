@@ -35,15 +35,27 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 from ecohydrolib.wcslib import getRasterForBoundingBox
 
-SUPPORTED_COVERAGE = ['SRTM_30m_USA', 'SRTM_90m_Global', 'GTOPO_30arc_Global']
-SUPPORTED_FORMATS = ['image/geotiff', 'image/netcdf', 'image/PNG', 'image/JPEG', 'image/JPEG2000', 'image/HDF4IMAGE']
+COVERAGE_NED_30m_USA = 'NED_30m_USA'
+COVERAGE_SRTM_30m_USA = 'SRTM_30m_USA'
+COVERAGE_SRTM_90m_USA = 'SRTM_90m_Global'
+COVERAGE_GTOPO_30arc_GLOBAL = 'GTOPO_30arc_Global'
+SUPPORTED_COVERAGE = [COVERAGE_NED_30m_USA, COVERAGE_SRTM_30m_USA, COVERAGE_SRTM_90m_USA, COVERAGE_GTOPO_30arc_GLOBAL]
+
+FORMAT_GEOTIFF = 'image/geotiff'
+FORMAT_NETCDF = 'image/netcdf'
+FORMAT_PNG = 'image/PNG'
+FORMAT_JPEG = 'image/JPEG'
+FORMAT_JP2000 = 'image/JPEG2000'
+FORMAT_HDF4 = 'image/HDF4IMAGE'
+SUPPORTED_FORMATS = [FORMAT_GEOTIFF, FORMAT_NETCDF, FORMAT_PNG, FORMAT_JPEG, FORMAT_JP2000, FORMAT_HDF4]
+
 MIME_TYPE = 'application/image'
 
 # Example URL /cgi-bin/gbwcs-dem?service=wcs&version=1.0.0&request=getcoverage&coverage=SRTM_90m_Global&bbox=-90,38,-89,39&crs=epsg:4326&format=image/geotiff&store=true
 HOST = 'geobrain.laits.gmu.edu'
 URL_PROTO = '/cgi-bin/gbwcs-dem?service=wcs&version=1.0.0&request=getcoverage&coverage={coverage}&crs={crs}&bbox={bbox}&response_crs={response_crs}&format={format}&store={store}'
 
-def getDEMForBoundingBox(config, outputDir, outDEMFilename, bbox, coverage='SRTM_30m_USA', srs='EPSG:4326', format='image/geotiff', overwrite=True):
+def getDEMForBoundingBox(config, outputDir, outDEMFilename, bbox, coverage=COVERAGE_NED_30m_USA, srs='EPSG:4326', format=FORMAT_GEOTIFF, overwrite=True):
     """ Fetch a digital elevation model (DEM) from the GeoBrain WCS4DEM WCS-compliant web service.
         Will write any error returned by query to sys.stderr.
     
