@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='ecohydrolib',
-      version='1.13',
+      version='1.14',
       description='Libraries and command-line scripts for performing ecohydrology data preparation workflows.',
       long_description=readme(),
       classifiers=[
@@ -37,7 +37,6 @@ setup(name='ecohydrolib',
         'pyproj==1.9.2',
         'numpy',
         'lxml',
-        'PySimpleSOAP',
         'OWSLib',
         'oset',
         'httplib2',

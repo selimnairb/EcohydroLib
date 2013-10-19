@@ -1,3 +1,7 @@
+# 1.14 - 10/18/2013
+  - Updated ecohydrolib.ssurgo.attributequery to no longer require PySimpleSoap,
+    version 1.10 of which had broken compatibility with SSURGO tablular queries
+
 # 1.13 - 9/27/2013
   - Made NED 30m the default coverage type to download via GetDEMExplorerDEMForBoundingBox
     (previous default was SRTM 30m USA)

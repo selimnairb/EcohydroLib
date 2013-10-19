@@ -39,10 +39,13 @@ import xml.sax
 
 import numpy as np
 from lxml import etree
-from pysimplesoap.client import SoapClient
+import socket
+import httplib2
 from oset import oset
 
 from saxhandlers import SSURGOMUKEYQueryHandler
+
+_BUFF_LEN = 4096 * 10
 
 ATTRIBUTE_LIST = ['ksat', 'pctClay', 'pctSilt', 'pctSand', 'porosity',
                  'pmgroupname', 'texture', 'tecdesc', 'fieldCap', 
@@ -265,15 +268,17 @@ def getParentMatKsatTexturePercentClaySiltSandForComponentsInMUKEYs(mukeyList):
     
         @return Tuple containing an ordered set (oset.oset) representing column names, and a list, 
         each element containing a list of column values for each row in the SSURGO query result for each map unit
+        
+        @raise socket.error if there was an error reading the data from the web service
+        @raise Exception if webservice returned code other than 200
     """ 
 
-    client = SoapClient(wsdl="http://sdmdataaccess.nrcs.usda.gov/Tabular/SDMTabularService.asmx?WSDL",trace=False)
+    #client = SoapClient(wsdl="http://sdmdataaccess.nrcs.usda.gov/Tabular/SDMTabularService.asmx?WSDL")
 
     # Query to get component %, ksat_r, texture, texture description, parent material, horizon name, horizon depth,
     # %clay, %silt, %sand, and porosity (as wsatiated.r, volumetric SWC at or near 0 bar tension) for all components in an MUKEY
     # Will select first non-organic horizon (i.e. horizon names that do not start with O, L, or F)
-    QUERY_PROTO = """
-SELECT c.mukey, c.cokey, c.comppct_r, p.pmgroupname, tg.texture, tg.texdesc, 
+    QUERY_PROTO = """SELECT c.mukey, c.cokey, c.comppct_r, p.pmgroupname, tg.texture, tg.texdesc, 
 ch.hzname, ch.hzdept_r, ch.ksat_r, ch.claytotal_r, ch.silttotal_r, ch.sandtotal_r, ch.wsatiated_r,
 ch.wthirdbar_r, ch.awc_r
 FROM component c
@@ -286,15 +291,38 @@ WHERE c.mukey IN (%s) ORDER BY c.cokey"""
     mukeyStr = strListToString(mukeyList)
     
     query = QUERY_PROTO % mukeyStr
-    #print query
     
-    result = client.RunQuery(query)
-    resultXmlStr = result['RunQueryResult'].as_xml()
+    # Manually make SOAP query (it's a long story)
+    host = 'sdmdataaccess.nrcs.usda.gov'
+    url = '/Tabular/SDMTabularService.asmx'
+    url = "http://" + host + url
+    
+    soapQueryBegin = """<?xml version="1.0" encoding="UTF-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><soap:Header/><soap:Body>
+    <RunQuery xmlns="http://SDMDataAccess.nrcs.usda.gov/Tabular/SDMTabularService.asmx">
+    <Query>
+    """
+    soapQueryEnd = """</Query></RunQuery></soap:Body></soap:Envelope>"""
+    
+    soapQuery = soapQueryBegin + xml.sax.saxutils.escape(query) + soapQueryEnd
+    
+    headers = { 'SOAPAction': 'http://SDMDataAccess.nrcs.usda.gov/Tabular/SDMTabularService.asmx/RunQuery',  #'SOAPAction': 'RunQuery',
+                'Content-Type': 'text/xml; charset=utf-8',
+                'Content-length': str(len(soapQuery)) }
+    h = httplib2.Http()
+    res = None
+    try:
+        (res, content) = h.request(url, method='POST', body=soapQuery, headers=headers)
+    except socket.error as e:
+        raise e
+    
+    if 200 != res.status:
+        raise Exception("Error %d encountered when reading SSURGO attributes from USDA webservice" % \
+                        (res.status,) )
 
     # Parse results
     handler = SSURGOMUKEYQueryHandler()
     
-    xml.sax.parseString(resultXmlStr, handler)
+    xml.sax.parseString(content, handler)
 
     return (handler.columnNames,handler.results)
     
