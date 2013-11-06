@@ -114,7 +114,7 @@ outputrasterresolutionY = studyArea['dem_res_y']
 # Truncate attributes to 10 characters because shapefiles rely on ancient technology
 sys.stdout.write('Generating soil property maps by rasterizing SURGO features...')
 sys.stdout.flush()
-attrList = [elem[:10] for elem in rasterize.RASTER_ATTRIBUTES] 
+attrList = [elem[:10] for elem in rasterize.RASTER_ATTRIBUTES]
 rasterFiles = rasterize.rasterizeSSURGOFeatures(config=context.config, outputDir=context.projectDir, featureFilename=shpFilename, featureLayername=layerName, \
                                       featureAttrList=attrList, \
                                       rasterResolutionX=outputrasterresolutionX, rasterResolutionY=outputrasterresolutionY)

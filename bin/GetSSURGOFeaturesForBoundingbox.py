@@ -123,12 +123,7 @@ srs = studyArea['dem_srs']
 
 sys.stdout.write('Downloading SSURGO features for study area from USDA Soil Data mart...\n')
 sys.stdout.flush()
-gmlFilename = getMapunitFeaturesForBoundingBox(context.projectDir, bbox)[0]
-    
-# Convert from gml to shp and then rasterize
-gmlFilepath = os.path.join(context.projectDir, gmlFilename)
-layerName = os.path.splitext(gmlFilename)[0]
-shpFilename = convertGMLToShapefile(context.config, context.projectDir, gmlFilepath, layerName, srs)
+shpFilename = getMapunitFeaturesForBoundingBox(context.config, context.projectDir, bbox, t_srs=srs)[0]
 
 # Write provenance
 asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)

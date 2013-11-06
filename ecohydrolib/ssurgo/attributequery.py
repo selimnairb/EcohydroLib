@@ -36,6 +36,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 import cStringIO
 import xml.sax
+import json
 
 import numpy as np
 from lxml import etree
@@ -47,6 +48,7 @@ from saxhandlers import SSURGOMUKEYQueryHandler
 
 _BUFF_LEN = 4096 * 10
 
+ATTRIBUTE_NAMESPACE = 'ms'
 ATTRIBUTE_LIST = ['ksat', 'pctClay', 'pctSilt', 'pctSand', 'porosity',
                  'pmgroupname', 'texture', 'tecdesc', 'fieldCap', 
                  'avlWatCap']
@@ -205,10 +207,47 @@ def computeWeightedAverageKsatClaySandSilt(soilAttrTuple):
     return (avgSoilHeaders, avgSoilAttr)
 
 
+def joinSSURGOAttributesToFeaturesByMUKEY_GeoJSON(geojson, typeName, ssurgoAttributes):
+    """ Join SSURGO tabular attributes to MapunitPoly or MapunitPolyExtended features based on
+        MUKEY.
+    
+        @param geojson JSON object representing SSURGO MapunitPolyExtended or MapunitPoly features
+        @param typeName String of either 'MapunitPoly' or 'MapunitPolyExtended'
+        @param ssurgoAttributes Tuple containing two lists: (1) list of column names; (2) list of
+        column values.  Assumes the following column names and order:
+        ['mukey', 'avgKsat', 'avgClay', 'avgSilt', 'avgSand', 'avgPorosity']
+    
+        @note geojson JSON object will be modified by this function   
+    """
+    assert(typeName == 'MapunitPoly' or typeName == 'MapunitPolyExtended')
+    
+    # Index attributes by MUKEY
+    attributeDict = {}
+    idx = 0
+    for row in ssurgoAttributes[1]:
+        myMukey = row[0]
+        attributeDict[myMukey] = idx
+        idx = idx + 1
+        
+    for feature in geojson['features']:
+        properties = feature['properties']
+        mukey = int(properties['mukey'])
+        
+        try:
+            mukeyIdx = attributeDict[mukey]
+        except KeyError:
+            continue
+        
+        currAttrIdx = 1
+        # Add attributes to this feature's properties table
+        for attr in ssurgoAttributes[0][1:]:
+            properties[attr] = str(ssurgoAttributes[1][mukeyIdx][currAttrIdx])
+            currAttrIdx += 1
+
+
 def joinSSURGOAttributesToFeaturesByMUKEY(gmlFile, typeName, ssurgoAttributes):
     """ Join SSURGO tabular attributes to MapunitPoly or MapunitPolyExtended features based on
-        MUKEY. Will write GML file and shapefile for features, and raster layers for each column
-        vallue (see below).
+        MUKEY.
     
         @param gmlFile A file handle associated with a SSURGO MapunitPoly or MapunitPolyExtended
         @param typeName String of either 'MapunitPoly' or 'MapunitPolyExtended'
@@ -237,6 +276,7 @@ def joinSSURGOAttributesToFeaturesByMUKEY(gmlFile, typeName, ssurgoAttributes):
                                     'gml': 'http://www.opengis.net/gml',
                                     'ms': 'http://mapserver.gis.umn.edu/mapserver'})
     nsMap = {'ms': 'http://mapserver.gis.umn.edu/mapserver'}
+    nsURI = nsMap['ms']
     for mukeyElem in mukeyElems:
         mukey = int(mukeyElem.text)
         parent = mukeyElem.getparent()

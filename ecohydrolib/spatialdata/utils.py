@@ -44,9 +44,9 @@ import math
 import re
 
 from osgeo.gdalconst import *
-import gdal
-import ogr
-import osr
+from osgeo import gdal
+from osgeo import ogr
+from osgeo import osr
 from pyproj import Proj
 from pyproj import transform
 from pyproj import Geod
@@ -396,6 +396,70 @@ def convertGMLToShapefile(config, outputDir, gmlFilepath, layerName, t_srs):
     return shpFilename
 
 
+def convertGMLToGeoJSON(config, outputDir, gmlFilepath, layerName, t_srs='EPSG:4326'):
+    """ Convert a GML file to a shapefile.  Will silently exit if GeoJSON already exists
+    
+        @param config A Python ConfigParser containing the section 'GDAL/OGR' and option 'PATH_OF_OGR2OGR'
+        @param outputDir String representing the absolute/relative path of the directory into which GeoJSON should be written
+        @param gmlFilepath String representing the absolute path of the GML file to convert
+        @param layerName String representing the name of the layer contained in the GML file to write to a GeoJSON
+        @param t_srs String representing the spatial reference system of the output GeoJSON, of the form 'EPSG:XXXX'
+        
+        @return String representing the name of the GeoJSON written
+    
+        @exception Exception if the conversion failed.
+    """
+    pathToOgrCmd = config.get('GDAL/OGR', 'PATH_OF_OGR2OGR')
+    
+    if not os.path.isdir(outputDir):
+        raise IOError(errno.ENOTDIR, "Output directory %s is not a directory" % (outputDir,))
+    if not os.access(outputDir, os.W_OK):
+        raise IOError(errno.EACCES, "Not allowed to write to output directory %s" % (outputDir,))
+    outputDir = os.path.abspath(outputDir)
+    
+    geojsonFilename = "%s.geojson" % (layerName,)
+    geojsonFilepath = os.path.join(outputDir, geojsonFilename)
+    if not os.path.exists(geojsonFilepath):
+        ogrCommand = "%s -f 'GeoJSON' -nln %s -t_srs %s %s %s" % (pathToOgrCmd, layerName, t_srs, geojsonFilepath, gmlFilepath)
+        returnCode = os.system(ogrCommand)
+        if returnCode != 0:
+            raise Exception("GML to GeoJSON command %s returned %d" % (ogrCommand, returnCode))
+    
+    return geojsonFilename
+
+
+def convertGeoJSONToShapefile(config, outputDir, geoJSONFilepath, shapefileName, layerName='OGRGeoJSON', t_srs='EPSG:4326'):
+    """ Convert a GeoJSON file to a shapefile.  Will silently exit if shapefile already exists
+    
+        @param config A Python ConfigParser containing the section 'GDAL/OGR' and option 'PATH_OF_OGR2OGR'
+        @param outputDir String representing the absolute/relative path of the directory into which shapefile should be written
+        @param geoJSONFilepath String representing the absolute path of the GeoJSON file to convert
+        @param layerName String representing the name of the layer contained in the GeoJSON file to write to a shapefile
+        @param t_srs String representing the spatial reference system of the output shapefile, of the form 'EPSG:XXXX'
+        
+        @return String representing the name of the shapefile written
+    
+        @exception Exception if the conversion failed.
+    """
+    pathToOgrCmd = config.get('GDAL/OGR', 'PATH_OF_OGR2OGR')
+    
+    if not os.path.isdir(outputDir):
+        raise IOError(errno.ENOTDIR, "Output directory %s is not a directory" % (outputDir,))
+    if not os.access(outputDir, os.W_OK):
+        raise IOError(errno.EACCES, "Not allowed to write to output directory %s" % (outputDir,))
+    outputDir = os.path.abspath(outputDir)
+    
+    shpFilename = "%s.shp" % (shapefileName,)
+    shpFilepath = os.path.join(outputDir, shpFilename)
+    if not os.path.exists(shpFilepath):
+        ogrCommand = "%s -f 'ESRI Shapefile' -nln %s -t_srs %s %s %s" % (pathToOgrCmd, layerName, t_srs, shpFilepath, geoJSONFilepath)
+        returnCode = os.system(ogrCommand)
+        if returnCode != 0:
+            raise Exception("GeoJSON to shapefile command %s returned %d" % (ogrCommand, returnCode))
+    
+    return shpFilename
+
+
 def deleteShapefile(shpfilePath):
     """ Delete shapefile and its related files (.dbf, .prj, .shx)
         
@@ -699,6 +763,10 @@ def getMeterConversionFactorForLinearUnitOfGMLfile(gmlFilename):
                       gmlFilename)
     inLayer = inDS.GetLayer()
     soilSrs = inLayer.GetSpatialRef()
+    if soilSrs == None:
+        # Assume EPSG:4326 (WGS84 GCS)
+        soilSrs = osr.SpatialReference()
+        soilSrs.ImportFromEPSG(4326)
     return soilSrs.GetLinearUnits()
 
 
@@ -718,6 +786,10 @@ def getMeterConversionFactorForLinearUnitOfShapefile(shpFilename):
                       shpFilename)
     inLayer = inDS.GetLayer()
     soilSrs = inLayer.GetSpatialRef()
+    if soilSrs == None:
+        # Assume EPSG:4326 (WGS84 GCS)
+        soilSrs = osr.SpatialReference()
+        soilSrs.ImportFromEPSG(4326)
     return soilSrs.GetLinearUnits()
 
 
