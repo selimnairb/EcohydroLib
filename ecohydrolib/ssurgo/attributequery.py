@@ -248,6 +248,8 @@ def joinSSURGOAttributesToFeaturesByMUKEY_GeoJSON(geojson, typeName, ssurgoAttri
 def joinSSURGOAttributesToFeaturesByMUKEY(gmlFile, typeName, ssurgoAttributes):
     """ Join SSURGO tabular attributes to MapunitPoly or MapunitPolyExtended features based on
         MUKEY.
+        
+        @deprecated: Will be removed from the next release
     
         @param gmlFile A file handle associated with a SSURGO MapunitPoly or MapunitPolyExtended
         @param typeName String of either 'MapunitPoly' or 'MapunitPolyExtended'
