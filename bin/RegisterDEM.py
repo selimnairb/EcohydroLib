@@ -95,7 +95,7 @@ parser.add_argument('-d', '--demfile', dest='demfile', required=True,
 parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                     help='The name of the DEM file to be written to the project directory.  File extension ".tif" will be added.')
 parser.add_argument('-b', '--publisher', dest='publisher', required=False,
-                    help="The publisher of the landcover dataset, if not supplied 'SELF PUBLISHED' will be used")
+                    help="The publisher of the DEM dataset, if not supplied 'SELF PUBLISHED' will be used")
 parser.add_argument('-c', '--demResolution', dest='demResolution', required=False, nargs=2, type=float,
                     help='Two floating point numbers representing the desired X and Y output resolution of soil property raster maps; unit: meters')
 parser.add_argument('-t', '--t_srs', dest='t_srs', required=False, 
