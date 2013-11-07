@@ -460,6 +460,52 @@ def convertGeoJSONToShapefile(config, outputDir, geoJSONFilepath, shapefileName,
     return shpFilename
 
 
+def convertFeatureLayerToShapefile(config, outputDir, featureFilepath, shapefileName, layerName=None, t_srs='EPSG:4326', overwrite=False):
+    """ Convert a vector feature file readible by OGR to a shapefile.  
+        Will silently exit if output shapefile already exists
+    
+        @param config A Python ConfigParser containing the section 'GDAL/OGR' and option 'PATH_OF_OGR2OGR'
+        @param outputDir String representing the absolute/relative path of the directory into which shapefile should be written
+        @param featureFilepath String representing the absolute path of the feature file to convert
+        @param layerName String representing the name of the layer contained in the feature file to write to a shapefile.
+                         If none, the base name of featureFilepath will be used
+        @param t_srs String representing the spatial reference system of the output shapefile, of the form 'EPSG:XXXX'
+        
+        @return String representing the name of the shapefile written
+    
+        @exception Exception if the conversion failed.
+    """
+    pathToOgrCmd = config.get('GDAL/OGR', 'PATH_OF_OGR2OGR')
+    
+    if not os.path.isdir(outputDir):
+        raise IOError(errno.ENOTDIR, "Output directory %s is not a directory" % (outputDir,))
+    if not os.access(outputDir, os.W_OK):
+        raise IOError(errno.EACCES, "Not allowed to write to output directory %s" % (outputDir,))
+    outputDir = os.path.abspath(outputDir)
+    if not os.access(featureFilepath, os.R_OK):
+        raise IOError(errno.EACCES, "Not allowed to read feature path %s" % (featureFilepath,))
+    
+    if layerName == None:
+        layerName = os.path.splitext(os.path.basename(featureFilepath))[0]
+    
+    shpFilename = "%s.shp" % (shapefileName,)
+    shpFilepath = os.path.join(outputDir, shpFilename)
+    
+    if os.path.exists(shpFilepath):
+        if overwrite:
+            deleteShapefile(shpFilepath)
+        else:
+            raise Exception("Output shapefile %s already exists, but the overwrite option was not specified." % (shpFilepath,) )
+        
+    # Import the feature layer using ogr2ogr...
+    ogrCommand = "%s -f 'ESRI Shapefile' -nln %s -t_srs %s %s %s" % (pathToOgrCmd, layerName, t_srs, shpFilepath, featureFilepath)
+    returnCode = os.system(ogrCommand)
+    if returnCode != 0:
+        raise Exception("Feature layer to shapefile command %s returned %d" % (ogrCommand, returnCode))
+    
+    return shpFilename
+
+
 def deleteShapefile(shpfilePath):
     """ Delete shapefile and its related files (.dbf, .prj, .shx)
         
