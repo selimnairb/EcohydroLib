@@ -1,3 +1,7 @@
+# 1.16 - 11/7/2013
+  - Added RegisterStudyAreaShapefile command to allow arbitrary study areas to be specified using
+    a GIS vector feature layer
+
 # 1.15 - 11/6/2013
   - Revised handling of SSURGO attribute data to use GeoJSON instead of GML, which avoids problems 
     introduced by GML schema validation used under newer versions of GDAL/OGR (1.10+)

@@ -339,3 +339,11 @@ follow scripts in the following order:
 3. RegisterRaster.py
 4. GetSSURGOFeaturesForBoundingbox.py
 
+A workflow using custom streamflow gage, but with standard spatial data (NED, NLCD, SSURGO)
+could consist of running the follow scripts in the following order:
+1. RegisterStudyAreaShapefile.py
+2. GetBoundingboxFromStudyAreaShapefile.py
+3. GetDEMExplorerDEMForBoundingbox.py
+4. GetNLCDForDEMExtent.py
+5. GetSSURGOFeaturesForBoundingbox.py
+6. GenerateSoilPropertyRastersFromSSURGO.py
