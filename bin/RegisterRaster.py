@@ -173,7 +173,7 @@ if resample:
          demResolutionX, demResolutionY) 
     sys.stdout.write( textwrap.fill("%s..." % (processingNotes,) ) )
     resampleRaster(context.config, context.projectDir, inRasterPath, rasterFilepath, \
-                   s_srs=rasterSrs, t_srs=srs, \
+                   s_srs=None, t_srs=srs, \
                    trX=demResolutionX, trY=demResolutionY, \
                    resampleMethod=args.resampleMethod)
 else:
