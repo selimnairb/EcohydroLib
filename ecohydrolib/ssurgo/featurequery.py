@@ -48,7 +48,6 @@ from ecohydrolib.spatialdata.utils import convertGeoJSONToShapefile
 from attributequery import getParentMatKsatTexturePercentClaySiltSandForComponentsInMUKEYs
 from attributequery import joinSSURGOAttributesToFeaturesByMUKEY_GeoJSON
 from attributequery import computeWeightedAverageKsatClaySandSilt
-# from attributequery import joinSSURGOAttributesToFeaturesByMUKEY
 from saxhandlers import SSURGOFeatureHandler       
 
 MAX_SSURGO_EXTENT = 10000000000 # 10,100,000,000 sq. meters
