@@ -39,7 +39,6 @@ import xml.sax
 import json
 
 import numpy as np
-from lxml import etree
 import socket
 import httplib2
 from oset import oset
@@ -243,63 +242,7 @@ def joinSSURGOAttributesToFeaturesByMUKEY_GeoJSON(geojson, typeName, ssurgoAttri
         for attr in ssurgoAttributes[0][1:]:
             properties[attr] = str(ssurgoAttributes[1][mukeyIdx][currAttrIdx])
             currAttrIdx += 1
-
-
-def joinSSURGOAttributesToFeaturesByMUKEY(gmlFile, typeName, ssurgoAttributes):
-    """ Join SSURGO tabular attributes to MapunitPoly or MapunitPolyExtended features based on
-        MUKEY.
-        
-        @deprecated: Will be removed from the next release
-    
-        @param gmlFile A file handle associated with a SSURGO MapunitPoly or MapunitPolyExtended
-        @param typeName String of either 'MapunitPoly' or 'MapunitPolyExtended'
-        @param ssurgoAttributes Tuple containing two lists: (1) list of column names; (2) list of
-        column values.  Assumes the following column names and order:
-        ['mukey', 'avgKsat', 'avgClay', 'avgSilt', 'avgSand', 'avgPorosity']
-    
-        @return String representing the GML file with attributes joined   
-    """
-    assert(typeName == 'MapunitPoly' or typeName == 'MapunitPolyExtended')
-    
-    # Index attributes by MUKEY
-    attributeDict = dict()
-    idx = 0
-    for row in ssurgoAttributes[1]:
-        myMukey = row[0]
-        attributeDict[myMukey] = idx
-        idx = idx + 1
-    
-    tree = etree.parse(gmlFile)
-    # Find all MUKEY elements
-    # /wfs:FeatureCollection/gml:featureMember/ms:MapunitPolyExtended/ms:MUKEY
-    # /wfs:FeatureCollection/gml:featureMember/ms:MapunitPoly/ms:MUKEY
-    mukeyElems = tree.xpath("/wfs:FeatureCollection/gml:featureMember/ms:%s/ms:mukey" % (typeName,),
-                        namespaces={'wfs': 'http://www.opengis.net/wfs',
-                                    'gml': 'http://www.opengis.net/gml',
-                                    'ms': 'http://mapserver.gis.umn.edu/mapserver'})
-    nsMap = {'ms': 'http://mapserver.gis.umn.edu/mapserver'}
-    nsURI = nsMap['ms']
-    for mukeyElem in mukeyElems:
-        mukey = int(mukeyElem.text)
-        parent = mukeyElem.getparent()
-        # Locate insertion point (i.e. after ms:mukey element)
-        preInsertElem = parent.find('ms:mukey',
-                                namespaces=nsMap) 
-        preInsertElemIdx = parent.index(preInsertElem)
-        insertIdx = preInsertElemIdx + 1
-        
-        try:
-            mukeyIdx = attributeDict[mukey]
-        except KeyError:
-            continue
-        currAttrIdx = 1
-        for attr in ssurgoAttributes[0][1:]:
-            attrElem = etree.Element(attr)
-            attrElem.text = str(ssurgoAttributes[1][mukeyIdx][currAttrIdx])
-            parent.insert(insertIdx, attrElem)
-            currAttrIdx = currAttrIdx + 1
             
-    return etree.tostring(tree)
 
 def getParentMatKsatTexturePercentClaySiltSandForComponentsInMUKEYs(mukeyList):
     """ Query USDA soil datamart tabular service for ksat, texture, % clay, % silt, % sand for all
