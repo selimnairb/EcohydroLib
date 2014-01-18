@@ -1,3 +1,8 @@
+# 1.17 - 1/18/2014
+  - Add road raster type
+  - Removed deprecated function joinSSURGOAttributesToFeaturesByMUKEY
+  - Removed dependency to lxml
+
 # 1.16 - 11/7/2013
   - Added RegisterStudyAreaShapefile command to allow arbitrary study areas to be specified using
     a GIS vector feature layer
