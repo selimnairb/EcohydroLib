@@ -659,6 +659,8 @@ def calculateBoundingBoxArea(bbox, srs='EPSG:4326'):
     """ Calculate bbox area in squared units of srs
     
         @param bbox A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
+        @param srs String representing spatial reference system, in EPSG format, in which
+        area should be calculated.
         
         @return Float representing the bounding box area in square meters
     """
