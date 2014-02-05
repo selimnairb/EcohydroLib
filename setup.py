@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='ecohydrolib',
-      version='1.17',
+      version='1.18',
       description='Libraries and command-line scripts for performing ecohydrology data preparation workflows.',
       long_description=readme(),
       classifiers=[
@@ -34,7 +34,7 @@ setup(name='ecohydrolib',
                 ],
       install_requires=[
         #'GDAL', # GDAL does not build under OS X easy_install/PIP
-        'pyproj==1.9.2',
+        'pyproj>=1.9.2',
         'numpy',
         'OWSLib',
         'oset',
