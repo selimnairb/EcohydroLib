@@ -681,13 +681,13 @@ def tileBoundingBox(bbox, threshold):
     """ Break up bounding box into tiles if bounding box is larger than threshold. 
         Bounding box must be defined by WGS84 lat,lon coordinates
         
-        @param bbox A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
+        @param bbox Dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
         @param threshold Float representing threshold area above which bounding box will be tiled. Units: sq. meters
         
         @return A list containing tiles defined as a dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
     """
     assert(bbox['srs'] == 'EPSG:4326')
-    area = calculateBoundingBoxAreaSqMeters(bbox)
+    area = calculateBoundingBoxArea(bbox)
     
     bboxes = []
     if area <= threshold:
