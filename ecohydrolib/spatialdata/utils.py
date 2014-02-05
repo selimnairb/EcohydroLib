@@ -50,7 +50,8 @@ from osgeo import osr
 from pyproj import Proj
 from pyproj import transform
 from pyproj import Geod
-from pyproj import polygonarea
+
+from shapely.geometry import shape
 
 SHP_MINX = 0
 SHP_MAXX = 1
@@ -59,10 +60,10 @@ SHP_MAXY = 3
 
 RASTER_RESAMPLE_METHOD = ['near', 'bilinear', 'cubic', 'cubicspline', 'lanczos', 'average', 'mode']
 WGS84_EPSG = 4326
-WGS84_EPSG_STR = "EPSG:4326"
+WGS84_EPSG_STR = 'EPSG:4326'
 
-OGR_SHAPEFILE_DRIVER_NAME = "ESRI Shapefile"
-OGR_GEOJSON_DRIVER_NAME = "GeoJSON"
+OGR_SHAPEFILE_DRIVER_NAME = 'ESRI Shapefile'
+OGR_GEOJSON_DRIVER_NAME = 'GeoJSON'
 OGR_DRIVERS = {OGR_SHAPEFILE_DRIVER_NAME: 'shp', 
                OGR_GEOJSON_DRIVER_NAME: 'geojson'}
 
@@ -654,23 +655,26 @@ def calculateBoundingBoxCenter(bbox):
     return (longitude, latitude)
 
 
-def calculateBoundingBoxAreaSqMeters(bbox):
-    """ Calculate bbox area in square meters
+def calculateBoundingBoxArea(bbox, srs='EPSG:4326'):
+    """ Calculate bbox area in squared units of srs
     
         @param bbox A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
         
         @return Float representing the bounding box area in square meters
     """
-    assert(bbox['srs'] == 'EPSG:4326')
-    # Points for polygon representing bounding box
-    points = [{'lat':bbox['minY'], 'lon':bbox['minX']}, 
-              {'lat':bbox['minY'], 'lon':bbox['maxX']}, 
-              {'lat':bbox['maxY'], 'lon':bbox['maxX']}, 
-              {'lat':bbox['maxY'], 'lon':bbox['minX']}]
+    assert(bbox['srs'] == WGS84_EPSG_STR)
 
-    geod = Geod(ellps='WGS84')
-    (numPoints, perimeter, area) = polygonarea.PolygonArea.Area(geod.G, points, None)
-    return area
+    coords = [(bbox['minX'], bbox['minY']), 
+              (bbox['maxX'], bbox['minY']),
+              (bbox['maxX'], bbox['maxY']), 
+              (bbox['minX'], bbox['maxY'])]
+    (lon, lat) = zip(*coords)
+    p_in = Proj(init=bbox['srs'])
+    p_out = Proj(init=srs)
+    (x, y) = transform(p_in, p_out, lon, lat)
+    geojson = {'type': 'Polygon', 'coordinates': [zip(x, y)]}
+
+    return shape(geojson).area
 
 
 def tileBoundingBox(bbox, threshold):

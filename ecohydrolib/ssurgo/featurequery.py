@@ -41,7 +41,7 @@ import json
 
 from owslib.wfs import WebFeatureService
 
-from ecohydrolib.spatialdata.utils import calculateBoundingBoxAreaSqMeters
+from ecohydrolib.spatialdata.utils import calculateBoundingBoxArea
 from ecohydrolib.spatialdata.utils import tileBoundingBox
 from ecohydrolib.spatialdata.utils import convertGMLToGeoJSON
 from ecohydrolib.spatialdata.utils import convertGeoJSONToShapefile
@@ -89,7 +89,7 @@ def getMapunitFeaturesForBoundingBox(config, outputDir, bbox, tileBbox=False, t_
         bboxes = tileBoundingBox(bbox, MAX_SSURGO_EXTENT)
         sys.stderr.write("Dividing bounding box %s into %d tiles\n" % (str(bbox), len(bboxes)))
     else:
-        if calculateBoundingBoxAreaSqMeters(bbox) > MAX_SSURGO_EXTENT:
+        if calculateBoundingBoxArea(bbox, t_srs) > MAX_SSURGO_EXTENT:
             raise Exception("Bounding box area is greater than %f sq. meters" % (MAX_SSURGO_EXTENT,))
         bboxes = [bbox]
     
