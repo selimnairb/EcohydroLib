@@ -145,8 +145,8 @@ studyArea = GenericMetadata.readStudyAreaEntries(context)
 bbox = bboxFromString(studyArea['bbox_wgs84'])
 demResolutionX = float(studyArea['dem_res_x'])
 demResolutionY = float(studyArea['dem_res_y'])
-demColumns = studyArea['dem_columns']
-demRows = studyArea['dem_rows']
+demColumns = int(studyArea['dem_columns'])
+demRows = int(studyArea['dem_rows'])
 srs = studyArea['dem_srs']
 
 rasterFilename = "%s%stif" % (outfile, os.extsep)
@@ -186,11 +186,17 @@ sys.stdout.write('done\n')
 
 # Make sure extent of resampled raster is the same as the extent of the DEM
 newRasterMetadata = getDimensionsForRaster(rasterFilepath)
-if (not force) and ( (newRasterMetadata[0] != demColumns) or (newRasterMetadata[1] != demRows) ):
-    # Extents to not match, roll back and bail out
-    os.unlink(rasterFilepath)
-    sys.exit(textwrap.fill("ERROR: Extent of raster dataset %s does not match extent of DEM in project directory %s. Use --force to override.") %
-             (rasterFilename, context.projectDir))
+if (newRasterMetadata[0] != demColumns) or (newRasterMetadata[1] != demRows):
+    if args.type == GenericMetadata.RASTER_TYPE_STREAM_BURNED_DEM:
+        # Extents to not match, roll back and bail out
+        os.unlink(rasterFilepath)
+        sys.exit(textwrap.fill("ERROR: Raster type %s must be the same extent as DEM" % 
+                 (GenericMetadata.RASTER_TYPE_STREAM_BURNED_DEM,) ) )
+    if not force:
+        # Extents to not match, roll back and bail out
+        os.unlink(rasterFilepath)
+        sys.exit(textwrap.fill("ERROR: Extent of raster dataset %s does not match extent of DEM in project directory %s. Use --force to override.") %
+                 (rasterFilename, context.projectDir))
 
 # Write metadata
 if GenericMetadata.RASTER_TYPE_LC == args.type:
