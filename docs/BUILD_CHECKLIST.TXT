@@ -24,7 +24,11 @@
 
 10. Commit to git: git commit -a
 
-11. Tag release in git: git tag -a v0.9 -m 'Initial alpha release'
+11. Push to develop: git push origin develop
 
-12. Push to master git repository: git push -u origin master --tags
+12. Merge develop into master: git checkout master; git merge develop
+
+13. Tag release in git: git tag -a v0.9 -m 'Initial alpha release'
+
+14. Push to master git repository: git push -u origin master --tags
 
