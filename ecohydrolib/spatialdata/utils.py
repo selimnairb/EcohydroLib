@@ -729,11 +729,6 @@ def getBoundingBoxForShapefile(shapefileName, buffer=0.0):
     """
     assert(buffer >= 0.0)
     
-    minX = 0.0
-    minY = 90.0
-    maxX = -180.0
-    maxY = 0.0
-    
     # Get spatial reference system for shapefile
     poDS = ogr.Open(shapefileName, True)
     assert(poDS.GetLayerCount() > 0)
@@ -746,24 +741,10 @@ def getBoundingBoxForShapefile(shapefileName, buffer=0.0):
     p_out = Proj(init="EPSG:4326")
     
     # Get bounding box for shapefile
-    poFeature = poLayer.GetNextFeature()
-    while poFeature is not None:
-        poGeometry = poFeature.GetGeometryRef()
-        poEnvelope = poGeometry.GetEnvelope()
-        # Convert coordinates to EPSG:4326 (WGS84)
-        (tmpMinX, tmpMinY) = transform(p_in, p_out, poEnvelope[SHP_MINX], poEnvelope[SHP_MINY])
-        (tmpMaxX, tmpMaxY) = transform(p_in, p_out, poEnvelope[SHP_MAXX], poEnvelope[SHP_MAXY])
-        
-        if tmpMinX < minX:
-            minX = tmpMinX
-        if tmpMinY < minY:
-            minY = tmpMinY
-        if tmpMaxX > maxX:
-            maxX = tmpMaxX
-        if tmpMaxY > maxY:
-            maxY = tmpMaxY 
-        #print minX,minY,maxX,maxY  
-        poFeature = poLayer.GetNextFeature()
+    (minX, maxX, minY, maxY) = poLayer.GetExtent()
+    # Convert coordinates to EPSG:4326 (WGS84)
+    (minX, minY) = transform(p_in, p_out, minX, minY)
+    (maxX, maxY) = transform(p_in, p_out, maxX, maxY)
     
     bbox = dict({'minX': minX, 'minY': minY, 'maxX': maxX, 'maxY': maxY, 'srs': 'EPSG:4326'})
     bufferBoundingBox(bbox, buffer)
