@@ -37,7 +37,7 @@ setup(name='ecohydrolib',
         #'GDAL', # GDAL does not build under OS X easy_install/PIP
         'pyproj',
         'numpy',
-        'OWSLib',
+        'OWSLib==0.8.6',
         'oset',
         'httplib2',
         'shapely'
