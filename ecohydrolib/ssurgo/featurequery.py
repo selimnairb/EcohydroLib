@@ -52,6 +52,7 @@ from saxhandlers import SSURGOFeatureHandler
 
 MAX_SSURGO_EXTENT = 10000000000 # 10,100,000,000 sq. meters
 MAX_SSURGO_EXTENT = MAX_SSURGO_EXTENT / 10
+SSURGO_WFS_TIMEOUT_SEC = 3600
 
 WFS_URL = 'http://SDMDataAccess.nrcs.usda.gov/Spatial/SDMWGS84Geographic.wfs'
 
@@ -107,7 +108,8 @@ def getMapunitFeaturesForBoundingBox(config, outputDir, bbox, tileBbox=False, t_
         
             wfs = WebFeatureService(WFS_URL, version='1.0.0')
             filter = "<Filter><BBOX><PropertyName>Geometry</PropertyName> <Box srsName='EPSG:4326'><coordinates>%f,%f %f,%f</coordinates> </Box></BBOX></Filter>" % (minX, minY, maxX, maxY)
-            gml = wfs.getfeature(typename=(typeName,), filter=filter, propertyname=None)
+            gml = wfs.getfeature(typename=(typeName,), filter=filter, propertyname=None, 
+                                 timeout=SSURGO_WFS_TIMEOUT_SEC)
     
             # Write intermediate GML to a file
             intGmlFilename = "%s_bbox_%s.gml" % (typeName, bboxLabel)
