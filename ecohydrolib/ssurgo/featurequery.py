@@ -38,12 +38,15 @@ import sys
 import errno
 import xml.sax
 import json
+import shutil
 
 from owslib.wfs import WebFeatureService
 
+from ecohydrolib.spatialdata.utils import BBOX_TILE_DIVISOR
 from ecohydrolib.spatialdata.utils import calculateBoundingBoxArea
 from ecohydrolib.spatialdata.utils import tileBoundingBox
 from ecohydrolib.spatialdata.utils import convertGMLToGeoJSON
+from ecohydrolib.spatialdata.utils import mergeFeatureLayersToGeoJSON
 from ecohydrolib.spatialdata.utils import convertGeoJSONToShapefile
 from attributequery import getParentMatKsatTexturePercentClaySiltSandForComponentsInMUKEYs
 from attributequery import joinSSURGOAttributesToFeaturesByMUKEY_GeoJSON
@@ -51,11 +54,16 @@ from attributequery import computeWeightedAverageKsatClaySandSilt
 from saxhandlers import SSURGOFeatureHandler       
 
 MAX_SSURGO_EXTENT = 10000000000 # 10,100,000,000 sq. meters
-MAX_SSURGO_EXTENT = MAX_SSURGO_EXTENT / 10
+#MAX_SSURGO_EXTENT = MAX_SSURGO_EXTENT / 10
+#MAX_SSURGO_EXTENT = MAX_SSURGO_EXTENT * 2
+SSURGO_WFS_TIMEOUT_SEC = 3600
 
 WFS_URL = 'http://SDMDataAccess.nrcs.usda.gov/Spatial/SDMWGS84Geographic.wfs'
 
-def getMapunitFeaturesForBoundingBox(config, outputDir, bbox, tileBbox=False, t_srs='EPSG:4326'):
+def getMapunitFeaturesForBoundingBox(config, outputDir, bbox, tileBbox=False, t_srs='EPSG:4326', 
+                                     tileDivisor=BBOX_TILE_DIVISOR,
+                                     keepOriginals=False,
+                                     overwrite=True):
     """ Query USDA Soil Data Mart for SSURGO MapunitPolyExtended features with a given bounding box.
         Features will be written to one or more shapefiles, one file for each bboxTile tile,
         stored in the specified output directory. The filename will be returned as a string.
@@ -69,14 +77,20 @@ def getMapunitFeaturesForBoundingBox(config, outputDir, bbox, tileBbox=False, t_
         @param bbox A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
         @param tileBoundingBox True if bounding box should be tiled if extent exceeds featurequery.MAX_SSURGO_EXTENT
         @param t_srs String representing the spatial reference system of the output shapefiles, of the form 'EPSG:XXXX'
+        @param tileDivisor Float representing amount by which to divide tile slides.
+        @param keepOriginals Boolean, if True original feature layers will be retained (otherwise they will be deleted)
+        @param overwrite Boolean, if True any existing files will be overwritten
         
         @return A list of strings representing the name of the shapefile(s) to which the mapunit features were saved.
         
         @exception IOError if output directory is not a directory
         @exception IOError if output directory is not writable
+        @exception Exception if tileDivisor is not a postive float > 0.0.
         @exception Exception if bounding box area is greater than MAX_SSURGO_EXTENT
         @exception Exception if no MUKEYs were returned
     """
+    if type(tileDivisor) != float or tileDivisor <= 0.0:
+        raise Exception("Tile divisor must be a float > 0.0.")
     if not os.path.isdir(outputDir):
         raise IOError(errno.ENOTDIR, "Output directory %s is not a directory" % (outputDir,))
     if not os.access(outputDir, os.W_OK):
@@ -86,83 +100,104 @@ def getMapunitFeaturesForBoundingBox(config, outputDir, bbox, tileBbox=False, t_
     typeName = 'MapunitPolyExtended'
 
     if tileBbox:
-        bboxes = tileBoundingBox(bbox, MAX_SSURGO_EXTENT)
+        bboxes = tileBoundingBox(bbox, MAX_SSURGO_EXTENT, t_srs)
         sys.stderr.write("Dividing bounding box %s into %d tiles\n" % (str(bbox), len(bboxes)))
     else:
-        if calculateBoundingBoxArea(bbox, t_srs) > MAX_SSURGO_EXTENT:
-            raise Exception("Bounding box area is greater than %f sq. meters" % (MAX_SSURGO_EXTENT,))
+        bboxArea = calculateBoundingBoxArea(bbox, t_srs)
+        if bboxArea > MAX_SSURGO_EXTENT:
+            raise Exception("Bounding box area %.2f is greater than %.2f sq. kilometers" % (bboxArea/1000/1000, MAX_SSURGO_EXTENT/1000/1000,))
         bboxes = [bbox]
+    
+    assert(len(bboxes) >= 1)
     
     outFiles = []
     
+    #i = 0
     for bboxTile in bboxes:
-        minX = bboxTile['minX']; minY = bboxTile['minY']; maxX = bboxTile['maxX']; maxY = bboxTile['maxY']
-        bboxLabel = str(minX) + "_" + str(minY) + "_" + str(maxX) + "_" + str(maxY)
-    
-        gmlFilename = "%s_bbox_%s-attr.gml" % (typeName, bboxLabel)
-        gmlFilepath = os.path.join(outputDir, gmlFilename)
-    
-        if not os.path.exists(gmlFilepath):
-            sys.stderr.write("Fetching SSURGO data for sub bboxTile %s\n" % bboxLabel)
+        geojsonFilename = _getMapunitFeaturesForBoundingBoxTile(config, outputDir, bboxTile, typeName)
+        outFiles.append(geojsonFilename)
         
-            wfs = WebFeatureService(WFS_URL, version='1.0.0')
-            filter = "<Filter><BBOX><PropertyName>Geometry</PropertyName> <Box srsName='EPSG:4326'><coordinates>%f,%f %f,%f</coordinates> </Box></BBOX></Filter>" % (minX, minY, maxX, maxY)
-            gml = wfs.getfeature(typename=(typeName,), filter=filter, propertyname=None)
+        #i += 1
+        #if i > 1:
+        #    break
     
-            # Write intermediate GML to a file
-            intGmlFilename = "%s_bbox_%s.gml" % (typeName, bboxLabel)
-            intGmlFilepath = os.path.join(outputDir, intGmlFilename)
-            out = open(intGmlFilepath, 'w')
-            out.write(gml.read())
-            out.close()
-            
-            # Parse GML to get list of MUKEYs
-            gmlFile = open(intGmlFilepath, 'r')
-            ssurgoFeatureHandler = SSURGOFeatureHandler()
-            xml.sax.parse(gmlFile, ssurgoFeatureHandler)
-            gmlFile.close()
-            mukeys = ssurgoFeatureHandler.mukeys
-            
-            if len(mukeys) < 1:
-                raise Exception("No SSURGO features returned from WFS query.  SSURGO GML format may have changed.\nPlease contact the developer.")
-            
-            # Get attributes (ksat, texture, %clay, %silt, and %sand) for all components in MUKEYS
-            attributes = getParentMatKsatTexturePercentClaySiltSandForComponentsInMUKEYs(mukeys)
-            
-            # Compute weighted average of soil properties across all components in each map unit
-            avgAttributes = computeWeightedAverageKsatClaySandSilt(attributes)
-            
-            # Convert GML to GeoJSON so that we can add fields easily (GDAL 1.10+ validates GML schema 
-            #   and won't let us add fields)
-            tmpGeoJSONFilename = convertGMLToGeoJSON(config, outputDir, intGmlFilepath, typeName)
-            tmpGeoJSONFilepath = os.path.join(outputDir, tmpGeoJSONFilename)
-            
-            # Join map unit component-averaged soil properties to attribute table in GML file
-#             gmlFile = open(intGmlFilepath, 'r')
-#             joinedGmlStr = joinSSURGOAttributesToFeaturesByMUKEY(gmlFile, typeName, avgAttributes)
-#             gmlFile.close()
-            tmpGeoJSONFile = open(tmpGeoJSONFilepath, 'r')
-            geojson = json.load(tmpGeoJSONFile)
-            tmpGeoJSONFile.close()
-            joinSSURGOAttributesToFeaturesByMUKEY_GeoJSON(geojson, typeName, avgAttributes)
-            
-            # Write Joined GeoJSON to a file
-            out = open(tmpGeoJSONFilepath, 'w')
-            json.dump(geojson, out)
-            out.close()
-            
-            # Convert GeoJSON to shapefile
-            filename = os.path.splitext(intGmlFilename)[0]
-            shpFilename = convertGeoJSONToShapefile(config, outputDir, tmpGeoJSONFilepath, filename, t_srs=t_srs)
-            
-            # Delete intermediate files
-            os.unlink(intGmlFilepath)
-            os.unlink(tmpGeoJSONFilepath)
+    # Join tiled data if necessary
+    if len(outFiles) > 1:
+        filename = mergeFeatureLayersToGeoJSON(config, outputDir, outFiles, typeName,
+                                               keepOriginals=keepOriginals,
+                                               overwrite=overwrite)
+    else:
+        filename = outFiles[0]
+        destFilename = "%s.geojson" % (typeName,)
+        destFilepath = os.path.join(outputDir, destFilename)
+        shutil.move(filename, destFilepath)
+        filename = destFilepath
+
+    # Convert GeoJSON to shapefile
+    shpFilename = convertGeoJSONToShapefile(config, outputDir, filename, typeName, t_srs=t_srs) 
+    
+    # Delete intermediate files (if requested)
+    if not keepOriginals:
+        os.unlink(filename)   
+    
+    return shpFilename
+    
+def _getMapunitFeaturesForBoundingBoxTile(config, outputDir, bboxTile, typeName):
+    minX = bboxTile['minX']; minY = bboxTile['minY']; maxX = bboxTile['maxX']; maxY = bboxTile['maxY']
+    bboxLabel = str(minX) + "_" + str(minY) + "_" + str(maxX) + "_" + str(maxY)
+
+    gmlFilename = "%s_bbox_%s-attr.gml" % (typeName, bboxLabel)
+    gmlFilepath = os.path.join(outputDir, gmlFilename)
+    geoJSONLayername = "%s_bbox_%s-attr" % (typeName, bboxLabel)
+
+    if not os.path.exists(gmlFilepath):
+        sys.stderr.write("Fetching SSURGO data for sub bboxTile %s\n" % bboxLabel)
+    
+        wfs = WebFeatureService(WFS_URL, version='1.0.0', timeout=SSURGO_WFS_TIMEOUT_SEC)
+        filter = "<Filter><BBOX><PropertyName>Geometry</PropertyName> <Box srsName='EPSG:4326'><coordinates>%f,%f %f,%f</coordinates> </Box></BBOX></Filter>" % (minX, minY, maxX, maxY)
+        gml = wfs.getfeature(typename=(typeName,), filter=filter, propertyname=None)
+
+        # Write intermediate GML to a file
+        intGmlFilename = "%s_bbox_%s.gml" % (typeName, bboxLabel)
+        intGmlFilepath = os.path.join(outputDir, intGmlFilename)
+        out = open(intGmlFilepath, 'w')
+        out.write(gml.read())
+        out.close()
         
-        outFiles.append(shpFilename)
-    
-    # TODO: join tiled data if tileBbox
+        # Parse GML to get list of MUKEYs
+        gmlFile = open(intGmlFilepath, 'r')
+        ssurgoFeatureHandler = SSURGOFeatureHandler()
+        xml.sax.parse(gmlFile, ssurgoFeatureHandler)
+        gmlFile.close()
+        mukeys = ssurgoFeatureHandler.mukeys
         
-    return outFiles
-    
+        if len(mukeys) < 1:
+            raise Exception("No SSURGO features returned from WFS query.  SSURGO GML format may have changed.\nPlease contact the developer.")
+        
+        # Get attributes (ksat, texture, %clay, %silt, and %sand) for all components in MUKEYS
+        attributes = getParentMatKsatTexturePercentClaySiltSandForComponentsInMUKEYs(mukeys)
+        
+        # Compute weighted average of soil properties across all components in each map unit
+        avgAttributes = computeWeightedAverageKsatClaySandSilt(attributes)
+        
+        # Convert GML to GeoJSON so that we can add fields easily (GDAL 1.10+ validates GML schema 
+        #   and won't let us add fields)
+        tmpGeoJSONFilename = convertGMLToGeoJSON(config, outputDir, intGmlFilepath, geoJSONLayername)
+        tmpGeoJSONFilepath = os.path.join(outputDir, tmpGeoJSONFilename)
+        
+        # Join map unit component-averaged soil properties to attribute table in GeoJSON file
+        tmpGeoJSONFile = open(tmpGeoJSONFilepath, 'r')
+        geojson = json.load(tmpGeoJSONFile)
+        tmpGeoJSONFile.close()
+        joinSSURGOAttributesToFeaturesByMUKEY_GeoJSON(geojson, typeName, avgAttributes)
+        
+        # Write joined GeoJSON to a file
+        out = open(tmpGeoJSONFilepath, 'w')
+        json.dump(geojson, out)
+        out.close()
+        
+        # Delete intermediate files
+        os.unlink(intGmlFilepath)
+        
+        return tmpGeoJSONFilepath
     

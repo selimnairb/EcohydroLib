@@ -75,6 +75,7 @@ from ecohydrolib.context import Context
 from ecohydrolib.metadata import GenericMetadata
 from ecohydrolib.metadata import AssetProvenance
 
+from ecohydrolib.spatialdata.utils import BBOX_TILE_DIVISOR
 from ecohydrolib.spatialdata.utils import deleteShapefile
 from ecohydrolib.spatialdata.utils import bboxFromString
 from ecohydrolib.spatialdata.utils import convertGMLToShapefile
@@ -87,6 +88,13 @@ parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                     help='The configuration file')
 parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                     help='The directory to which metadata, intermediate, and final files should be saved')
+parser.add_argument('--tile', dest='tile', required=False, default=False, action='store_true',
+                    help='Enable bounding box tiling to download SSURGO data for areas larger than that supported by USDA web service.')
+parser.add_argument('--tiledivisor', dest='tiledivisor', required=False, default=BBOX_TILE_DIVISOR, type=float,
+                    help='Divisor to use for tiling bounding box.  Larger divisor will result in a greater number of tiles. ' +
+                    "Default: {0}".format(BBOX_TILE_DIVISOR))
+parser.add_argument('--keeporiginals', dest='keeporiginals', required=False, default=False, action='store_true',
+                    help='If True, intermediate SSURGO feature layers will be retained (otherwise they will be deleted)')
 parser.add_argument('--overwrite', dest='overwrite', action='store_true', required=False,
                     help='Overwrite existing SSURGO features shapefile in project directory.  If not specified, program will halt if a dataset already exists.')
 args = parser.parse_args()
@@ -123,7 +131,10 @@ srs = studyArea['dem_srs']
 
 sys.stdout.write('Downloading SSURGO features for study area from USDA Soil Data mart...\n')
 sys.stdout.flush()
-shpFilename = getMapunitFeaturesForBoundingBox(context.config, context.projectDir, bbox, t_srs=srs)[0]
+shpFilename = getMapunitFeaturesForBoundingBox(context.config, context.projectDir, bbox, 
+                                               tileBbox=args.tile, t_srs=srs, tileDivisor=args.tiledivisor,
+                                               keepOriginals=args.keeporiginals,
+                                               overwrite=args.overwrite)
 
 # Write provenance
 asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)

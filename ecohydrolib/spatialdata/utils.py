@@ -62,6 +62,11 @@ RASTER_RESAMPLE_METHOD = ['near', 'bilinear', 'cubic', 'cubicspline', 'lanczos',
 WGS84_EPSG = 4326
 WGS84_EPSG_STR = 'EPSG:4326'
 
+NORTH = 0.0
+EAST = 90.0
+
+BBOX_TILE_DIVISOR = 8.0
+
 OGR_SHAPEFILE_DRIVER_NAME = 'ESRI Shapefile'
 OGR_GEOJSON_DRIVER_NAME = 'GeoJSON'
 OGR_DRIVERS = {OGR_SHAPEFILE_DRIVER_NAME: 'shp', 
@@ -461,6 +466,63 @@ def convertGeoJSONToShapefile(config, outputDir, geoJSONFilepath, shapefileName,
     return shpFilename
 
 
+def mergeFeatureLayersToGeoJSON(config, outputDir, featureFilepaths, outLayerName,
+                                keepOriginals=False, overwrite=False):
+    """ Combine vector feature files readable by OGR into a single GeoJSON feature
+        layer.
+    
+        @param config A Python ConfigParser containing the section 'GDAL/OGR' and option 'PATH_OF_OGR2OGR'
+        @param outputDir String representing the absolute/relative path of the directory into which shapefile should be written
+        @param featureFilepaths Array of strings representing the absolute path of the feature files to convert
+        @param outLayerName String representing the name of the merged GeoJSON feature.  Extension '.geojson' will be added.
+        @param keepOriginals Boolean, if True, original feature layers will be retained (otherwise they will be deleted)
+        @param overwrite Boolean, if True any existing files will be overwritten
+        
+        @return String representing the absolute path of the GeoJSON file written
+        
+        @exception Exception if OGR returned an error.
+    """
+    pathToOgrCmd = config.get('GDAL/OGR', 'PATH_OF_OGR2OGR')
+    
+    if not os.path.isdir(outputDir):
+        raise IOError(errno.ENOTDIR, "Output directory %s is not a directory" % (outputDir,))
+    if not os.access(outputDir, os.W_OK):
+        raise IOError(errno.EACCES, "Not allowed to write to output directory %s" % (outputDir,))
+    outputDir = os.path.abspath(outputDir)
+    
+    # Write virtual feature layer (requires GDAL 1.10)
+    vFeatureFilename = 'mergeFeatureLayersToGeoJSON.vrt'
+    vFeatureFilepath = os.path.join(outputDir, vFeatureFilename)
+    
+    f = open(vFeatureFilepath, 'w')
+    f.write('<OGRVRTDataSource>\n\t<OGRVRTUnionLayer name="unionLayer">\n')
+    for feature in featureFilepaths:
+        if not os.access(feature, os.R_OK):
+            raise IOError(errno.EACCES, "Not allowed to read feature %s" % (feature,))
+        f.write('\t\t<OGRVRTLayer name="OGRGeoJSON">\n')
+        f.write('\t\t\t<SrcDataSource>{0}</SrcDataSource>\n\t\t</OGRVRTLayer>\n'.format(feature))
+    f.write('\t</OGRVRTUnionLayer>\n</OGRVRTDataSource>\n')
+    f.close()
+        
+    # Merge to a single GeoJSON
+    geoJSONOutName = "%s.geojson" % (outLayerName,)
+    geoJSONOutPath = os.path.join(outputDir, geoJSONOutName)
+    if overwrite:
+        os.unlink(geoJSONOutPath)
+    ogrCommand = "%s -f 'GeoJSON' %s %s -dialect sqlite -sql \"SELECT DISTINCT geometry, * FROM unionLayer\"" % (pathToOgrCmd, geoJSONOutPath, vFeatureFilepath)
+    returnCode = os.system(ogrCommand)
+    if returnCode != 0:
+        raise Exception("Merge feature layers to single GeoJSON command %s returned %d" % (ogrCommand, returnCode))
+    
+    # Remove originals (if requested)
+    if not keepOriginals:
+        os.unlink(vFeatureFilepath)
+        for feature in featureFilepaths:
+            os.unlink(feature)
+            
+    return geoJSONOutPath
+
+
 def convertFeatureLayerToShapefile(config, outputDir, featureFilepath, shapefileName, layerName=None, t_srs='EPSG:4326', overwrite=False):
     """ Convert a vector feature file readible by OGR to a shapefile.  
         Will silently exit if output shapefile already exists
@@ -655,7 +717,7 @@ def calculateBoundingBoxCenter(bbox):
     return (longitude, latitude)
 
 
-def calculateBoundingBoxArea(bbox, srs='EPSG:4326'):
+def calculateBoundingBoxArea(bbox, srs=WGS84_EPSG_STR):
     """ Calculate bbox area in squared units of srs
     
         @param bbox A dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
@@ -665,31 +727,44 @@ def calculateBoundingBoxArea(bbox, srs='EPSG:4326'):
         @return Float representing the bounding box area in square meters
     """
     assert(bbox['srs'] == WGS84_EPSG_STR)
-
     coords = [(bbox['minX'], bbox['minY']), 
               (bbox['maxX'], bbox['minY']),
               (bbox['maxX'], bbox['maxY']), 
               (bbox['minX'], bbox['maxY'])]
     (lon, lat) = zip(*coords)
-    p_in = Proj(init=bbox['srs'])
-    p_out = Proj(init=srs)
-    (x, y) = transform(p_in, p_out, lon, lat)
-    geojson = {'type': 'Polygon', 'coordinates': [zip(x, y)]}
+    if bbox['srs'] != srs:
+        p_in = Proj(init=bbox['srs'])
+        p_out = Proj(init=srs)
+        (lon, lat) = transform(p_in, p_out, lon, lat)
+        
+    geojson = {'type': 'Polygon', 'coordinates': [zip(lon, lat)]}
+    poly = shape(geojson)
+    
+    return poly.area
 
-    return shape(geojson).area
 
-
-def tileBoundingBox(bbox, threshold):
+def tileBoundingBox(bbox, threshold, t_srs=WGS84_EPSG_STR, divisor=BBOX_TILE_DIVISOR):
     """ Break up bounding box into tiles if bounding box is larger than threshold. 
         Bounding box must be defined by WGS84 lat,lon coordinates
         
         @param bbox Dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
         @param threshold Float representing threshold area above which bounding box will be tiled. Units: sq. meters
+        @param t_srs String representing spatial reference system, in EPSG format, in which
+        area should be calculated.
+        @param divisor Float representing amount by which to divide tile sides, such that tile side = sqrt(threshold) / divisor
         
         @return A list containing tiles defined as a dict containing keys: minX, minY, maxX, maxY, srs, where srs='EPSG:4326'
     """
-    assert(bbox['srs'] == 'EPSG:4326')
-    area = calculateBoundingBoxArea(bbox)
+    assert(bbox['srs'] == WGS84_EPSG_STR)
+    
+    threshold = float(threshold)
+    divisor = float(divisor)
+    
+    assert(threshold > 0.0)
+    assert(divisor > 0.0)
+    
+    geod = Geod(ellps='WGS84')
+    area = calculateBoundingBoxArea(bbox, t_srs)
     
     bboxes = []
     if area <= threshold:
@@ -699,7 +774,7 @@ def tileBoundingBox(bbox, threshold):
         sys.stderr.write("Area of bounding box > threshold, tiling ...\n")
         # Tile it
         # Calculate the length of a "side" of a square tile
-        tileSide = sqrt(threshold)
+        tileSide = sqrt(threshold) / divisor
         # Start at the southwestern-most corner of the bounding box
         minLat = bbox['minY']
         minLon = bbox['minX']
@@ -708,7 +783,7 @@ def tileBoundingBox(bbox, threshold):
             (lon, maxLat, backAz) = geod.fwd(lons=minLon, lats=minLat, az=NORTH, dist=tileSide)
             while minLon < bbox['maxX']:
                 (maxLon, lat, backAz) = geod.fwd(lons=minLon, lats=maxLat, az=EAST, dist=tileSide)
-                bboxes.append(dict({'minX': minLon, 'minY': minLat, 'maxX': maxLon, 'maxY': maxLat, 'srs': 'EPSG:4326'}))
+                bboxes.append(dict({'minX': minLon, 'minY': minLat, 'maxX': maxLon, 'maxY': maxLat, 'srs': WGS84_EPSG_STR}))
                 minLon = maxLon
             minLat = maxLat
             minLon = bbox['minX']
