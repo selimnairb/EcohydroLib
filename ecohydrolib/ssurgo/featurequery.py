@@ -40,6 +40,7 @@ import xml.sax
 import json
 import shutil
 import multiprocessing
+import gc
 
 from owslib.wfs import WebFeatureService
 
@@ -183,20 +184,45 @@ def _getMapunitFeaturesForBoundingBoxTile(config, outputDir, bboxTile, typeName,
     
         wfs = WebFeatureService(WFS_URL, version='1.0.0', timeout=SSURGO_WFS_TIMEOUT_SEC)
         filter = "<Filter><BBOX><PropertyName>Geometry</PropertyName> <Box srsName='EPSG:4326'><coordinates>%f,%f %f,%f</coordinates> </Box></BBOX></Filter>" % (minX, minY, maxX, maxY)
-        gml = wfs.getfeature(typename=(typeName,), filter=filter, propertyname=None)
-
-        # Write intermediate GML to a file
+        
         intGmlFilename = "%s_bbox_%s.gml" % (typeName, bboxLabel)
         intGmlFilepath = os.path.join(outputDir, intGmlFilename)
-        out = open(intGmlFilepath, 'w')
-        out.write(gml.read())
-        out.close()
-        
-        # Parse GML to get list of MUKEYs
-        gmlFile = open(intGmlFilepath, 'r')
         ssurgoFeatureHandler = SSURGOFeatureHandler()
-        xml.sax.parse(gmlFile, ssurgoFeatureHandler)
-        gmlFile.close()
+        
+        try:
+            gml = wfs.getfeature(typename=(typeName,), filter=filter, propertyname=None)
+    
+            # Write intermediate GML to a file
+            out = open(intGmlFilepath, 'w')
+            out.write(gml.read())
+            out.close()
+            
+            # Parse GML to get list of MUKEYs
+            gmlFile = open(intGmlFilepath, 'r')
+            xml.sax.parse(gmlFile, ssurgoFeatureHandler)
+            gmlFile.close()
+            gml = None
+            gc.collect()
+        except  xml.sax.SAXParseException as e:
+            gml = None
+            gc.collect()
+            # Try to re-download
+            sys.stderr.write("initial download possibly incomplete, error: {0} retrying...".format(str(e)))
+            sys.stderr.flush()
+            gml = wfs.getfeature(typename=(typeName,), filter=filter, propertyname=None)
+    
+            # Write intermediate GML to a file
+            out = open(intGmlFilepath, 'w')
+            out.write(gml.read())
+            out.close()
+            
+            # Parse GML to get list of MUKEYs
+            gmlFile = open(intGmlFilepath, 'r')
+            xml.sax.parse(gmlFile, ssurgoFeatureHandler)
+            gmlFile.close()
+            gml = None
+            gc.collect()
+        
         mukeys = ssurgoFeatureHandler.mukeys
         
         if len(mukeys) < 1:
