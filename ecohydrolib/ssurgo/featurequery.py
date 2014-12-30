@@ -39,6 +39,7 @@ import errno
 import xml.sax
 import json
 import shutil
+import multiprocessing
 
 from owslib.wfs import WebFeatureService
 
@@ -54,8 +55,6 @@ from attributequery import computeWeightedAverageKsatClaySandSilt
 from saxhandlers import SSURGOFeatureHandler       
 
 MAX_SSURGO_EXTENT = 10000000000 # 10,100,000,000 sq. meters
-#MAX_SSURGO_EXTENT = MAX_SSURGO_EXTENT / 10
-#MAX_SSURGO_EXTENT = MAX_SSURGO_EXTENT * 2
 SSURGO_WFS_TIMEOUT_SEC = 3600
 
 WFS_URL = 'http://SDMDataAccess.nrcs.usda.gov/Spatial/SDMWGS84Geographic.wfs'
@@ -63,7 +62,8 @@ WFS_URL = 'http://SDMDataAccess.nrcs.usda.gov/Spatial/SDMWGS84Geographic.wfs'
 def getMapunitFeaturesForBoundingBox(config, outputDir, bbox, tileBbox=False, t_srs='EPSG:4326', 
                                      tileDivisor=BBOX_TILE_DIVISOR,
                                      keepOriginals=False,
-                                     overwrite=True):
+                                     overwrite=True,
+                                     nprocesses=None):
     """ Query USDA Soil Data Mart for SSURGO MapunitPolyExtended features with a given bounding box.
         Features will be written to one or more shapefiles, one file for each bboxTile tile,
         stored in the specified output directory. The filename will be returned as a string.
@@ -80,6 +80,8 @@ def getMapunitFeaturesForBoundingBox(config, outputDir, bbox, tileBbox=False, t_
         @param tileDivisor Float representing amount by which to divide tile slides.
         @param keepOriginals Boolean, if True original feature layers will be retained (otherwise they will be deleted)
         @param overwrite Boolean, if True any existing files will be overwritten
+        @param nprocesses Integer representing number of processes to use for fetching SSURGO tiles in parallel (used only if bounding box needs to be tiled).
+               if None, multiprocessing.cpu_count() will be used.
         
         @return A list of strings representing the name of the shapefile(s) to which the mapunit features were saved.
         
@@ -108,24 +110,46 @@ def getMapunitFeaturesForBoundingBox(config, outputDir, bbox, tileBbox=False, t_
             raise Exception("Bounding box area %.2f is greater than %.2f sq. kilometers" % (bboxArea/1000/1000, MAX_SSURGO_EXTENT/1000/1000,))
         bboxes = [bbox]
     
-    assert(len(bboxes) >= 1)
+    numTiles = len(bboxes)
+    assert(numTiles >= 1)
     
     outFiles = []
-    
-    #i = 0
-    for bboxTile in bboxes:
-        geojsonFilename = _getMapunitFeaturesForBoundingBoxTile(config, outputDir, bboxTile, typeName)
+    if numTiles == 1:
+        # No tiling, fetch SSURGO features for bbox in the current process
+        geojsonFilename = _getMapunitFeaturesForBoundingBoxTile(config, outputDir, bboxes[0], typeName, 1, numTiles)
         outFiles.append(geojsonFilename)
+    else:
+        # Fetch SSURGO feature tiles in parallel
+        if nprocesses is None:
+            nprocesses = multiprocessing.cpu_count()
+        assert(type(nprocesses) == int)
+        assert(nprocesses > 0)
         
-        #i += 1
-        #if i > 1:
-        #    break
+        # Start my pool
+        pool = multiprocessing.Pool( nprocesses )
+        tasks = []
+        
+        # Build task list
+        i = 1
+        for bboxTile in bboxes:
+            tasks.append( (config, outputDir, bboxTile, typeName, i, numTiles) ) 
+            i += 1
+
+        # Send tasks to pool (i.e. fetch SSURGO features for each tile in parallel)
+        results = [pool.apply_async(_getMapunitFeaturesForBoundingBoxTile, t) for t in tasks]
+        
+        # Get resulting filenames for each tile
+        for result in results:
+            outFiles.append(result.get())
     
     # Join tiled data if necessary
     if len(outFiles) > 1:
+        sys.stderr.write('Merging tiled features to single GeoJSON file...')
+        sys.stderr.flush()
         filename = mergeFeatureLayersToGeoJSON(config, outputDir, outFiles, typeName,
                                                keepOriginals=keepOriginals,
                                                overwrite=overwrite)
+        sys.stderr.write('done\n')
     else:
         filename = outFiles[0]
         destFilename = "%s.geojson" % (typeName,)
@@ -134,7 +158,10 @@ def getMapunitFeaturesForBoundingBox(config, outputDir, bbox, tileBbox=False, t_
         filename = destFilepath
 
     # Convert GeoJSON to shapefile
-    shpFilename = convertGeoJSONToShapefile(config, outputDir, filename, typeName, t_srs=t_srs) 
+    sys.stderr.write('Converting SSURGO features from GeoJSON to shapefile format...')
+    sys.stderr.flush()
+    shpFilename = convertGeoJSONToShapefile(config, outputDir, filename, typeName, t_srs=t_srs)
+    sys.stderr.write('done\n') 
     
     # Delete intermediate files (if requested)
     if not keepOriginals:
@@ -142,7 +169,7 @@ def getMapunitFeaturesForBoundingBox(config, outputDir, bbox, tileBbox=False, t_
     
     return shpFilename
     
-def _getMapunitFeaturesForBoundingBoxTile(config, outputDir, bboxTile, typeName):
+def _getMapunitFeaturesForBoundingBoxTile(config, outputDir, bboxTile, typeName, currTile, numTiles):
     minX = bboxTile['minX']; minY = bboxTile['minY']; maxX = bboxTile['maxX']; maxY = bboxTile['maxY']
     bboxLabel = str(minX) + "_" + str(minY) + "_" + str(maxX) + "_" + str(maxY)
 
@@ -151,7 +178,8 @@ def _getMapunitFeaturesForBoundingBoxTile(config, outputDir, bboxTile, typeName)
     geoJSONLayername = "%s_bbox_%s-attr" % (typeName, bboxLabel)
 
     if not os.path.exists(gmlFilepath):
-        sys.stderr.write("Fetching SSURGO data for sub bboxTile %s\n" % bboxLabel)
+        sys.stderr.write("Fetching SSURGO data for tile %s of %s, bbox: %s\n" % (currTile, numTiles, bboxLabel))
+        sys.stderr.flush()
     
         wfs = WebFeatureService(WFS_URL, version='1.0.0', timeout=SSURGO_WFS_TIMEOUT_SEC)
         filter = "<Filter><BBOX><PropertyName>Geometry</PropertyName> <Box srsName='EPSG:4326'><coordinates>%f,%f %f,%f</coordinates> </Box></BBOX></Filter>" % (minX, minY, maxX, maxY)

@@ -95,6 +95,9 @@ parser.add_argument('--tiledivisor', dest='tiledivisor', required=False, default
                     "Default: {0}".format(BBOX_TILE_DIVISOR))
 parser.add_argument('--keeporiginals', dest='keeporiginals', required=False, default=False, action='store_true',
                     help='If True, intermediate SSURGO feature layers will be retained (otherwise they will be deleted)')
+parser.add_argument('--nprocesses', dest='nprocesses', required=False, default=None, type=int,
+                    help='Number of processes to use for fetching SSURGO tiles in parallel (used only if bounding box needs to be tiled). ' +
+                    'If None, number of CPU threads will be used.')
 parser.add_argument('--overwrite', dest='overwrite', action='store_true', required=False,
                     help='Overwrite existing SSURGO features shapefile in project directory.  If not specified, program will halt if a dataset already exists.')
 args = parser.parse_args()
@@ -134,7 +137,8 @@ sys.stdout.flush()
 shpFilename = getMapunitFeaturesForBoundingBox(context.config, context.projectDir, bbox, 
                                                tileBbox=args.tile, t_srs=srs, tileDivisor=args.tiledivisor,
                                                keepOriginals=args.keeporiginals,
-                                               overwrite=args.overwrite)
+                                               overwrite=args.overwrite,
+                                               nprocesses=args.nprocesses)
 
 # Write provenance
 asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
