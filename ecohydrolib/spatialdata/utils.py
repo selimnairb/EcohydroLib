@@ -65,7 +65,7 @@ WGS84_EPSG_STR = 'EPSG:4326'
 NORTH = 0.0
 EAST = 90.0
 
-BBOX_TILE_DIVISOR = 16.0
+BBOX_TILE_DIVISOR = 1.0
 
 OGR_SHAPEFILE_DRIVER_NAME = 'ESRI Shapefile'
 OGR_GEOJSON_DRIVER_NAME = 'GeoJSON'
@@ -466,15 +466,16 @@ def convertGeoJSONToShapefile(config, outputDir, geoJSONFilepath, shapefileName,
     return shpFilename
 
 
-def mergeFeatureLayersToGeoJSON(config, outputDir, featureFilepaths, outLayerName,
-                                keepOriginals=False, overwrite=False):
-    """ Combine vector feature files readable by OGR into a single GeoJSON feature
-        layer.
+def mergeFeatureLayers(config, outputDir, featureFilepaths, outLayerName,
+                       outFormat='GeoJSON',
+                       keepOriginals=False, overwrite=False):
+    """ Combine vector feature files readable by OGR into a single feature layer.
     
         @param config A Python ConfigParser containing the section 'GDAL/OGR' and option 'PATH_OF_OGR2OGR'
         @param outputDir String representing the absolute/relative path of the directory into which shapefile should be written
         @param featureFilepaths Array of strings representing the absolute path of the feature files to convert
         @param outLayerName String representing the name of the merged GeoJSON feature.  Extension '.geojson' will be added.
+        @param outFormat String representing output format supported by OGR listed in OGR_DRIVERS
         @param keepOriginals Boolean, if True, original feature layers will be retained (otherwise they will be deleted)
         @param overwrite Boolean, if True any existing files will be overwritten
         
@@ -483,6 +484,8 @@ def mergeFeatureLayersToGeoJSON(config, outputDir, featureFilepaths, outLayerNam
         @exception Exception if OGR returned an error.
     """
     pathToOgrCmd = config.get('GDAL/OGR', 'PATH_OF_OGR2OGR')
+    
+    assert(outFormat in OGR_DRIVERS.keys())
     
     if not os.path.isdir(outputDir):
         raise IOError(errno.ENOTDIR, "Output directory %s is not a directory" % (outputDir,))
@@ -504,16 +507,17 @@ def mergeFeatureLayersToGeoJSON(config, outputDir, featureFilepaths, outLayerNam
     f.write('\t</OGRVRTUnionLayer>\n</OGRVRTDataSource>\n')
     f.close()
         
-    # Merge to a single GeoJSON
-    geoJSONOutName = "%s.geojson" % (outLayerName,)
-    geoJSONOutPath = os.path.join(outputDir, geoJSONOutName)
+    # Merge to a single output feature
+    outExt = OGR_DRIVERS[outFormat]
+    outName = "%s.%s" % (outLayerName, outExt)
+    outPath = os.path.join(outputDir, outName)
     if overwrite:
-        if os.path.exists(geoJSONOutPath):
-            os.unlink(geoJSONOutPath)
-    ogrCommand = "%s -f 'GeoJSON' %s %s -dialect sqlite -sql \"SELECT DISTINCT geometry, * FROM unionLayer\"" % (pathToOgrCmd, geoJSONOutPath, vFeatureFilepath)
+        if os.path.exists(outPath):
+            os.unlink(outPath)
+    ogrCommand = "%s -f '%s' %s %s -dialect sqlite -sql \"SELECT DISTINCT geometry, * FROM unionLayer\"" % (pathToOgrCmd, outFormat, outPath, vFeatureFilepath)
     returnCode = os.system(ogrCommand)
     if returnCode != 0:
-        raise Exception("Merge feature layers to single GeoJSON command %s returned %d" % (ogrCommand, returnCode))
+        raise Exception("Merge feature layers to single layer command %s returned %d" % (ogrCommand, returnCode))
     
     # Remove originals (if requested)
     if not keepOriginals:
@@ -521,7 +525,7 @@ def mergeFeatureLayersToGeoJSON(config, outputDir, featureFilepaths, outLayerNam
         for feature in featureFilepaths:
             os.unlink(feature)
             
-    return geoJSONOutPath
+    return outPath
 
 
 def convertFeatureLayerToShapefile(config, outputDir, featureFilepath, shapefileName, layerName=None, t_srs='EPSG:4326', overwrite=False):
@@ -772,8 +776,8 @@ def tileBoundingBox(bbox, threshold, t_srs=WGS84_EPSG_STR, divisor=BBOX_TILE_DIV
         sys.stderr.write("Area of bounding box <= threshold, no tiling\n")
         bboxes.append(bbox)
     else:
-        sys.stderr.write("Area of bounding box > threshold, tiling ...\n")
         # Tile it
+        sys.stderr.write("Area of bounding box > threshold, tiling ...\n")
         # Calculate the length of a "side" of a square tile
         tileSide = sqrt(threshold) / divisor
         # Start at the southwestern-most corner of the bounding box

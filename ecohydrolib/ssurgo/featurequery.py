@@ -44,24 +44,27 @@ import gc
 
 from owslib.wfs import WebFeatureService
 
-from ecohydrolib.spatialdata.utils import BBOX_TILE_DIVISOR
 from ecohydrolib.spatialdata.utils import calculateBoundingBoxArea
 from ecohydrolib.spatialdata.utils import tileBoundingBox
 from ecohydrolib.spatialdata.utils import convertGMLToGeoJSON
-from ecohydrolib.spatialdata.utils import mergeFeatureLayersToGeoJSON
+from ecohydrolib.spatialdata.utils import mergeFeatureLayers
 from ecohydrolib.spatialdata.utils import convertGeoJSONToShapefile
+from ecohydrolib.spatialdata.utils import OGR_SHAPEFILE_DRIVER_NAME
 from attributequery import getParentMatKsatTexturePercentClaySiltSandForComponentsInMUKEYs
 from attributequery import joinSSURGOAttributesToFeaturesByMUKEY_GeoJSON
 from attributequery import computeWeightedAverageKsatClaySandSilt
 from saxhandlers import SSURGOFeatureHandler       
 
-MAX_SSURGO_EXTENT = 10000000000 # 10,100,000,000 sq. meters
-SSURGO_WFS_TIMEOUT_SEC = 3600
+MAX_SSURGO_EXTENT = 10100000000 # 10,100,000,000 sq. meters
+MAX_SSURGO_EXTENT = MAX_SSURGO_EXTENT / 4.0 # Large queries take a long time, reduce threshold for tiling
+SSURGO_BBOX_TILE_DIVISOR = 8.0
 
+SSURGO_WFS_TIMEOUT_SEC = 3600
+SSURGO_GML_MAX_DOWNLOAD_ATTEMPTS = 4
 WFS_URL = 'http://SDMDataAccess.nrcs.usda.gov/Spatial/SDMWGS84Geographic.wfs'
 
 def getMapunitFeaturesForBoundingBox(config, outputDir, bbox, tileBbox=False, t_srs='EPSG:4326', 
-                                     tileDivisor=BBOX_TILE_DIVISOR,
+                                     tileDivisor=SSURGO_BBOX_TILE_DIVISOR,
                                      keepOriginals=False,
                                      overwrite=True,
                                      nprocesses=None):
@@ -103,12 +106,12 @@ def getMapunitFeaturesForBoundingBox(config, outputDir, bbox, tileBbox=False, t_
     typeName = 'MapunitPolyExtended'
 
     if tileBbox:
-        bboxes = tileBoundingBox(bbox, MAX_SSURGO_EXTENT, t_srs)
+        bboxes = tileBoundingBox(bbox, MAX_SSURGO_EXTENT, t_srs, tileDivisor)
         sys.stderr.write("Dividing bounding box %s into %d tiles\n" % (str(bbox), len(bboxes)))
     else:
         bboxArea = calculateBoundingBoxArea(bbox, t_srs)
         if bboxArea > MAX_SSURGO_EXTENT:
-            raise Exception("Bounding box area %.2f is greater than %.2f sq. kilometers" % (bboxArea/1000/1000, MAX_SSURGO_EXTENT/1000/1000,))
+            raise Exception("Bounding box area %.2f sq. km is greater than %.2f sq. km.  You must tile the bounding box." % (bboxArea/1000/1000, MAX_SSURGO_EXTENT/1000/1000,))
         bboxes = [bbox]
     
     numTiles = len(bboxes)
@@ -148,28 +151,21 @@ def getMapunitFeaturesForBoundingBox(config, outputDir, bbox, tileBbox=False, t_
     
     # Join tiled data if necessary
     if len(outFiles) > 1:
-        sys.stderr.write('Merging tiled features to single GeoJSON file...')
+        sys.stderr.write('Merging tiled features to single shapefile...')
         sys.stderr.flush()
-        filename = mergeFeatureLayersToGeoJSON(config, outputDir, outFiles, typeName,
-                                               keepOriginals=keepOriginals,
-                                               overwrite=overwrite)
+        shpFilename = mergeFeatureLayers(config, outputDir, outFiles, typeName,
+                                         outFormat=OGR_SHAPEFILE_DRIVER_NAME,
+                                         keepOriginals=keepOriginals,
+                                         overwrite=overwrite)
         sys.stderr.write('done\n')
     else:
-        filename = outFiles[0]
-        destFilename = "%s.geojson" % (typeName,)
-        destFilepath = os.path.join(outputDir, destFilename)
-        shutil.move(filename, destFilepath)
-        filename = destFilepath
-
-    # Convert GeoJSON to shapefile
-    sys.stderr.write('Converting SSURGO features from GeoJSON to shapefile format...')
-    sys.stderr.flush()
-    shpFilename = convertGeoJSONToShapefile(config, outputDir, filename, typeName, t_srs=t_srs)
-    sys.stderr.write('done\n') 
-    
-    # Delete intermediate files (if requested)
-    if not keepOriginals:
-        os.unlink(filename)   
+        # Convert GeoJSON to shapefile
+        filepath = outFiles[0]
+        sys.stderr.write('Converting SSURGO features from GeoJSON to shapefile format...')
+        sys.stderr.flush()
+        shpFilename = convertGeoJSONToShapefile(config, outputDir, filepath, typeName, t_srs=t_srs)
+        os.unlink(filepath)
+        sys.stderr.write('done\n')   
     
     return shpFilename
     
@@ -192,40 +188,31 @@ def _getMapunitFeaturesForBoundingBoxTile(config, outputDir, bboxTile, typeName,
         intGmlFilepath = os.path.join(outputDir, intGmlFilename)
         ssurgoFeatureHandler = SSURGOFeatureHandler()
         
-        try:
-            gml = wfs.getfeature(typename=(typeName,), filter=filter, propertyname=None)
-    
-            # Write intermediate GML to a file
-            out = open(intGmlFilepath, 'w')
-            out.write(gml.read())
-            out.close()
-            
-            # Parse GML to get list of MUKEYs
-            gmlFile = open(intGmlFilepath, 'r')
-            xml.sax.parse(gmlFile, ssurgoFeatureHandler)
-            gmlFile.close()
-            gml = None
-            gc.collect()
-        except  xml.sax.SAXParseException as e:
-            gml = None
-            gc.collect()
-            # Try to re-download
-            sys.stderr.write("initial download possibly incomplete, error: {0} retrying...".format(str(e)))
-            sys.stderr.flush()
-            gml = wfs.getfeature(typename=(typeName,), filter=filter, propertyname=None)
-    
-            # Write intermediate GML to a file
-            out = open(intGmlFilepath, 'w')
-            out.write(gml.read())
-            out.close()
-            
-            # Parse GML to get list of MUKEYs
-            gmlFile = open(intGmlFilepath, 'r')
-            xml.sax.parse(gmlFile, ssurgoFeatureHandler)
-            gmlFile.close()
-            gml = None
-            gc.collect()
+        downloadComplete = False
+        downloadAttempts = 0
+        while not downloadComplete:
+            try:
+                gml = wfs.getfeature(typename=(typeName,), filter=filter, propertyname=None)
         
+                # Write intermediate GML to a file
+                out = open(intGmlFilepath, 'w')
+                out.write(gml.read())
+                out.close()
+                
+                # Parse GML to get list of MUKEYs
+                gmlFile = open(intGmlFilepath, 'r')
+                xml.sax.parse(gmlFile, ssurgoFeatureHandler)
+                gmlFile.close()
+                downloadComplete = True
+            except xml.sax.SAXParseException as e:
+                # Try to re-download
+                downloadAttempts += 1
+                if downloadAttempts > SSURGO_GML_MAX_DOWNLOAD_ATTEMPTS:
+                    raise Exception("Giving up on downloading tile {0} of {1} after {2} attempts.  There may be something wrong with the web service.  Try again later.".format(currTile, numTiles, downloadAttempts))
+                else:
+                    sys.stderr.write("Initial download of tile {0} of {1} possibly incomplete, error: {0}.  Retrying...".format(currTile, numTiles, str(e)))
+                    sys.stderr.flush()
+                    
         mukeys = ssurgoFeatureHandler.mukeys
         
         if len(mukeys) < 1:
