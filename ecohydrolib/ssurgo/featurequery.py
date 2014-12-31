@@ -143,6 +143,9 @@ def getMapunitFeaturesForBoundingBox(config, outputDir, bbox, tileBbox=False, t_
         for result in results:
             outFiles.append(result.get())
     
+        pool.close()
+        pool.join()
+    
     # Join tiled data if necessary
     if len(outFiles) > 1:
         sys.stderr.write('Merging tiled features to single GeoJSON file...')

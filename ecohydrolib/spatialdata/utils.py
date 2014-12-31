@@ -65,7 +65,7 @@ WGS84_EPSG_STR = 'EPSG:4326'
 NORTH = 0.0
 EAST = 90.0
 
-BBOX_TILE_DIVISOR = 8.0
+BBOX_TILE_DIVISOR = 16.0
 
 OGR_SHAPEFILE_DRIVER_NAME = 'ESRI Shapefile'
 OGR_GEOJSON_DRIVER_NAME = 'GeoJSON'
@@ -508,7 +508,8 @@ def mergeFeatureLayersToGeoJSON(config, outputDir, featureFilepaths, outLayerNam
     geoJSONOutName = "%s.geojson" % (outLayerName,)
     geoJSONOutPath = os.path.join(outputDir, geoJSONOutName)
     if overwrite:
-        os.unlink(geoJSONOutPath)
+        if os.path.exists(geoJSONOutPath):
+            os.unlink(geoJSONOutPath)
     ogrCommand = "%s -f 'GeoJSON' %s %s -dialect sqlite -sql \"SELECT DISTINCT geometry, * FROM unionLayer\"" % (pathToOgrCmd, geoJSONOutPath, vFeatureFilepath)
     returnCode = os.system(ogrCommand)
     if returnCode != 0:
