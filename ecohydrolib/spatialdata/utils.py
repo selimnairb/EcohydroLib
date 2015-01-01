@@ -468,7 +468,9 @@ def convertGeoJSONToShapefile(config, outputDir, geoJSONFilepath, shapefileName,
 
 def mergeFeatureLayers(config, outputDir, featureFilepaths, outLayerName,
                        outFormat='GeoJSON',
-                       keepOriginals=False, overwrite=False):
+                       keepOriginals=False, 
+                       t_srs='EPSG:4326',
+                       overwrite=False):
     """ Combine vector feature files readable by OGR into a single feature layer.
     
         @param config A Python ConfigParser containing the section 'GDAL/OGR' and option 'PATH_OF_OGR2OGR'
@@ -477,9 +479,10 @@ def mergeFeatureLayers(config, outputDir, featureFilepaths, outLayerName,
         @param outLayerName String representing the name of the merged GeoJSON feature.  Extension '.geojson' will be added.
         @param outFormat String representing output format supported by OGR listed in OGR_DRIVERS
         @param keepOriginals Boolean, if True, original feature layers will be retained (otherwise they will be deleted)
+        @param t_srs String representing the spatial reference system of the output feature, of the form 'EPSG:XXXX'
         @param overwrite Boolean, if True any existing files will be overwritten
         
-        @return String representing the absolute path of the GeoJSON file written
+        @return String representing the absolute path of the single feature file written
         
         @exception Exception if OGR returned an error.
     """
@@ -514,7 +517,7 @@ def mergeFeatureLayers(config, outputDir, featureFilepaths, outLayerName,
     if overwrite:
         if os.path.exists(outPath):
             os.unlink(outPath)
-    ogrCommand = "%s -f '%s' %s %s -dialect sqlite -sql \"SELECT DISTINCT geometry, * FROM unionLayer\"" % (pathToOgrCmd, outFormat, outPath, vFeatureFilepath)
+    ogrCommand = "%s -f '%s' -t_srs %s %s %s -dialect sqlite -sql \"SELECT DISTINCT geometry, * FROM unionLayer\"" % (pathToOgrCmd, outFormat, t_srs, outPath, vFeatureFilepath)
     returnCode = os.system(ogrCommand)
     if returnCode != 0:
         raise Exception("Merge feature layers to single layer command %s returned %d" % (ogrCommand, returnCode))

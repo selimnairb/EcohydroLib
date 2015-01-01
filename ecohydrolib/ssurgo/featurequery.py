@@ -153,10 +153,12 @@ def getMapunitFeaturesForBoundingBox(config, outputDir, bbox, tileBbox=False, t_
     if len(outFiles) > 1:
         sys.stderr.write('Merging tiled features to single shapefile...')
         sys.stderr.flush()
-        shpFilename = mergeFeatureLayers(config, outputDir, outFiles, typeName,
+        shpFilepath = mergeFeatureLayers(config, outputDir, outFiles, typeName,
                                          outFormat=OGR_SHAPEFILE_DRIVER_NAME,
                                          keepOriginals=keepOriginals,
+                                         t_srs=t_srs,
                                          overwrite=overwrite)
+        shpFilename = os.path.basename(shpFilepath)
         sys.stderr.write('done\n')
     else:
         # Convert GeoJSON to shapefile
