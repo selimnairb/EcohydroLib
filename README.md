@@ -4,7 +4,7 @@ EcohydroLib			{#index}
 This software is provided free of charge under the New BSD License. Please see
 the following license information:
 
-Copyright (c) 2013, University of North Carolina at Chapel Hill
+Copyright (c) 2013-2015 University of North Carolina at Chapel Hill
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
