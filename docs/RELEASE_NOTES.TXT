@@ -1,3 +1,7 @@
+# 1.22 - 1/1/2015
+  - Add support for downloading SSURGO soils data for large spatial extents using tiled queries in 
+    GetSSURGOFeaturesForBoundingbox.py
+
 # 1.21 - 12/2/2014
   - Version lock OWSLib to 0.8.6 to work around timeout bug introduced in version 0.8.7.
 
