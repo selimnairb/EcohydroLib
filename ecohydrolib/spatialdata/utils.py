@@ -42,6 +42,7 @@ import os, sys, errno
 from math import sqrt
 import math
 import re
+import ConfigParser
 
 from osgeo.gdalconst import *
 from osgeo import gdal
@@ -369,6 +370,57 @@ def resampleRaster(config, outputDir, inRasterFilepath, outRasterFilename, \
         if returnCode != 0:
             raise Exception("GDAL command %s failed." % (gdalCommand,)) 
 
+
+def rescaleRaster(config, outputDir, inRasterFilepath, outRasterFilename, \
+                  scalar):
+    """ Rescale DN values of raster.
+        
+        @note Output raster will be in LZW-compressed GeoTIFF file.
+        @note Will silently return if output raster already exists.
+    
+        @param config Python ConfigParser containing the section 'GDAL/OGR' and option 'PATH_OF_GDAL_WARP'
+        @param outputDir String representing the absolute/relative path of the directory into which output raster
+            should be written
+        @param inRasterFilepath String representing the path of the input raster
+        @param outRasterFilename String representing the name of the output raster
+        @param scalar Float representing scalar.  Values can run from (-Inf, Inf).
+
+        @exception ConfigParser.NoSectionError
+        @exception ConfigParser.NoOptionError
+        @exception IOError(errno.ENOTDIR) if outputDir is not a directory
+        @exception IOError(errno.EACCESS) if outputDir is not writable
+        @exception ValueError if scalar is not a floating point number
+        @exception Exception if a gdal_calc.py command fails
+    """
+    gdalBase = None
+    try:
+        gdalBase = config.get('GDAL/OGR', 'GDAL_BASE')
+    except ConfigParser.NoOptionError:
+        gdalBase = os.path.dirname(config.get('GDAL/OGR', 'PATH_OF_GDAL_WARP'))
+    
+    gdalCmdPath = os.path.join(gdalBase, 'gdal_calc.py')
+    if not os.access(gdalCmdPath, os.X_OK):
+        raise IOError(errno.EACCES, "The gdalwarp binary at %s is not executable" %
+                      gdalCmdPath)
+    gdalCmdPath = os.path.abspath(gdalCmdPath)
+    
+    if not os.path.isdir(outputDir):
+        raise IOError(errno.ENOTDIR, "Output directory %s is not a directory" % (outputDir,))
+    if not os.access(outputDir, os.W_OK):
+        raise IOError(errno.EACCES, "Not allowed to write to output directory %s" % (outputDir,))
+    outputDir = os.path.abspath(outputDir)
+    
+    scalar = float(scalar)
+    
+    outRasterFilepath = os.path.join(outputDir, outRasterFilename)
+    
+    if not os.path.exists(outRasterFilepath):
+        gdalCommand = "%s -A %s --outfile=%s --type='Float32' --calc='A*%s' --format=GTiff --co='COMPRESS=LZW'" \
+                            % (gdalCmdPath, inRasterFilepath, outRasterFilepath, scalar)
+        #print gdalCommand
+        returnCode = os.system(gdalCommand)
+        if returnCode != 0:
+            raise Exception("GDAL command %s failed." % (gdalCommand,)) 
 
 def convertGMLToShapefile(config, outputDir, gmlFilepath, layerName, t_srs):
     """ Convert a GML file to a shapefile.  Will silently exit if shapefile already exists

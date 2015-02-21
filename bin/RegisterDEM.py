@@ -79,6 +79,7 @@ from ecohydrolib.spatialdata.utils import isValidSrs
 from ecohydrolib.spatialdata.utils import RASTER_RESAMPLE_METHOD
 from ecohydrolib.spatialdata.utils import copyRasterToGeoTIFF
 from ecohydrolib.spatialdata.utils import resampleRaster
+from ecohydrolib.spatialdata.utils import rescaleRaster
 from ecohydrolib.spatialdata.utils import getDimensionsForRaster
 from ecohydrolib.spatialdata.utils import getSpatialReferenceForRaster
 from ecohydrolib.spatialdata.utils import getBoundingBoxForRaster
@@ -103,6 +104,8 @@ parser.add_argument('-t', '--t_srs', dest='t_srs', required=False,
 parser.add_argument('-s', '--resampleMethod', dest='resampleMethod', required=False,
                     choices=RASTER_RESAMPLE_METHOD, default='bilinear',
                     help='Method to use to resample DEM (if necessary). Defaults to bilinear.')
+parser.add_argument('--scale', dest='scale', required=False, type=float,
+                    help='Amount to scale input DEM by')
 args = parser.parse_args()
 cmdline = GenericMetadata.getCommandLine()
 
@@ -157,18 +160,38 @@ demFilepath = os.path.join(context.projectDir, demFilename)
 if os.path.exists(demFilepath):
     os.unlink(demFilepath)
 
+outfileTemp = None
+demFilenameTemp = None
+demFilepathTemp = None
+if args.scale:
+    outfileTemp = "%s_temp" % (outfile,)
+    demFilenameTemp = "%s%stif" % (outfileTemp, os.extsep)
+    demFilepathTemp = os.path.join(context.projectDir, demFilenameTemp)
+
 # Copy the raster in to the project directory (reprojecting if need be)
 if not resample:
     sys.stdout.write("Importing DEM...")
     sys.stdout.flush()
-    copyRasterToGeoTIFF(context.config, context.projectDir, inDEMPath, demFilename)
+    if args.scale:
+        copyRasterToGeoTIFF(context.config, context.projectDir, inDEMPath, demFilenameTemp)
+    else:
+        copyRasterToGeoTIFF(context.config, context.projectDir, inDEMPath, demFilename)
 else:
     sys.stdout.write("Reprojecting DEM from %s to %s, spatial resolution (%.2f, %.2f) to (%.2f, %.2f)..." % \
                      (s_srs, t_srs, inSpatialMetadata[0], inSpatialMetadata[1],
                       demResolutionX, demResolutionY) )
     sys.stdout.flush()
-    resampleRaster(context.config, context.projectDir, inDEMPath, demFilename,
-                   s_srs, t_srs, demResolutionX, demResolutionY, args.resampleMethod)
+    if args.scale:
+        resampleRaster(context.config, context.projectDir, inDEMPath, demFilenameTemp,
+                       s_srs, t_srs, demResolutionX, demResolutionY, args.resampleMethod)
+    else:
+        resampleRaster(context.config, context.projectDir, inDEMPath, demFilename,
+                       s_srs, t_srs, demResolutionX, demResolutionY, args.resampleMethod)
+
+if args.scale:
+    rescaleRaster(context.config, context.projectDir, demFilepathTemp, demFilename, args.scale)
+    os.unlink(demFilepathTemp)
+
 sys.stdout.write('done\n')
 # Get the bounding box for the DEM
 bbox = getBoundingBoxForRaster(demFilepath)
