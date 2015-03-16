@@ -33,10 +33,10 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 @author Brian Miles <brian_miles@unc.edu>
 """
-import os
-import sys
+import os, sys, errno
 import tempfile
 import shutil
+import ConfigParser
 
 from owslib.wcs import WebCoverageService
 
@@ -58,6 +58,12 @@ COVERAGES = ["{variable}_000_005_EV_N_P_AU_TRN_N_1",  # 0-5cm
              "{variable}_030_060_EV_N_P_AU_TRN_N_10", # 30-60cm
              "{variable}_060_100_EV_N_P_AU_TRN_N_13", # 60-100cm
             ]
+WEIGHTS = [float(5)/float(100),     # 0-5cm
+           float(10)/float(100),    # 5-15cm
+           float(15)/float(100),    # 15-30cm
+           float(30)/float(100),    # 30-60cm
+           float(40)/float(100),    # 60-100cm  
+          ]
 
 # Example URL: http://www.asris.csiro.au/ArcGis/services/TERN/CLY_ACLEP_AU_TRN_N/MapServer/WCSServer?SERVICE=WCS&VERSION=1.0.0&REQUEST=GetCoverage&COVERAGE=CLY_000_005_EV_N_P_AU_TRN_N_1&FORMAT=GeoTIFF&BBOX=147.539,-37.024,147.786,-36.830&RESX=0.000277777777778&RESY=0.000277777777778&CRS=EPSG:4283&RESPONSE_CRS=EPSG:4326&INTERPOLATION=bilinear&Band=1
 # http://www.asris.csiro.au/ArcGis/services/TERN/CLY_ACLEP_AU_TRN_N/MapServer/WCSServer?SERVICE=WCS&REQUEST=GetCoverage&VERSION=1.0.0&COVERAGE=1&FORMAT=GeoTIFF&BBOX=147.539,-37.024,147.786,-36.830&RESX=0.000277777777778&RESY=0.000277777777778&CRS=EPSG:4283&RESPONSE_CRS=EPSG:4326&INTERPOLATION=bilinear&Band=1
@@ -89,11 +95,24 @@ def getSoilsRasterDataForBoundingBox(config, outputDir, bbox,
     """
     
     """
-    import logging
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-    owslib_log = logging.getLogger('owslib')
+    #import logging
+    #logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    #owslib_log = logging.getLogger('owslib')
     # Add formatting and handlers as needed
-    owslib_log.setLevel(logging.DEBUG)
+    #owslib_log.setLevel(logging.DEBUG)
+    
+    # Set-up gdal_calc.py command
+    gdalBase = None
+    try:
+        gdalBase = config.get('GDAL/OGR', 'GDAL_BASE')
+    except ConfigParser.NoOptionError:
+        gdalBase = os.path.dirname(config.get('GDAL/OGR', 'PATH_OF_GDAL_WARP'))
+    
+    gdalCmdPath = os.path.join(gdalBase, 'gdal_calc.py')
+    if not os.access(gdalCmdPath, os.X_OK):
+        raise IOError(errno.EACCES, "The gdal_calc.py binary at %s is not executable" %
+                      gdalCmdPath)
+    gdalCmdPath = os.path.abspath(gdalCmdPath)
     
     tmpdir = tempfile.mkdtemp()
     print(tmpdir)
