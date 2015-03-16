@@ -78,7 +78,13 @@ def _getCoverageIDsForCoverageTitle(wcs, variable):
          
     return coverage_ids
 
-def getSoilsRasterDataForBoundingBox(config, outputDir, bbox, srs='EPSG:4326', fmt=FORMAT_GEOTIFF, overwrite=True):
+def getSoilsRasterDataForBoundingBox(config, outputDir, bbox, 
+                                     crs='EPSG:4326',
+                                     #response_crs='EPSG:4326',
+                                     resx=0.000277777777778,
+                                     resy=0.000277777777778,
+                                     interpolation='bilinear',
+                                     fmt=FORMAT_GEOTIFF, overwrite=False):
     """
     
     """
@@ -95,8 +101,12 @@ def getSoilsRasterDataForBoundingBox(config, outputDir, bbox, srs='EPSG:4326', f
         for c in coverages.keys():
             coverage = coverages[c]
             #coverage = c.format(variable=variable)
-            wcsfp = wcs.getCoverage(identifier=coverage, bbox=bbox, format=fmt)
-            filename = os.path.join(tmpdir, "{coverage}.tif".format(coverage=coverage))
+            wcsfp = wcs.getCoverage(identifier=coverage, bbox=bbox,
+                                    crs=crs,
+                                    resx=resx,
+                                    resy=resy,
+                                    format=fmt)
+            filename = os.path.join(tmpdir, "{coverage}.tif".format(coverage=c))
             f = open(filename, 'wb')
             f.write(wcsfp.read())
             f.close()
