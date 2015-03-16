@@ -39,9 +39,8 @@ import sys
 from ecohydrolib.command.base import Command
 from ecohydrolib.command.exceptions import MetadataException
 from ecohydrolib.command.exceptions import RunException
-
 from ecohydrolib.metadata import GenericMetadata
-
+from ecohydrolib.spatialdata.utils import bboxFromString
 from ecohydrolib.geosciaus.soilwcs import getSoilsRasterDataForBoundingBox
 
 class SoilGridAustralia(Command):
@@ -66,9 +65,9 @@ class SoilGridAustralia(Command):
             raise MetadataException("Metadata in project directory %s does not contain a bounding box" % (self.context.projectDir,))
         if not 'dem_srs' in self.studyArea:
             raise MetadataException("Metadata in project directory %s does not contain a spatial reference system" % (self.context.projectDir,))
-        if not 'dem_res_x' in self.metadata:
+        if not 'dem_res_x' in self.studyArea:
             raise MetadataException("Metadata in project directory %s does not contain a raster X resolution" % (self.context.projectDir,))
-        if not 'dem_res_y' in self.metadata:
+        if not 'dem_res_y' in self.studyArea:
             raise MetadataException("Metadata in project directory %s does not contain a raster Y resolution" % (self.context.projectDir,))    
     
     def run(self, *args, **kwargs):
@@ -81,9 +80,11 @@ class SoilGridAustralia(Command):
         
         self.checkMetadata()
         
+        bbox = bboxFromString(self.studyArea['bbox_wgs84'])
+        
         getSoilsRasterDataForBoundingBox(self.context.config, 
                                          self.context.projectDir,
-                                         self.studyArea['bbox_wgs84'],
+                                         bbox,
                                          crs=self.studyArea['dem_srs'],
                                          #response_crs=self.studyArea['dem_srs'],
                                          resx=self.studyArea['dem_res_x'],

@@ -34,6 +34,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 @author Brian Miles <brian_miles@unc.edu>
 """
 import os
+import sys
 import tempfile
 import shutil
 
@@ -88,8 +89,16 @@ def getSoilsRasterDataForBoundingBox(config, outputDir, bbox,
     """
     
     """
+    import logging
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    owslib_log = logging.getLogger('owslib')
+    # Add formatting and handlers as needed
+    owslib_log.setLevel(logging.DEBUG)
+    
     tmpdir = tempfile.mkdtemp()
     print(tmpdir)
+    
+    bbox = [bbox['minX'], bbox['minY'], bbox['maxX'], bbox['maxY']]
     
     for v in VARIABLE.keys():
         variable = VARIABLE[v]
@@ -98,15 +107,17 @@ def getSoilsRasterDataForBoundingBox(config, outputDir, bbox,
         wcs = WebCoverageService(url, version='1.0.0')
         coverages = _getCoverageIDsForCoverageTitle(wcs, variable)
         
+        outfiles = []
         for c in coverages.keys():
             coverage = coverages[c]
             #coverage = c.format(variable=variable)
             wcsfp = wcs.getCoverage(identifier=coverage, bbox=bbox,
-                                    crs=crs,
+                                    crs='EPSG:4326',
                                     resx=resx,
                                     resy=resy,
                                     format=fmt)
             filename = os.path.join(tmpdir, "{coverage}.tif".format(coverage=c))
+            outfiles.append(filename)
             f = open(filename, 'wb')
             f.write(wcsfp.read())
             f.close()
