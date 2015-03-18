@@ -40,6 +40,8 @@ import ConfigParser
 
 from owslib.wcs import WebCoverageService
 
+from ecohydrolib.spatialdata.utils import resampleRaster
+
 FORMAT_GEOTIFF = 'GeoTIFF'
 MIME_TYPE = {FORMAT_GEOTIFF: 'image/GeoTIFF'}
 
@@ -58,12 +60,24 @@ COVERAGES = ["{variable}_000_005_EV_N_P_AU_TRN_N_1",  # 0-5cm
              "{variable}_030_060_EV_N_P_AU_TRN_N_10", # 30-60cm
              "{variable}_060_100_EV_N_P_AU_TRN_N_13", # 60-100cm
             ]
-WEIGHTS = [float(5)/float(100),     # 0-5cm
-           float(10)/float(100),    # 5-15cm
-           float(15)/float(100),    # 15-30cm
-           float(30)/float(100),    # 30-60cm
-           float(40)/float(100),    # 60-100cm  
-          ]
+
+WEIGHTS = {COVERAGES[0]: float(5)/float(100),     # 0-5cm
+           COVERAGES[1]: float(10)/float(100),    # 5-15cm
+           COVERAGES[2]: float(15)/float(100),    # 15-30cm
+           COVERAGES[3]: float(30)/float(100),    # 30-60cm
+           COVERAGES[4]: float(40)/float(100),    # 60-100cm  
+          }
+
+
+def ordinalToAlpha(ordinal):
+    """
+        Return unicode character ranging from A-Z for ordinal values from 1-26
+    """
+    assert(ordinal >= 1)
+    assert(ordinal <= 26)
+    o = ordinal + 64 # Map to ASCII/UNICODE value for capital letters
+    return unichr(o)
+    
 
 # Example URL: http://www.asris.csiro.au/ArcGis/services/TERN/CLY_ACLEP_AU_TRN_N/MapServer/WCSServer?SERVICE=WCS&VERSION=1.0.0&REQUEST=GetCoverage&COVERAGE=CLY_000_005_EV_N_P_AU_TRN_N_1&FORMAT=GeoTIFF&BBOX=147.539,-37.024,147.786,-36.830&RESX=0.000277777777778&RESY=0.000277777777778&CRS=EPSG:4283&RESPONSE_CRS=EPSG:4326&INTERPOLATION=bilinear&Band=1
 # http://www.asris.csiro.au/ArcGis/services/TERN/CLY_ACLEP_AU_TRN_N/MapServer/WCSServer?SERVICE=WCS&REQUEST=GetCoverage&VERSION=1.0.0&COVERAGE=1&FORMAT=GeoTIFF&BBOX=147.539,-37.024,147.786,-36.830&RESX=0.000277777777778&RESY=0.000277777777778&CRS=EPSG:4283&RESPONSE_CRS=EPSG:4326&INTERPOLATION=bilinear&Band=1
@@ -71,19 +85,21 @@ WEIGHTS = [float(5)/float(100),     # 0-5cm
 # Silt: http://www.asris.csiro.au/ArcGis/services/TERN/SLT_ACLEP_AU_TRN_N/MapServer/WCSServer?SERVICE=WCS&REQUEST=GetCapabilities
 # Sand: http://www.asris.csiro.au/ArcGis/services/TERN/SND_ACLEP_AU_TRN_N/MapServer/WCSServer?SERVICE=WCS&REQUEST=GetCapabilities
 
-def _getCoverageIDsForCoverageTitle(wcs, variable):
+def _getCoverageIDsAndWeightsForCoverageTitle(wcs, variable):
     coverages = wcs.items()
     coverage_ids = {}
+    coverage_weights = {}
     for coverage in coverages:
         #print('id: %s, title %s' % (coverage[0], coverage[1].title))
         id = coverage[0]
         title = coverage[1].title
         for c in COVERAGES:
-            c = c.format(variable=variable)
-            if title == c:
-                coverage_ids[c] = id
+            cov = c.format(variable=variable)
+            if title == cov:
+                coverage_ids[cov] = id
+                coverage_weights[cov] = WEIGHTS[c]
          
-    return coverage_ids
+    return (coverage_ids, coverage_weights)
 
 def getSoilsRasterDataForBoundingBox(config, outputDir, bbox, 
                                      crs='EPSG:4326',
@@ -91,10 +107,14 @@ def getSoilsRasterDataForBoundingBox(config, outputDir, bbox,
                                      resx=0.000277777777778,
                                      resy=0.000277777777778,
                                      interpolation='bilinear',
-                                     fmt=FORMAT_GEOTIFF, overwrite=False):
+                                     fmt=FORMAT_GEOTIFF, 
+                                     overwrite=False):
     """
     
+        @exception Exception if a gdal_calc.py command fails
     """
+    soilPropertyRasters = {}
+    
     #import logging
     #logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
     #owslib_log = logging.getLogger('owslib')
@@ -119,16 +139,19 @@ def getSoilsRasterDataForBoundingBox(config, outputDir, bbox,
     
     bbox = [bbox['minX'], bbox['minY'], bbox['maxX'], bbox['maxY']]
     
+    # For each soil variable, download desired depth layers
     for v in VARIABLE.keys():
         variable = VARIABLE[v]
         url = URL_BASE.format(variable=variable)
 
         wcs = WebCoverageService(url, version='1.0.0')
-        coverages = _getCoverageIDsForCoverageTitle(wcs, variable)
+        (coverages, weights_abs) = _getCoverageIDsAndWeightsForCoverageTitle(wcs, variable)
         
         outfiles = []
+        weights = []
         for c in coverages.keys():
             coverage = coverages[c]
+            weights.append(weights_abs[c])
             #coverage = c.format(variable=variable)
             wcsfp = wcs.getCoverage(identifier=coverage, bbox=bbox,
                                     crs='EPSG:4326',
@@ -140,9 +163,41 @@ def getSoilsRasterDataForBoundingBox(config, outputDir, bbox,
             f = open(filename, 'wb')
             f.write(wcsfp.read())
             f.close()
+        
+        # Compute depth-length weighted-average for each coverage using gdal_calc.py
+        assert(len(outfiles) == len(COVERAGES))
+        gdalCommand = gdalCmdPath
+        
+        soilPropertyName = "soil_avg{var}_rast".format(var=v)
+        soilPropertyFilename = "{name}.tif".format(name=soilPropertyName)
+        soilPropertyFilepathTmp = os.path.join(tmpdir, soilPropertyFilename)
+        soilPropertyFilepath = os.path.join(outputDir, soilPropertyFilename)
+        
+        calcStr = '0' # Identity element for addition
+        for (i, outfile) in enumerate(outfiles):
+            ord = i + 1
+            var_label = ordinalToAlpha(ord)
+            gdalCommand += " -{var} {outfile}".format(var=var_label, outfile=outfile)
+            calcStr += "+({weight}*{var})".format(weight=weights[i],
+                                                  var=var_label)
             
+        gdalCommand += " --calc='{calc}' --outfile={outfile} --type='Float32' --format=GTiff --co='COMPRESS=LZW'".format(calc=calcStr,
+                                                                                                                         outfile=soilPropertyFilepathTmp)
+        
+        #print("GDAL command:\n{0}".format(gdalCommand))
+        returnCode = os.system(gdalCommand)
+        if returnCode != 0:
+            raise Exception("GDAL command %s failed." % (gdalCommand,))     
+    
+        # Resample raster
+        resampleRaster(config, outputDir, soilPropertyFilepathTmp, soilPropertyFilename,
+                       'EPSG:4326', crs, resx, resy)
+    
+        soilPropertyRasters[soilPropertyName] = soilPropertyFilepath
     
     # Clean-up
     #shutil.rmtree(tmpdir)
+    
+    return soilPropertyRasters
         
         

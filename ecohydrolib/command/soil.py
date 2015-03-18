@@ -82,10 +82,10 @@ class SoilGridAustralia(Command):
         
         bbox = bboxFromString(self.studyArea['bbox_wgs84'])
         
-        getSoilsRasterDataForBoundingBox(self.context.config, 
-                                         self.context.projectDir,
-                                         bbox,
-                                         crs=self.studyArea['dem_srs'],
-                                         #response_crs=self.studyArea['dem_srs'],
-                                         resx=self.studyArea['dem_res_x'],
-                                         resy=self.studyArea['dem_res_y'])
+        rasters = getSoilsRasterDataForBoundingBox(self.context.config, 
+                                                   self.context.projectDir,
+                                                   bbox,
+                                                   crs=self.studyArea['dem_srs'],
+                                                   #response_crs=self.studyArea['dem_srs'],
+                                                   resx=self.studyArea['dem_res_x'],
+                                                   resy=self.studyArea['dem_res_y'])
