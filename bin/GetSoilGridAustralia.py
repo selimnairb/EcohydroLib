@@ -63,7 +63,7 @@ if __name__ == "__main__":
     
     exitCode = os.EX_OK
     try: 
-        command.run(verbose=args.verbose)
+        command.run(verbose=args.verbose, overwrite=args.overwrite)
     except CommandException as e:
         print(str(e))
         exitCode = os.EX_DATAERR

@@ -37,22 +37,24 @@ import os, sys, errno
 import tempfile
 import shutil
 import ConfigParser
+from subprocess import *
 
 from owslib.wcs import WebCoverageService
 
+from ecohydrolib.spatialdata.utils import RASTER_RESAMPLE_METHOD
 from ecohydrolib.spatialdata.utils import resampleRaster
 
 FORMAT_GEOTIFF = 'GeoTIFF'
+FORMATS = set([FORMAT_GEOTIFF])
 MIME_TYPE = {FORMAT_GEOTIFF: 'image/GeoTIFF'}
 
-# VARIABLE = {'clay': 'CLY',
-#             'silt': 'SLT',
-#             'sand': 'SND'
-#             }
-
-VARIABLE = {'clay': 'CLY'}
+VARIABLE = {'clay': 'CLY',
+            'silt': 'SLT',
+            'sand': 'SND'
+            }
 
 URL_BASE = "http://www.asris.csiro.au/ArcGis/services/TERN/{variable}_ACLEP_AU_TRN_N/MapServer/WCSServer"
+DC_PUBLISHER = "http://www.clw.csiro.au/aclep/soilandlandscapegrid/"
 
 COVERAGES = ["{variable}_000_005_EV_N_P_AU_TRN_N_1",  # 0-5cm 
              "{variable}_005_015_EV_N_P_AU_TRN_N_4",  # 5-15cm
@@ -102,17 +104,48 @@ def _getCoverageIDsAndWeightsForCoverageTitle(wcs, variable):
     return (coverage_ids, coverage_weights)
 
 def getSoilsRasterDataForBoundingBox(config, outputDir, bbox, 
-                                     crs='EPSG:4326',
-                                     #response_crs='EPSG:4326',
+                                     srs='EPSG:4326',
                                      resx=0.000277777777778,
                                      resy=0.000277777777778,
                                      interpolation='bilinear',
                                      fmt=FORMAT_GEOTIFF, 
-                                     overwrite=False):
+                                     overwrite=False,
+                                     verbose=False,
+                                     outfp=sys.stdout):
     """
+        Download soil property rasters from http://www.clw.csiro.au/aclep/soilandlandscapegrid/
+        For each property, rasters for the first 1-m of the soil profile will be downloaded
+        from which the depth-weighted mean of the property will be calculated and stored in outpufDir
     
+        @param config A Python ConfigParser (not currently used)
+        @param outputDir String representing the absolute/relative path of the directory into which output raster should be written
+        @param bbox Dict representing the lat/long coordinates and spatial reference of the bounding box area
+            for which the raster is to be extracted.  The following keys must be specified: minX, minY, maxX, maxY, srs.
+        @param srs String representing the spatial reference of the raster to be returned.
+        @param resx Float representing the X resolution of the raster(s) to be returned
+        @param resy Float representing the Y resolution of the raster(s) to be returned
+        @param interpolation String representing resampling method to use. Must be one of spatialdatalib.utils.RASTER_RESAMPLE_METHOD.
+        @param fmt String representing format of raster file.  Must be one of FORMATS.
+        @param overwrite Boolean True if existing data should be overwritten
+        @param verbose Boolean True if detailed output information should be printed to outfp
+        @param outfp File-like object to which verbose output should be printed
+    
+        @return A dictionary mapping soil property names to soil property file path and WCS URL, i.e.
+            dict[soilPropertyName] = (soilPropertyFilePath, WCS URL)
+    
+        @exception Exception if interpolation method is not known
+        @exception Exception if fmt is not a known format
+        @exception Exception if output already exists by overwrite is False
         @exception Exception if a gdal_calc.py command fails
     """
+    if interpolation not in RASTER_RESAMPLE_METHOD:
+        raise Exception("Interpolation method {0} is not of a known method {1}".format(interpolation,
+                                                                                       RASTER_RESAMPLE_METHOD))
+    if fmt not in FORMATS:
+        raise Exception("Format {0} is not of a known format {1}".format(fmt, str(FORMATS)))
+    if verbose:
+        outfp.write("Acquiring soils data from {0}\n".format(DC_PUBLISHER))
+    
     soilPropertyRasters = {}
     
     #import logging
@@ -135,13 +168,29 @@ def getSoilsRasterDataForBoundingBox(config, outputDir, bbox,
     gdalCmdPath = os.path.abspath(gdalCmdPath)
     
     tmpdir = tempfile.mkdtemp()
-    print(tmpdir)
+    #print(tmpdir)
     
     bbox = [bbox['minX'], bbox['minY'], bbox['maxX'], bbox['maxY']]
     
     # For each soil variable, download desired depth layers
     for v in VARIABLE.keys():
         variable = VARIABLE[v]
+        
+        soilPropertyName = "soil_raster_pct{var}".format(var=v)
+        soilPropertyFilename = "{name}.tif".format(name=soilPropertyName)
+        soilPropertyFilepathTmp = os.path.join(tmpdir, soilPropertyFilename)
+        soilPropertyFilepath = os.path.join(outputDir, soilPropertyFilename)
+        
+        if verbose:
+            outfp.write("Getting attribute {0} ...\n".format(soilPropertyName))
+        
+        delete = False
+        if os.path.exists(soilPropertyFilepath):
+            if not overwrite:
+                raise Exception("File {0} already exists, and overwrite is false".format(soilPropertyFilepath))
+            else:
+                delete = True
+        
         url = URL_BASE.format(variable=variable)
 
         wcs = WebCoverageService(url, version='1.0.0')
@@ -155,7 +204,7 @@ def getSoilsRasterDataForBoundingBox(config, outputDir, bbox,
             #coverage = c.format(variable=variable)
             wcsfp = wcs.getCoverage(identifier=coverage, bbox=bbox,
                                     crs='EPSG:4326',
-                                    resx=resx,
+                                    resx=resx, # their WCS seems to accept resx, resy in meters
                                     resy=resy,
                                     format=fmt)
             filename = os.path.join(tmpdir, "{coverage}.tif".format(coverage=c))
@@ -168,11 +217,6 @@ def getSoilsRasterDataForBoundingBox(config, outputDir, bbox,
         assert(len(outfiles) == len(COVERAGES))
         gdalCommand = gdalCmdPath
         
-        soilPropertyName = "soil_avg{var}_rast".format(var=v)
-        soilPropertyFilename = "{name}.tif".format(name=soilPropertyName)
-        soilPropertyFilepathTmp = os.path.join(tmpdir, soilPropertyFilename)
-        soilPropertyFilepath = os.path.join(outputDir, soilPropertyFilename)
-        
         calcStr = '0' # Identity element for addition
         for (i, outfile) in enumerate(outfiles):
             ord = i + 1
@@ -182,21 +226,30 @@ def getSoilsRasterDataForBoundingBox(config, outputDir, bbox,
                                                   var=var_label)
             
         gdalCommand += " --calc='{calc}' --outfile={outfile} --type='Float32' --format=GTiff --co='COMPRESS=LZW'".format(calc=calcStr,
-                                                                                                                         outfile=soilPropertyFilepathTmp)
-        
+                                                                                                                         outfile=soilPropertyFilepathTmp)     
         #print("GDAL command:\n{0}".format(gdalCommand))
-        returnCode = os.system(gdalCommand)
-        if returnCode != 0:
-            raise Exception("GDAL command %s failed." % (gdalCommand,))     
+        process = Popen(gdalCommand, cwd=outputDir, shell=True,
+                        stdout=PIPE, stderr=PIPE)
+        (process_stdout, process_stderr) = process.communicate()
+        if process.returncode != 0:
+            raise Exception("GDAL command {0} failed, returning {1}\nstdout:\n{2}\nstderr:\n{3}\n.".format(gdalCommand, 
+                                                                                                           process.returncode,
+                                                                                                           process_stdout,
+                                                                                                           process_stderr))
+        if verbose:
+            outfp.write(process_stdout)
+            outfp.write(process_stderr)
     
         # Resample raster
+        if delete:
+            os.unlink(soilPropertyFilepath)
         resampleRaster(config, outputDir, soilPropertyFilepathTmp, soilPropertyFilename,
-                       'EPSG:4326', crs, resx, resy)
+                       'EPSG:4326', srs, resx, resy, resampleMethod=interpolation)
     
-        soilPropertyRasters[soilPropertyName] = soilPropertyFilepath
+        soilPropertyRasters[soilPropertyName] = (soilPropertyFilepath, wcs.url)
     
     # Clean-up
-    #shutil.rmtree(tmpdir)
+    shutil.rmtree(tmpdir)
     
     return soilPropertyRasters
         

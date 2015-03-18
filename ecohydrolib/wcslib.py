@@ -65,6 +65,13 @@ def getRasterForBoundingBox(config, outputDir, outFilename, host, urlProto, mime
         @param srs String representing the spatial reference of the raster to be returned.
         @param format String representing the MIME type of the raster format to be returned.  Must be a value listed in 
             SUPPORTED_FORMATS
+        @param response_srs String representing the spatial reference of the raster to be returned.  
+            Present for compatibility purposes and is ignored; only srs is used.
+        @param store String present for compatibility with WCS4DEM.
+        @param resx Float representing the X resolution of the raster(s) to be returned
+        @param resy Float representing the Y resolution of the raster(s) to be returned
+        @param interpolation String representing interpolation method.
+            
         @param overwrite Boolean value indicating whether or not the file indicated by filename should be overwritten.
             If False and filename exists, IOError exception will be thrown with errno.EEXIST
     

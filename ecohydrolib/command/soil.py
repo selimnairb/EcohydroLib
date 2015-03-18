@@ -39,8 +39,12 @@ import sys
 from ecohydrolib.command.base import Command
 from ecohydrolib.command.exceptions import MetadataException
 from ecohydrolib.command.exceptions import RunException
+
 from ecohydrolib.metadata import GenericMetadata
+from ecohydrolib.metadata import AssetProvenance
+
 from ecohydrolib.spatialdata.utils import bboxFromString
+from ecohydrolib.geosciaus import soilwcs
 from ecohydrolib.geosciaus.soilwcs import getSoilsRasterDataForBoundingBox
 
 class SoilGridAustralia(Command):
@@ -75,17 +79,41 @@ class SoilGridAustralia(Command):
         
         Arguments:
         verbose -- boolean    Produce verbose output. Default: False.
+        overwrite -- boolean    Overwrite existing output.  Default: False.
         """
         verbose = kwargs.get('verbose', False)
+        overwrite = kwargs.get('overwrite', False)
         
         self.checkMetadata()
         
         bbox = bboxFromString(self.studyArea['bbox_wgs84'])
         
-        rasters = getSoilsRasterDataForBoundingBox(self.context.config, 
-                                                   self.context.projectDir,
-                                                   bbox,
-                                                   crs=self.studyArea['dem_srs'],
-                                                   #response_crs=self.studyArea['dem_srs'],
-                                                   resx=self.studyArea['dem_res_x'],
-                                                   resy=self.studyArea['dem_res_y'])
+        try: 
+            rasters = getSoilsRasterDataForBoundingBox(self.context.config, 
+                                                       self.context.projectDir,
+                                                       bbox,
+                                                       srs=self.studyArea['dem_srs'],
+                                                       resx=self.studyArea['dem_res_x'],
+                                                       resy=self.studyArea['dem_res_y'],
+                                                       overwrite=overwrite,
+                                                       verbose=verbose,
+                                                       outfp=self.outfp)
+        except Exception as e:
+            raise RunException(e)
+        
+        # Write metadata entries
+        cmdline = GenericMetadata.getCommandLine()
+        for attr in rasters.keys():
+            (filepath, url) = rasters[attr]
+            filename = os.path.basename(filepath)
+            asset = AssetProvenance(GenericMetadata.MANIFEST_SECTION)
+            asset.name = attr
+            asset.dcIdentifier = filename
+            asset.dcSource = url
+            asset.dcTitle = attr
+            asset.dcPublisher = soilwcs.DC_PUBLISHER
+            asset.dcDescription = cmdline
+            asset.writeToMetadata(self.context)
+            
+        # Write processing history
+        GenericMetadata.appendProcessingHistoryItem(self.context, cmdline)
