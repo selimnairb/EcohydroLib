@@ -1,3 +1,8 @@
+# 1.23 - 3/18/2015
+  - Add --scale option to RegisterDEM command to allow elevation values to be converted to
+    different units
+  - Add GetSoilGridAustralia command to download raster soils data
+
 # 1.22 - 1/1/2015
   - Add support for downloading SSURGO soils data for large spatial extents using tiled queries in 
     GetSSURGOFeaturesForBoundingbox.py
