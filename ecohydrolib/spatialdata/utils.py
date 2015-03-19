@@ -43,6 +43,7 @@ from math import sqrt
 import math
 import re
 import ConfigParser
+from subprocess import *
 
 from osgeo.gdalconst import *
 from osgeo import gdal
@@ -74,6 +75,7 @@ OGR_DRIVERS = {OGR_SHAPEFILE_DRIVER_NAME: 'shp',
                OGR_GEOJSON_DRIVER_NAME: 'geojson'}
 
 EPSG_RE = re.compile('^epsg:\d+$')
+GDAL_VERSION_RE = re.compile('^GDAL\s(\d{1,2})\.(\d{1,2})\.(\d{1,2}),\sreleased\s\d{4}/\d{2}/\d{2}\s*$')
 
 def _readImageGDAL(filePath):
     ds = gdal.Open(filePath, GA_ReadOnly)
@@ -398,6 +400,27 @@ def rescaleRaster(config, outputDir, inRasterFilepath, outRasterFilename, \
     except ConfigParser.NoOptionError:
         gdalBase = os.path.dirname(config.get('GDAL/OGR', 'PATH_OF_GDAL_WARP'))
     
+    # Get GDAL version
+    gdalVersionCommand = config.get('GDAL/OGR', 'PATH_OF_GDAL_WARP') + ' --version'
+    process = Popen(gdalVersionCommand, shell=True,
+                    stdout=PIPE, stderr=PIPE)
+    (process_stdout, process_stderr) = process.communicate()
+    if process.returncode != 0:
+        raise Exception("Unable to get GDAL version using {0} which, returned {1}\nstdout:\n{2}\nstderr:\n{3}\n.".format(gdalVersionCommand, 
+                                                                                                                         process.returncode,
+                                                                                                                         process_stdout,
+                                                                                                                         process_stderr))
+    m = GDAL_VERSION_RE.match(process_stdout)
+    if not m:
+        raise Exception("Unable to determine GDAL version, command returned: {0}".format(process_stdout))
+    major_version = int(m.group(1))
+    minor_version = int(m.group(2))
+    gdalCalcCOSupported = True
+    if major_version < 2:
+        if minor_version < 10:
+            # gdal_calc.py didn't support --co options until GDAL 1.10
+            gdalCalcCOSupported = False
+    
     gdalCmdPath = os.path.join(gdalBase, 'gdal_calc.py')
     if not os.access(gdalCmdPath, os.X_OK):
         raise IOError(errno.EACCES, "The gdalwarp binary at %s is not executable" %
@@ -415,8 +438,10 @@ def rescaleRaster(config, outputDir, inRasterFilepath, outRasterFilename, \
     outRasterFilepath = os.path.join(outputDir, outRasterFilename)
     
     if not os.path.exists(outRasterFilepath):
-        gdalCommand = "%s -A %s --outfile=%s --type='Float32' --calc='A*%s' --format=GTiff --co='COMPRESS=LZW'" \
+        gdalCommand = "%s -A %s --outfile=%s --type='Float32' --calc='A*%s' --format=GTiff" \
                             % (gdalCmdPath, inRasterFilepath, outRasterFilepath, scalar)
+        if gdalCalcCOSupported:
+            gdalCommand += " --co='COMPRESS=LZW'"
         #print gdalCommand
         returnCode = os.system(gdalCommand)
         if returnCode != 0:
