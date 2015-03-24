@@ -51,6 +51,9 @@ Pre conditions
    dem_rows
    dem_srs
 
+3. The following metadata entry(ies) must be present in the manifest section of the metadata associated with the project directory:
+   dem
+
 Post conditions
 ---------------
 1. Will write the following entry(ies) to the manifest section of metadata associated with the project directory:
@@ -82,6 +85,7 @@ from ecohydrolib.spatialdata.utils import copyRasterToGeoTIFF
 from ecohydrolib.spatialdata.utils import resampleRaster
 from ecohydrolib.spatialdata.utils import getDimensionsForRaster
 from ecohydrolib.spatialdata.utils import getSpatialReferenceForRaster
+from ecohydrolib.spatialdata.utils import extractTileFromRasterByRasterExtent
 
 # Handle command line options
 parser = argparse.ArgumentParser(description='Register raster dataset with project')
@@ -102,6 +106,8 @@ parser.add_argument('--force', dest='force', required=False, action='store_true'
                     help='Force registry of raster if extent does not match DEM.')
 parser.add_argument('--noresample', dest='noresample', required=False, action='store_true',
                     help='Do not resample raster if its resolution differs from DEM. Will still resample if raster is not in the same spatial reference as DEM.')
+parser.add_argument('--clip', dest='clip', required=False, action='store_true',
+                    help='Clip raster to DEM extent.  Will re-sample raster using method specified by resamplingMethod option')
 parser.add_argument('-b', '--publisher', dest='publisher', required=False,
                     help="The publisher of the raster, if not supplied 'SELF PUBLISHED' will be used")
 args = parser.parse_args()
@@ -165,23 +171,31 @@ if (rasterSrs != srs):
     resample = True
 elif (not args.noresample) and ( (rasterX != demResolutionX) or (rasterY != demResolutionY) ):
     resample = True
-    
-if resample:
-    # Reproject raster, copying into project directory in the process
-    processingNotes = "Resampling %s raster from %s to %s, spatial resolution (%.2f, %.2f) to (%.2f, %.2f)" % \
-        (args.type, rasterSrs, srs, rasterX, rasterX,
-         demResolutionX, demResolutionY) 
-    sys.stdout.write( textwrap.fill("%s..." % (processingNotes,) ) )
-    resampleRaster(context.config, context.projectDir, inRasterPath, rasterFilepath, \
-                   s_srs=None, t_srs=srs, \
-                   trX=demResolutionX, trY=demResolutionY, \
-                   resampleMethod=args.resampleMethod)
+
+if args.clip:
+    processingNotes = "Clipping %s raster %s to DEM extent" % (args.type, inRasterPath)
+    manifest = GenericMetadata.readManifestEntries(context)
+    demFilename = manifest['dem']
+    demFilepath = os.path.join(context.projectDir, demFilename)
+    demFilepath = os.path.abspath(demFilepath)
+    extractTileFromRasterByRasterExtent(context.config, context.projectDir, demFilepath, inRasterPath, rasterFilepath, args.resampleMethod)
 else:
-    # Copy the raster in to the project directory
-    processingNotes = "Importing %s raster from %s without resampling" % (args.type, inRasterPath)
-    sys.stdout.write( textwrap.fill("%s..." % (processingNotes,) ) )
-    sys.stdout.flush()
-    copyRasterToGeoTIFF(context.config, context.projectDir, inRasterPath, rasterFilename)
+    if resample:
+        # Reproject raster, copying into project directory in the process
+        processingNotes = "Resampling %s raster from %s to %s, spatial resolution (%.2f, %.2f) to (%.2f, %.2f)" % \
+            (args.type, rasterSrs, srs, rasterX, rasterX,
+             demResolutionX, demResolutionY) 
+        sys.stdout.write( textwrap.fill("%s..." % (processingNotes,) ) )
+        resampleRaster(context.config, context.projectDir, inRasterPath, rasterFilepath, \
+                       s_srs=None, t_srs=srs, \
+                       trX=demResolutionX, trY=demResolutionY, \
+                       resampleMethod=args.resampleMethod)
+    else:
+        # Copy the raster in to the project directory
+        processingNotes = "Importing %s raster from %s without resampling" % (args.type, inRasterPath)
+        sys.stdout.write( textwrap.fill("%s..." % (processingNotes,) ) )
+        sys.stdout.flush()
+        copyRasterToGeoTIFF(context.config, context.projectDir, inRasterPath, rasterFilename)
 sys.stdout.write('done\n')
 
 # Make sure extent of resampled raster is the same as the extent of the DEM
