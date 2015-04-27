@@ -35,6 +35,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 import os
 import sys
+import traceback
 
 from ecohydrolib.command.base import Command
 from ecohydrolib.command.exceptions import MetadataException
@@ -75,7 +76,7 @@ class SoilGridAustralia(Command):
             raise MetadataException("Metadata in project directory %s does not contain a raster Y resolution" % (self.context.projectDir,))    
     
     def run(self, *args, **kwargs):
-        """ Multiple worldfiles, one worldfile for each subbasin delineated. 
+        """ Run the command: Acquire Australian soils data. 
         
         Arguments:
         verbose -- boolean    Produce verbose output. Default: False.
@@ -99,6 +100,7 @@ class SoilGridAustralia(Command):
                                                        verbose=verbose,
                                                        outfp=self.outfp)
         except Exception as e:
+            traceback.print_exc(file=self.outfp)
             raise RunException(e)
         
         # Write metadata entries

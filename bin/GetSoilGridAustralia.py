@@ -38,6 +38,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import sys
 import os
 import argparse
+import traceback
 
 from ecohydrolib.command.exceptions import *
 from ecohydrolib.command.soil import SoilGridAustralia
@@ -65,7 +66,7 @@ if __name__ == "__main__":
     try: 
         command.run(verbose=args.verbose, overwrite=args.overwrite)
     except CommandException as e:
-        print(str(e))
+        traceback.print_exc(file=sys.stderr)
         exitCode = os.EX_DATAERR
     
     sys.exit(exitCode)
