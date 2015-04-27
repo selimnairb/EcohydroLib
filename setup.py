@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='ecohydrolib',
-      version='1.24',
+      version='1.25-dev',
       description='Libraries and command-line scripts for performing ecohydrology data preparation workflows.',
       long_description=readme(),
       classifiers=[
@@ -41,7 +41,8 @@ setup(name='ecohydrolib',
         'owslib>=0.8.12',
         'oset',
         'httplib2',
-        'shapely'
+        'shapely',
+        'requests'
       ],
       scripts=['bin/DumpClimateStationInfo.py',
                'bin/DumpMetadataToiRODSXML.py',
@@ -59,6 +60,7 @@ setup(name='ecohydrolib',
                'bin/GetNLCDForDEMExtent.py',
                'bin/GetSoilGridAustralia.py',
                'bin/GetSSURGOFeaturesForBoundingbox.py',
+               'bin/GetUSGSDEMForBoundingbox.py',
                'bin/RegisterDEM.py',
                'bin/RegisterGage.py',
                'bin/RegisterRaster.py',

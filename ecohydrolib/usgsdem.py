@@ -36,35 +36,65 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #from __future__ import division
 import os, errno
 import sys
+import shutil
 from math import floor, ceil
+import xml.sax
+import urlparse
 import socket
 import httplib
+import tempfile
 import textwrap
 
 from pyproj import Proj
 
+import requests
+
+from ecohydrolib.spatialdata.utils import resampleRaster
+from ecohydrolib.spatialdata.utils import rescaleRaster
 from ecohydrolib.spatialdata.utils import deleteGeoTiff
 
 
-_BUFF_LEN = 4096 * 10
+_BUFF_LEN = 4096 * 100
 
 HOST = 'cida-test.er.usgs.gov'
 URL_PROTO = "/nhdplus/geoserver/ows?service=WCS&version=1.1.1&request=GetCoverage&identifier={coverage}&boundingBox={x1},{y1},{x2},{y2},urn:ogc:def:crs:EPSG::5070&gridBaseCRS=urn:ogc:def:crs:EPSG::5070&gridOffsets={xoffset},{yoffset}&format=image/tiff&store=true"
 
+RASTER_RESAMPLE_METHOD = ['bilinear', 'cubic', 'cubicspline']
+DEFAULT_COVERAGE = 'NED'
 COVERAGES = {   'NHDPlus_hydroDEM':
-                {'grid_origin': [-2356109.9999999995, 3506249.9999999967],
+                {'srs': 'EPSG:5070',
+                 'grid_origin': [-2356109.9999999995, 3506249.9999999967],
                  'grid_offset': [30.000000000000245, -30.00000000000047],
                  'grid_extent': [2419274.9999999995, 186285.00000000186]},
                 'NED':
-                {'grid_origin': [-2470950.0000000005, 3621360.000000002],
+                {'srs': 'EPSG:5070',
+                 'grid_origin': [-2470950.0000000005, 3621360.000000002],
                  'grid_offset': [30.0, -30.0],
                  'grid_extent': [2258235.0000000377, 209654.99999994505]}
              }
 
-CONTENT_TYPE_ERRORS = ['application/xml']
+CONTENT_TYPE_ERRORS = ['text/html']
+
+
+class USGSDEMCoverageHandler(xml.sax.ContentHandler):
+    def __init__(self):
+        self.in_coverage = False
+        self.coverage_url = None
+    def startElement(self, name, attrs):
+        if not self.in_coverage:
+            if name.lower() == 'wcs:coverage':
+                self.in_coverage = True
+                return
+        else:
+            if name.lower() == 'ows:reference':
+                if not 'xlink:href' in attrs:
+                    raise xml.sax.SAXParseException('xlink:href attribute not found in ows:reference element')
+                self.coverage_url = attrs['xlink:href']
+                return
 
 def getDEMForBoundingBox(config, outputDir, outFilename, bbox, srs, coverage='NHDPlus_hydroDEM', 
-                         resx=None, resy=None, interpolation=None, overwrite=True):
+                         resx=None, resy=None, interpolation='bilinear', scale=1.0, overwrite=True,
+                         verbose=False, outfp=sys.stdout):
     """ Fetch U.S. 1/3 arcsecond DEM data hosted by U.S. Geological Survey using OGC WCS 1.1.1 query.
     
         @note Adapted from code provided by dblodgett@usgs.gov.
@@ -78,12 +108,16 @@ def getDEMForBoundingBox(config, outputDir, outFilename, bbox, srs, coverage='NH
         @param coverage String representing the raster source from which to get the raster coverage.  Must be one of: NHDPlus_hydroDEM, NED
         @param resx Float representing the X resolution of the raster(s) to be returned
         @param resy Float representing the Y resolution of the raster(s) to be returned
-        @param interpolation String representing interpolation method.
+        @param interpolation String representing interpolation method.  Must be one of RASTER_RESAMPLE_METHOD.  Defaults to 'bilinear'.
+        @param scale Float representing factor by which to scale elevation data.  Defaults to 1.0.
         @param overwrite Boolean value indicating whether or not the file indicated by filename should be overwritten.
             If False and filename exists, IOError exception will be thrown with errno.EEXIST
+        @param verbose Boolean True if detailed output information should be printed to outfp
+        @param outfp File-like object to which verbose output should be printed
     
         @raise IOError if outputDir is not a writable directory
         @raise IOError if outFilename already exists and overwrite is False (see above)
+        @raise Exception if there was an error making the WCS request
     
         @return Tuple(True if raster data were fetched and False if not, URL of raster fetched)
     """
@@ -94,6 +128,7 @@ def getDEMForBoundingBox(config, outputDir, outFilename, bbox, srs, coverage='NH
     assert('maxX' in bbox)
     assert('maxY' in bbox)
     assert('srs' in bbox)
+    assert(scale > 0.0)
     
     if not os.path.isdir(outputDir):
         raise IOError(errno.ENOTDIR, "Output directory %s is not a directory" % (outputDir,))
@@ -103,19 +138,24 @@ def getDEMForBoundingBox(config, outputDir, outFilename, bbox, srs, coverage='NH
     
     outFilepath = os.path.join(outputDir, outFilename)
     
+    deleteOldfile = False
     if os.path.exists(outFilepath):
         if overwrite: 
-            deleteGeoTiff(outFilepath)
+            deleteOldfile = True
         else:
             raise IOError(errno.EEXIST, "Raster file %s already exists" % outFilepath)
-    
-    #crs = bbox['srs']
-    #bboxStr = "%f,%f,%f,%f" % (bbox['minX'], bbox['minY'], bbox['maxX'], bbox['maxY'])
-    
+     
     cov = COVERAGES[coverage]
     grid_origin = cov['grid_origin']
     grid_offset = cov['grid_offset']
     grid_extent = cov['grid_extent']
+    s_srs = cov['srs']
+    
+    if resx is None:
+        resx = abs(grid_offset[0])
+    if resy is None:
+        resy = abs(grid_offset[1])
+    t_srs = srs
 
     # For requests, grid cell centers are used. Need to add half the grid_offset to the grid_origin
     grid_origin_0 = grid_origin[0] + grid_offset[0] / 2.0
@@ -144,7 +184,91 @@ def getDEMForBoundingBox(config, outputDir, outFilename, bbox, srs, coverage='NH
                            xoffset=grid_offset[0], yoffset=grid_offset[1])
     urlFetched = "http://%s%s" % (HOST, url)
 
-    print urlFetched
+    if verbose:
+        outfp.write("Acquiring DEM data from {0} ...\n".format(urlFetched))
+
+    # Make initial request, which will return the URL of our clipped coverage
+    r = requests.get(urlFetched)
+    if r.status_code != 200:
+        raise Exception("Error fetching {url}, HTTP status code was {code} {reason}".format(urlFetched,
+                                                                                            r.status_code,
+                                                                                            r.reason))
+    usgs_dem_coverage_handler = USGSDEMCoverageHandler()
+    xml.sax.parseString(r.text, usgs_dem_coverage_handler)
+    coverage_url = usgs_dem_coverage_handler.coverage_url
+    if coverage_url is None:
+        raise Exception("Unable to deteremine coverage URL from WCS server response.  Response text was: {0}".format(r.text))
+    parsed_coverage_url = urlparse.urlparse(coverage_url)
     
+    if verbose:
+        outfp.write("Downloading DEM coverage from {0} ...\n".format(coverage_url))
+    
+    # Download coverage to tempfile
+    tmp_dir = tempfile.mkdtemp()
+    tmp_cov_name = os.path.join(tmp_dir, 'usgswcsdemtmp')
+    tmp_out = open(tmp_cov_name, mode='w+b')
+    
+    conn = httplib.HTTPConnection(parsed_coverage_url.netloc)
+    try:
+        conn.request('GET', parsed_coverage_url.path)
+        res = conn.getresponse(buffering=True)
+    except socket.error as e:
+        msg = "Encountered the following error when trying to read raster from %s. Error: %s.  Please try again later or contact the developer." % \
+            (urlFetched, str(e) )
+        raise Exception(msg)
+  
+    if 200 != res.status:
+        msg = "HTTP response %d %s encountered when querying %s.  Please try again later or contact the developer." % \
+            (res.status, res.reason, urlFetched)
+        raise Exception(msg) 
+     
+    contentType = res.getheader('Content-Type')
+    
+    mimeType = 'image/tiff'
+    if contentType.startswith(mimeType):
+        # The data returned were of the type expected, read the data
+        data = res.read(_BUFF_LEN)
+        if data: 
+            dataFetched = True
+            while data:
+                tmp_out.write(data)
+                data = res.read(_BUFF_LEN)
+            tmp_out.close()
+    elif contentType.startswith(CONTENT_TYPE_ERRORS):
+        # Read the error and print to stderr
+        msg = "The following error was encountered reading WCS coverage URL %s\n\n" %\
+            (coverage_url, )
+        data = res.read(_BUFF_LEN)
+        while data:
+            msg += data 
+        raise Exception(msg)
+    else:
+        msg = "Query for raster from URL %s returned content type %s, was expecting type %s.  Operation failed." % \
+            (coverage_url, contentType, mimeType)
+        raise Exception(msg)
+
+    # Rescale raster values if requested        
+    if scale != 1.0:
+        # Rescale values in raster
+        if verbose:
+            outfp.write("Rescaling raster values by factor {0}".format(scale))
+        rescale_out = os.path.basename("{0}_rescale".format(tmp_cov_name))
+        rescaleRaster(config, tmp_dir, tmp_cov_name, rescale_out, scale)
+        tmp_cov_name = os.path.join(tmp_dir, rescale_out)
+    
+    # Re-project to desired coordinate system
+    if deleteOldfile:
+        deleteGeoTiff(outFilepath)
+    
+    if verbose:
+        outfp.write("Resampling raster from {s_srs} to {t_srs} with X resolution {resx} and Y resolution {resy}\n".format(s_srs=s_srs,
+                                                                                                                          t_srs=t_srs,
+                                                                                                                          resx=resx,
+                                                                                                                          resy=resy))
+    resampleRaster(config, outputDir, tmp_cov_name,  outFilename,
+                   s_srs, t_srs, resx, resy, interpolation)
+    
+    # Delete temp directory
+    shutil.rmtree(tmp_dir)
         
     return ( dataFetched, urlFetched )
