@@ -46,6 +46,7 @@ import tempfile
 import textwrap
 
 from pyproj import Proj
+from pyproj import transform
 
 import requests
 
@@ -57,17 +58,18 @@ from ecohydrolib.spatialdata.utils import deleteGeoTiff
 _BUFF_LEN = 4096 * 100
 
 HOST = 'cida-test.er.usgs.gov'
-URL_PROTO = "/nhdplus/geoserver/ows?service=WCS&version=1.1.1&request=GetCoverage&identifier={coverage}&boundingBox={x1},{y1},{x2},{y2},urn:ogc:def:crs:EPSG::5070&gridBaseCRS=urn:ogc:def:crs:EPSG::5070&gridOffsets={xoffset},{yoffset}&format=image/tiff&store=true"
+URL_PROTO = "/nhdplus/geoserver/ows?service=WCS&version=1.1.1&request=GetCoverage&identifier={coverage}&boundingBox={x1},{y1},{x2},{y2},urn:ogc:def:crs:{bbox_srs}&gridBaseCRS=urn:ogc:def:crs:EPSG::5070&gridOffsets={xoffset},{yoffset}&format=image/tiff&store=true"
 
+DEFAULT_SRS = 'EPSG:5070'
 RASTER_RESAMPLE_METHOD = ['bilinear', 'cubic', 'cubicspline']
 DEFAULT_COVERAGE = 'NED'
 COVERAGES = {   'NHDPlus_hydroDEM':
-                {'srs': 'EPSG:5070',
+                {'srs': DEFAULT_SRS,
                  'grid_origin': [-2356109.9999999995, 3506249.9999999967],
                  'grid_offset': [30.000000000000245, -30.00000000000047],
                  'grid_extent': [2419274.9999999995, 186285.00000000186]},
                 'NED':
-                {'srs': 'EPSG:5070',
+                {'srs': DEFAULT_SRS,
                  'grid_origin': [-2470950.0000000005, 3621360.000000002],
                  'grid_offset': [30.0, -30.0],
                  'grid_extent': [2258235.0000000377, 209654.99999994505]}
@@ -168,9 +170,18 @@ def getDEMForBoundingBox(config, outputDir, outFilename, bbox, srs, coverage='NH
     grid_extent_0 = grid_origin_0 + grid_offset[0] * x_len
     grid_extent_1 = grid_origin_1 + grid_offset[1] * y_len
     
-    p=Proj(init="EPSG:5070")
-    (x1, y1) = p(bbox['minX'], bbox['minY'])
-    (x2, y2) = p(bbox['maxX'], bbox['maxY'])
+    if t_srs != 'EPSG:4326':
+        # Transform bounding box coords to t_srs
+        p_in = Proj(init='EPSG:4326')
+        p_out = Proj(init=t_srs)
+        (x1, y1) = transform(p_in, p_out, bbox['minX'], bbox['minY'])
+        (x2, y2) = transform(p_in, p_out, bbox['maxX'], bbox['maxY'])
+        bbox_srs = t_srs
+    else:
+        p = Proj(init=DEFAULT_SRS)
+        (x1, y1) = p(bbox['minX'], bbox['minY'])
+        (x2, y2) = p(bbox['maxX'], bbox['maxY'])
+        bbox_srs = DEFAULT_SRS
  
     # Find the number of grid cells from the grid origin to each edge of the request.
     # Multiply by the grid_offset and add the grid origin to get to the request location.
@@ -180,7 +191,7 @@ def getDEMForBoundingBox(config, outputDir, outFilename, bbox, srs, coverage='NH
     yi2 = ceil((y2 - grid_origin_1) / grid_offset[1]) * grid_offset[1] + grid_origin_1
  
     # coverage, crs, bbox, format. May have the following fields: response_srs, store, resx, resy, interpolation
-    url = URL_PROTO.format(coverage=coverage, x1=xi1, y1=yi1, x2=xi2, y2=yi2, 
+    url = URL_PROTO.format(coverage=coverage, x1=xi1, y1=yi1, x2=xi2, y2=yi2, bbox_srs=bbox_srs,
                            xoffset=grid_offset[0], yoffset=grid_offset[1])
     urlFetched = "http://%s%s" % (HOST, url)
 
