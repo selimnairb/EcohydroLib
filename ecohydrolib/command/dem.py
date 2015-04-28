@@ -164,7 +164,11 @@ class USGSWCSDEM(Command):
         asset.dcTitle = "Digital Elevation Model ({0})".format(coverage)
         asset.dcPublisher = 'U.S. Geological Survey'
         asset.dcDescription = cmdline
-        asset.processingNotes = 'Elevation values rescaled from centimeters to meters'
+        asset.processingNotes = "Elevation values rescaled from centimeters to meters. "   
+        asset.processingNotes += "Spatial grid resampled to {srs} with X resolution {xres} and Y resolution {yres}."
+        asset.processingNotes = asset.processingNotes.format(srs=srs,
+                                                             xres=demSrs[0],
+                                                             yres=demSrs[1])
         asset.writeToMetadata(self.context)
             
         # Write processing history
