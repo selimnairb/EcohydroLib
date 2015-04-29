@@ -163,9 +163,6 @@ def getDEMForBoundingBox(config, outputDir, outFilename, bbox, srs, coverage='NH
     grid_origin_0 = grid_origin[0] + grid_offset[0] / 2.0
     grid_origin_1 = grid_origin[1] + grid_offset[1] / 2.0
     
-    x_len = (grid_extent[0] - grid_origin_0) / grid_offset[0]
-    y_len = (grid_extent[1] - grid_origin_1) / grid_offset[1]
-    
     if t_srs != 'EPSG:4326':
         # Transform bounding box coords to t_srs
         p_in = Proj(init='EPSG:4326')
