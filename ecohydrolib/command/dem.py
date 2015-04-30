@@ -61,6 +61,9 @@ class USGSWCSDEM(Command):
     SUPPORTED_COVERAGES = ecohydrolib.usgsdem.COVERAGES.keys()
     DEFAULT_COVERAGE = ecohydrolib.usgsdem.DEFAULT_COVERAGE
     
+    DEFAULT_RASTER_RESAMPLE_METHOD = ecohydrolib.usgsdem.DEFAULT_RASTER_RESAMPLE_METHOD
+    RASTER_RESAMPLE_METHOD = ecohydrolib.usgsdem.RASTER_RESAMPLE_METHOD
+    
     def __init__(self, projectDir, configFile=None, outfp=sys.stdout):
             """ Construct a USGSWCSDEM command.
             Arguments:

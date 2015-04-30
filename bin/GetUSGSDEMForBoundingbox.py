@@ -46,13 +46,14 @@ from ecohydrolib.command.dem import USGSWCSDEM
 
 if __name__ == "__main__":
     # Handle command line options
-    parser = argparse.ArgumentParser(description='Download NHDPlus hydro-conditioned or NED DEM data via USGS-hosted WCS web')
+    parser = argparse.ArgumentParser(description='Download NED DEM data via USGS-hosted WCS web')
     parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                         help='The configuration file. Must define section "GRASS" and option "GISBASE"')
     parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                         help='The directory to which metadata, intermediate, and final files should be saved')
-    parser.add_argument('-d', '--demType', dest='demType', required=False, choices=USGSWCSDEM.SUPPORTED_COVERAGES, default=USGSWCSDEM.DEFAULT_COVERAGE,
-                        help='Source dataset from which DEM tile should be extracted.')
+    parser.add_argument('-s', '--resampleMethod', dest='resampleMethod', required=False,
+                        choices=USGSWCSDEM.RASTER_RESAMPLE_METHOD, default=USGSWCSDEM.DEFAULT_RASTER_RESAMPLE_METHOD,
+                        help="Method to use to resample raster to DEM extent and spatial reference (if necessary). Defaults to '%s'." % (USGSWCSDEM.DEFAULT_RASTER_RESAMPLE_METHOD,) )
     parser.add_argument('-f', '--outfile', dest='outfile', required=False,
                         help='The name of the DEM file to be written.  File extension ".tif" will be added.')
     parser.add_argument('-c', '--demResolution', dest='demResolution', required=False, nargs=2, type=float,
@@ -73,10 +74,11 @@ if __name__ == "__main__":
     
     exitCode = os.EX_OK
     try: 
-        command.run(coverage=args.demType,
+        command.run(coverage=USGSWCSDEM.DEFAULT_COVERAGE,
                     outfile=args.outfile,
                     demResolution=args.demResolution,
                     srs=args.srs,
+                    interpolation=args.resampleMethod,
                     verbose=args.verbose, 
                     overwrite=args.overwrite)
     except CommandException as e:

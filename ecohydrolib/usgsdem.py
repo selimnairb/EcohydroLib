@@ -61,6 +61,7 @@ HOST = 'cida-test.er.usgs.gov'
 URL_PROTO = "/nhdplus/geoserver/ows?service=WCS&version=1.1.1&request=GetCoverage&identifier={coverage}&boundingBox={x1},{y1},{x2},{y2},urn:ogc:def:crs:{bbox_srs}&gridBaseCRS=urn:ogc:def:crs:EPSG::5070&gridOffsets={xoffset},{yoffset}&format=image/tiff&store=true"
 
 DEFAULT_SRS = 'EPSG:5070'
+DEFAULT_RASTER_RESAMPLE_METHOD = 'cubic'
 RASTER_RESAMPLE_METHOD = ['bilinear', 'cubic', 'cubicspline']
 DEFAULT_COVERAGE = 'NED'
 COVERAGES = {   'NHDPlus_hydroDEM':
@@ -94,8 +95,8 @@ class USGSDEMCoverageHandler(xml.sax.ContentHandler):
                 self.coverage_url = attrs['xlink:href']
                 return
 
-def getDEMForBoundingBox(config, outputDir, outFilename, bbox, srs, coverage='NHDPlus_hydroDEM', 
-                         resx=None, resy=None, interpolation='bilinear', scale=1.0, overwrite=True,
+def getDEMForBoundingBox(config, outputDir, outFilename, bbox, srs, coverage=DEFAULT_COVERAGE, 
+                         resx=None, resy=None, interpolation=DEFAULT_RASTER_RESAMPLE_METHOD, scale=1.0, overwrite=True,
                          verbose=False, outfp=sys.stdout):
     """ Fetch U.S. 1/3 arcsecond DEM data hosted by U.S. Geological Survey using OGC WCS 1.1.1 query.
     
@@ -110,7 +111,7 @@ def getDEMForBoundingBox(config, outputDir, outFilename, bbox, srs, coverage='NH
         @param coverage String representing the raster source from which to get the raster coverage.  Must be one of: NHDPlus_hydroDEM, NED
         @param resx Float representing the X resolution of the raster(s) to be returned
         @param resy Float representing the Y resolution of the raster(s) to be returned
-        @param interpolation String representing interpolation method.  Must be one of RASTER_RESAMPLE_METHOD.  Defaults to 'bilinear'.
+        @param interpolation String representing interpolation method.  Must be one of RASTER_RESAMPLE_METHOD.  Defaults to DEFAULT_RASTER_RESAMPLE_METHOD.
         @param scale Float representing factor by which to scale elevation data.  Defaults to 1.0.
         @param overwrite Boolean value indicating whether or not the file indicated by filename should be overwritten.
             If False and filename exists, IOError exception will be thrown with errno.EEXIST
