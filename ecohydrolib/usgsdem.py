@@ -167,6 +167,13 @@ def getDEMForBoundingBox(config, outputDir, outFilename, bbox, srs, coverage=DEF
     p = Proj(init=DEFAULT_SRS)
     (x1, y1) = p(bbox['minX'], bbox['minY'])
     (x2, y2) = p(bbox['maxX'], bbox['maxY'])
+    # Pad the width of the bounding box as the Albers transform results in regions of interest
+    # that are a bit narrower than I would like, which risks watershed boundaries lying beyond
+    # the DEM boundary.
+    len_x = x2 - x1
+    del_x = len_x * 0.30
+    x1 = x1 - del_x
+    x2 = x2 + del_x
     bbox_srs = DEFAULT_SRS
  
     # Find the number of grid cells from the grid origin to each edge of the request.
