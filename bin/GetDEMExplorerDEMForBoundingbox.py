@@ -42,7 +42,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 import textwrap
 
-msg = "This module is deprecated as the underlying WCS4DEM server is no longer available. " +  \
-      "Use GetUSGSDEMForBoundingBox.py for U.S.-based elevation data or GetGADEMForBoundBox.py " + \
+msg = "This module is deprecated as the underlying WCS4DEM service is no longer available. " +  \
+      "Use GetUSGSDEMForBoundingbox.py for U.S.-based elevation data or GetGADEMForBoundingBox.py " + \
       "for Australian elevation data."
 print("\n" + textwrap.fill(msg) + "\n")
