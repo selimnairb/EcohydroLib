@@ -311,7 +311,7 @@ will consist of running the follow scripts in the following order:
 1. GetNHDStreamflowGageIdentifiersAndLocation.py
 2. GetCatchmentShapefileForNHDStreamflowGage.py
 3. GetBoundingboxFromStudyAreaShapefile.py
-4. GetDEMExplorerDEMForBoundingbox.py
+4. GetUSGSDEMForBoundingbox.py
 5. GetNLCDForDEMExtent.py
 6. GetSSURGOFeaturesForBoundingbox.py
 7. GenerateSoilPropertyRastersFromSSURGO.py or GenerateSoilPropertyRastersFromSOLIM.py
@@ -343,7 +343,7 @@ A workflow using custom streamflow gage, but with standard spatial data (NED, NL
 could consist of running the follow scripts in the following order:
 1. RegisterStudyAreaShapefile.py
 2. GetBoundingboxFromStudyAreaShapefile.py
-3. GetDEMExplorerDEMForBoundingbox.py
+3. GetUSGSDEMForBoundingbox.py
 4. GetNLCDForDEMExtent.py
 5. GetSSURGOFeaturesForBoundingbox.py
 6. GenerateSoilPropertyRastersFromSSURGO.py
