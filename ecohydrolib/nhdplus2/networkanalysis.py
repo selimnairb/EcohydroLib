@@ -243,7 +243,42 @@ def getUpstreamReachesSQL(conn, comID, allUpstreamReaches):
         allUpstreamReaches.append(u)
         # Find reaches upstream of it
         getUpstreamReachesSQL(conn, u, allUpstreamReaches)
+        
+def getUpstreamReachesSQL_stack(conn, comID, allUpstreamReaches):
+    """ Recursively searches PlusFlow table in an SQLite database for all stream reaches
+        upstream of a given reach.
+    
+        @note This method has no return value. Upstream reaches discovered are appended to allUpstreamReaches list.
+    
+        @param conn A connection to an SQLite3 database
+        @param comID The ComID of the reach whose upstream reaches are to be discovered
+        @param allUpstreamReaches A list containing integers representing comIDs of upstream reaches
+    """
+    upstream_reaches = getPlusFlowPredecessors(conn, comID)
+    if len(upstream_reaches) == 1 and upstream_reaches[0] == 0:
+        # We're at a headwater reach
+        return
 
+    next_upstream = []
+    while True:
+        # Foreach reach upstream of this reach
+        for u in upstream_reaches:
+            if u == 0:
+                # We're at a headwater reach
+                break
+            
+            # Record the upstream reach
+            allUpstreamReaches.append(u)
+            
+            # Find reaches upstream of it
+            next_upstream.append(u)
+        
+        if len(next_upstream) > 0:
+            upstream_reaches = getPlusFlowPredecessors(conn, next_upstream.pop())
+        else:
+            break
+        
+    return
 
 def getFirstOrderUpstreamReachesNotInSet(config, comID, comIdsInSet, maxdepth=30):
     """ Search for upstream reaches downstream of reaches in the specified set.
@@ -605,7 +640,7 @@ def getCatchmentFeaturesForReaches(config, outputDir,
 
 def getCatchmentFeaturesForComid(config, outputDir,
                                 catchmentFilename, comID,
-                                format=OGR_SHAPEFILE_DRIVER_NAME):
+                                format=OGR_SHAPEFILE_DRIVER_NAME, test=False):
     """ Get features (in WGS 84) for the drainage area associated with a
         given NHD (National Hydrography Dataset) stream reach.
          
@@ -642,7 +677,11 @@ def getCatchmentFeaturesForComid(config, outputDir,
     
     # Get upstream reaches
     reaches = [comID]
-    getUpstreamReachesSQL(conn, comID, reaches)
+    if test:
+        print("getUpstreamReachesSQL test")
+        getUpstreamReachesSQL_stack(conn, comID, reaches)
+    else:
+        getUpstreamReachesSQL(conn, comID, reaches)
     #sys.stderr.write("Upstream reaches: ")
     #sys.stderr.write(upstream_reaches)
     conn.close()
@@ -654,7 +693,7 @@ def getCatchmentFeaturesForComid(config, outputDir,
  
 def getCatchmentFeaturesForGage(config, outputDir,
                                 catchmentFilename, reachcode, measure, 
-                                format=OGR_SHAPEFILE_DRIVER_NAME):
+                                format=OGR_SHAPEFILE_DRIVER_NAME, test=False):
     """ Get features (in WGS 84) for the drainage area associated with a
         given NHD (National Hydrography Dataset) streamflow gage
         identified by a reach code and measure.
@@ -706,4 +745,4 @@ def getCatchmentFeaturesForGage(config, outputDir,
     
     return getCatchmentFeaturesForComid(config, outputDir,
                                 catchmentFilename, comID,
-                                format)
+                                format, test)
