@@ -48,7 +48,7 @@ if __name__ == "__main__":
     # Handle command line options
     parser = argparse.ArgumentParser(description='Download NED DEM data via USGS-hosted WCS web')
     parser.add_argument('-i', '--configfile', dest='configfile', required=False,
-                        help='The configuration file. Must define section "GRASS" and option "GISBASE"')
+                        help='The configuration file.')
     parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
                         help='The directory to which metadata, intermediate, and final files should be saved')
     parser.add_argument('-s', '--resampleMethod', dest='resampleMethod', required=False,
