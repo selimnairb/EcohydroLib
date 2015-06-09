@@ -164,18 +164,17 @@ def getDEMForBoundingBox(config, outputDir, outFilename, bbox, srs, coverage=DEF
     grid_origin_0 = grid_origin[0] + grid_offset[0] / 2.0
     grid_origin_1 = grid_origin[1] + grid_offset[1] / 2.0
     
-    if t_srs != 'EPSG:4326':
-        # Transform bounding box coords to t_srs
-        p_in = Proj(init='EPSG:4326')
-        p_out = Proj(init=t_srs)
-        (x1, y1) = transform(p_in, p_out, bbox['minX'], bbox['minY'])
-        (x2, y2) = transform(p_in, p_out, bbox['maxX'], bbox['maxY'])
-        bbox_srs = t_srs
-    else:
-        p = Proj(init=DEFAULT_SRS)
-        (x1, y1) = p(bbox['minX'], bbox['minY'])
-        (x2, y2) = p(bbox['maxX'], bbox['maxY'])
-        bbox_srs = DEFAULT_SRS
+    p = Proj(init=DEFAULT_SRS)
+    (x1, y1) = p(bbox['minX'], bbox['minY'])
+    (x2, y2) = p(bbox['maxX'], bbox['maxY'])
+    # Pad the width of the bounding box as the Albers transform results in regions of interest
+    # that are a bit narrower than I would like, which risks watershed boundaries lying beyond
+    # the DEM boundary.
+    len_x = x2 - x1
+    del_x = len_x * 0.30
+    x1 = x1 - del_x
+    x2 = x2 + del_x
+    bbox_srs = DEFAULT_SRS
  
     # Find the number of grid cells from the grid origin to each edge of the request.
     # Multiply by the grid_offset and add the grid origin to get to the request location.
@@ -248,7 +247,8 @@ def getDEMForBoundingBox(config, outputDir, outFilename, bbox, srs, coverage=DEF
             msg += data 
         raise Exception(msg)
     else:
-        msg = "Query for raster from URL %s returned content type %s, was expecting type %s.  Operation failed." % \
+        msg = "Query for raster from URL %s returned content type %s, was expecting type %s. " + \
+              " Operation failed." % \
             (coverage_url, contentType, mimeType)
         raise Exception(msg)
 
@@ -261,15 +261,18 @@ def getDEMForBoundingBox(config, outputDir, outFilename, bbox, srs, coverage=DEF
         rescaleRaster(config, tmp_dir, tmp_cov_name, rescale_out, scale)
         tmp_cov_name = os.path.join(tmp_dir, rescale_out)
     
-    # Re-project to desired coordinate system
     if deleteOldfile:
         deleteGeoTiff(outFilepath)
     
     if verbose:
-        outfp.write("Resampling raster from {s_srs} to {t_srs} with X resolution {resx} and Y resolution {resy}\n".format(s_srs=s_srs,
-                                                                                                                          t_srs=t_srs,
-                                                                                                                          resx=resx,
-                                                                                                                          resy=resy))
+        msg = "Resampling raster from {s_srs} to {t_srs} " + \
+              "with X resolution {resx} and Y resolution {resy}\n"
+        outfp.write(msg.format(s_srs=s_srs,
+                               t_srs=t_srs,
+                               resx=resx,
+                               resy=resy))
+    
+    # Re-sample to target spatial reference and resolution
     resampleRaster(config, outputDir, tmp_cov_name,  outFilename,
                    s_srs, t_srs, resx, resy, interpolation)
     
