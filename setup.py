@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='ecohydrolib',
-      version='1.25',
+      version='1.26.dev1',
       description='Libraries and command-line scripts for performing ecohydrology data preparation workflows.',
       long_description=readme(),
       classifiers=[
@@ -42,9 +42,12 @@ setup(name='ecohydrolib',
         'oset',
         'httplib2',
         'shapely',
-        'requests'
+        'requests',
+        'hs_restclient',
+        'clint'
       ],
-      scripts=['bin/DumpClimateStationInfo.py',
+      scripts=['bin/CreateHydroShareResource.py',
+               'bin/DumpClimateStationInfo.py',
                'bin/DumpMetadataToiRODSXML.py',
                'bin/GenerateSoilPropertyRastersFromSOLIM.py',
                'bin/GenerateSoilPropertyRastersFromSSURGO.py',

@@ -1,6 +1,6 @@
 """@package ecohydrolib.hydroshare
     
-@brief Utilities for interacting with HydroShare (http://www.hydroshare.org)
+@brief Utilities for interacting with HydroShare (http://www.hydroshare.org/)
 
 This software is provided free of charge under the New BSD License. Please see
 the following license information:
@@ -33,6 +33,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 @author Brian Miles <brian_miles@unc.edu>
 """
+import sys
 import os
 import tempfile
 import zipfile
@@ -40,12 +41,40 @@ import shutil
 
 from hs_restclient import HydroShare, HydroShareAuthBasic
 
+from clint.textui.progress import Bar
+
+
+def create_console_callback(size):
+    """ 
+    Create progress callback suitable for displaying the progress of a
+    requests_toolbelt.MultipartEncoderMonitor to a text console.
+    
+    @param size int representing the number of bytes to be read be the
+    MultipartEncoderMonitor
+    """
+    bar = Bar(expected_size=size, filled_char=u'\u25A0', every=1024)
+    def callback(monitor):
+        bar.show(monitor.bytes_read)
+    return callback
+
 def _addToZip((project_dir, zfile), dirname, names):
     clean_dir = os.path.relpath(dirname, project_dir)
     for name in names:
         filename = os.path.join(dirname, name)
         arcname = os.path.join(clean_dir, name)
         zfile.write(filename, arcname)
+
+def get_password_authentication(username, password):
+    """
+    Get HydroShare authentication object that can be
+    used to authenticate using a username and password
+    
+    @param username string
+    @param password string
+    
+    @return HydroShareAuth object
+    """
+    return HydroShareAuthBasic(username, password)
 
 def create_hydroshare_resource(context,
                                auth,
@@ -55,7 +84,9 @@ def create_hydroshare_resource(context,
                                resource_type='GenericResource',
                                abstract=None,
                                keywords=None,
-                               create_callback=None):
+                               create_callback=None,
+                               verbose=False,
+                               outfp=sys.stderr):
     """
     Create HydroShare resource of an EcohydroLib project
     
@@ -76,21 +107,28 @@ def create_hydroshare_resource(context,
         file size in bytes, and generates a callable to provide feedback 
         to the user about the progress of the upload of resource_file.  
         For more information, see:
-        http://toolbelt.readthedocs.org/en/latest/uploading-data.html#monitoring-your-streaming-multipart-upload 
-        
+        http://toolbelt.readthedocs.org/en/latest/uploading-data.html#monitoring-your-streaming-multipart-upload
+    @param verbose Boolean True if detailed output information should be printed to outfp
+    @param outfp File-like object to which verbose output should be printed
+    
     @return string representing the ID of the newly created resource
     """
     temp_dir = tempfile.mkdtemp()
-    print(temp_dir)
     zip_filename = "{0}.zip".format(os.path.basename(context.projectDir))
     zip_filepath = os.path.join(temp_dir, zip_filename)
     
     # Zip up the project for upload ...
+    if verbose:
+        outfp.write("Creating archive...")
+        outfp.flush()
     zfile = zipfile.ZipFile(zip_filepath, 'w', 
                             zipfile.ZIP_DEFLATED,
                             True)
     os.path.walk(context.projectDir, _addToZip, (context.projectDir, zfile))
     zfile.close()
+    if verbose:
+        outfp.write("done\n")
+        outfp.flush()
     
     # Make upload progress callback
     progress_callback = None
@@ -98,13 +136,29 @@ def create_hydroshare_resource(context,
         s = os.stat(zip_filepath)
         progress_callback = create_callback(s.st_size)
     
-    hs = HydroShare(hostname=hydroshare_host, port=hydroshare_port,
-                    use_https=use_https, auth=auth)
-    resource_id = hs.createResource(resource_type, title, 
-                                    resource_file=zip_filepath, resource_filename=zip_filename, 
-                                    abstract=abstract, keywords=keywords,
-                                    progress_callback=progress_callback)
-    
-    shutil.rmtree(temp_dir)
+    if verbose:
+        outfp.write("Uploading to HydroShare...")
+        outfp.flush()
+        outfp.write("                               \nThis is a hack\r")
+        outfp.flush()
+    if hydroshare_host:
+        hs = HydroShare(hostname=hydroshare_host, port=hydroshare_port,
+                        use_https=use_https, auth=auth)
+    else:
+        hs = HydroShare(port=hydroshare_port,
+                        use_https=use_https, auth=auth)
+    resource_id = None
+    try:
+        resource_id = hs.createResource(resource_type, title, 
+                                        resource_file=zip_filepath, resource_filename=zip_filename, 
+                                        abstract=abstract, keywords=keywords,
+                                        progress_callback=progress_callback)
+        if verbose:
+            outfp.write("\nID of new resource is {0}\n".format(resource_id))
+            outfp.flush()
+    except Exception as e:
+        raise e
+    finally:
+        shutil.rmtree(temp_dir)
     
     return resource_id
