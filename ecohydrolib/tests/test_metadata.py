@@ -106,6 +106,10 @@ class TestMetadata(TestCase):
         climateGrid = GenericMetadata.readClimateGridEntries(self.context)
         self.assertTrue(climateGrid["key1"] == "value_one")
         
+        GenericMetadata.writeHydroShareEntry(self.context, "resource_id", "fae3688aa1354fb2a558380669229a66")
+        hydroshare = GenericMetadata.readHydroShareEntries(self.context)
+        self.assertTrue(hydroshare["resource_id"] == "fae3688aa1354fb2a558380669229a66")
+        
         
     def test_delete(self):
         GenericMetadata.writeManifestEntry(self.context, "key1", "value_one")
@@ -137,6 +141,13 @@ class TestMetadata(TestCase):
         self.assertTrue(not 'key1' in climateGrid)
         # Delete and empty entry
         GenericMetadata.deleteClimateGridEntry(self.context, "not_in_store")
+        
+        GenericMetadata.writeHydroShareEntry(self.context, "resource_id", "fae3688aa1354fb2a558380669229a66")
+        hydroshare = GenericMetadata.readHydroShareEntries(self.context)
+        self.assertTrue(hydroshare["resource_id"] == "fae3688aa1354fb2a558380669229a66")
+        GenericMetadata.deleteHydroShareEntry(self.context, "resource_id")
+        hydroshare = GenericMetadata.readHydroShareEntries(self.context)
+        self.assertTrue(not 'resource_id' in hydroshare)
         
         
     def test_write_climate_point1(self):

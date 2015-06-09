@@ -5,7 +5,7 @@
 This software is provided free of charge under the New BSD License. Please see
 the following license information:
 
-Copyright (c) 2013, University of North Carolina at Chapel Hill
+Copyright (c) 2013-2015, University of North Carolina at Chapel Hill
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -425,9 +425,10 @@ class GenericMetadata(object):
     CLIMATE_POINT_SECTION = 'climate_point'
     CLIMATE_GRID_SECTION = 'climate_grid'
     MODEL_RUN_SECTION = 'model_run'
+    HYDROSHARE_SECTION = 'hydroshare'
     SECTIONS = [ECOHYDROLIB_SECION, MANIFEST_SECTION, PROVENANCE_SECTION, HISTORY_SECTION,
                 STUDY_AREA_SECTION, GRASS_SECTION, CLIMATE_POINT_SECTION, CLIMATE_GRID_SECTION,
-                MODEL_RUN_SECTION]
+                MODEL_RUN_SECTION, HYDROSHARE_SECTION]
     
     HISTORY_PROTO = "processing%sstep%s" % (KEY_SEP, KEY_SEP)
 
@@ -793,6 +794,22 @@ class GenericMetadata(object):
             @exception IOError(errno.EACCES) if the metadata store for the project is not writable
         """
         GenericMetadata.writeEntryToSection(context, GenericMetadata.CLIMATE_GRID_SECTION, key, value)
+    
+    
+    @staticmethod 
+    def writeHydroShareEntry(context, key, value):
+        """ Write a HydroShare entry to the metadata store for a given project.
+            
+            @note Will overwrite the value for a key that already exists
+        
+            @param context Context object containing projectDir, the path of the project whose 
+            metadata store is to be written to
+            @param key The key to be written to the study area section of the project metadata
+            @param value The value to be written for key stored in the HydroShare section of the project metadata
+            
+            @exception IOError(errno.EACCES) if the metadata store for the project is not writable
+        """
+        GenericMetadata.writeEntryToSection(context, GenericMetadata.HYDROSHARE_SECTION, key, value)
         
     
     @staticmethod
@@ -858,6 +875,19 @@ class GenericMetadata(object):
             @exception IOError(errno.EACCES) if the metadata store for the project is not writable
         """
         GenericMetadata.deleteEntryFromSection(context, GenericMetadata.CLIMATE_GRID_SECTION, key)
+    
+    
+    @staticmethod 
+    def deleteHydroShareEntry(context, key):
+        """ Delete an entry from the HydroShare section of the metadata store for a given project.
+        
+            @param context Context object containing projectDir, the path of the project whose 
+            metadata store is to be deleted from
+            @param key The key to be deleted from the given section of the project metadata
+            
+            @exception IOError(errno.EACCES) if the metadata store for the project is not writable
+        """
+        GenericMetadata.deleteEntryFromSection(context, GenericMetadata.HYDROSHARE_SECTION, key)
     
         
     @staticmethod 
@@ -1060,6 +1090,18 @@ class GenericMetadata(object):
             @return A dictionary of key/value pairs from the grid climate section of the project metadata
         """
         return GenericMetadata._readEntriesForSection(context.projectDir, GenericMetadata.CLIMATE_GRID_SECTION)
+
+    
+    @staticmethod
+    def readHydroShareEntries(context):
+        """ Read all HydroShare entries from the metadata store for a given project
+        
+            @param context Context object containing projectDir, the path of the project whose 
+            metadata store is to be read from
+            
+            @return A dictionary of key/value pairs from the study area section of the project metadata
+        """
+        return GenericMetadata._readEntriesForSection(context.projectDir, GenericMetadata.HYDROSHARE_SECTION)
 
 
     @staticmethod
