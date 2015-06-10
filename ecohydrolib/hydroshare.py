@@ -57,6 +57,28 @@ def create_console_callback(size):
         bar.show(monitor.bytes_read)
     return callback
 
+def _getResourceURL(resource_id, hs_host='www.hydroshare.org', hs_port=None, use_https=False):
+    # Hackish temporary function until the HydroShare API makes it
+    # possible to get the web client URL for a resource programatically
+    if hs_host is None:
+        hs_host = 'www.hydroshare.org'
+    scheme = None 
+    if use_https:
+        scheme = 'https://'
+    else:
+        scheme = 'http://'
+    url = None
+    if hs_port:
+        url = "{scheme}{host}:{port}/resource/{id}/".format(scheme=scheme,
+                                                            host=hs_host,
+                                                            port=hs_port,
+                                                            id=resource_id)
+    else:
+        url = "{scheme}{host}/resource/{id}/".format(scheme=scheme,
+                                                     host=hs_host,
+                                                     id=resource_id)
+    return url
+
 def _addToZip((project_dir, zfile), dirname, names):
     clean_dir = os.path.relpath(dirname, project_dir)
     for name in names:
@@ -139,6 +161,8 @@ def create_hydroshare_resource(context,
     if verbose:
         outfp.write("Uploading to HydroShare...")
         outfp.flush()
+        # This next line is needed for some text-based progress indicators 
+        # to properly render.
         outfp.write("                               \nThis is a hack\r")
         outfp.flush()
     if hydroshare_host:
@@ -154,7 +178,10 @@ def create_hydroshare_resource(context,
                                         abstract=abstract, keywords=keywords,
                                         progress_callback=progress_callback)
         if verbose:
-            outfp.write("\nID of new resource is {0}\n".format(resource_id))
+            url = _getResourceURL(resource_id, 
+                                  hydroshare_host, hs_port=hydroshare_port, 
+                                  use_https=use_https)
+            outfp.write("\nNew resource created at:\n{0}\n".format(url))
             outfp.flush()
     except Exception as e:
         raise e
