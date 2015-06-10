@@ -43,7 +43,7 @@ setup(name='ecohydrolib',
         'httplib2',
         'shapely',
         'requests',
-        'hs_restclient',
+        'hs_restclient>=1.1.0',
         'clint'
       ],
       scripts=['bin/CreateHydroShareResource.py',
