@@ -1,5 +1,5 @@
 EcohydroLib			{#index}
-=======================
+=============================
 
 This software is provided free of charge under the New BSD License. Please see
 the following license information:

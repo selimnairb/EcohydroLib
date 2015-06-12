@@ -1,3 +1,6 @@
+# 1.26 - 6/12/2015
+  - Add CreateHydroShareResource to allow projects to be published in HydroShare.
+
 # 1.25 - 5/25/2015
   - Add GetUSGSDEMForBoundingbox for accessing U.S. National Elevation Dataset via USGS-hosted
     OGC WCS web service.
