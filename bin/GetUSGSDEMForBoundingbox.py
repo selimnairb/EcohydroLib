@@ -46,7 +46,7 @@ from ecohydrolib.command.dem import USGSWCSDEM
 
 if __name__ == "__main__":
     # Handle command line options
-    parser = argparse.ArgumentParser(description='Download NED DEM data via USGS-hosted WCS web')
+    parser = argparse.ArgumentParser(description='Download NED DEM data via USGS-hosted WCS web service')
     parser.add_argument('-i', '--configfile', dest='configfile', required=False,
                         help='The configuration file.')
     parser.add_argument('-p', '--projectDir', dest='projectDir', required=True,
