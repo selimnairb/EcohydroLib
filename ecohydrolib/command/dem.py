@@ -87,7 +87,7 @@ class USGSWCSDEM(Command):
         """ Run the command: Acquire USGS DEM data.
         
         Arguments:
-        demType -- string    Source dataset from which DEM tile should be extracted.
+        coverage -- string    Source dataset from which DEM tile should be extracted.
         outfile -- string    The name of the DEM file to be written.  File extension ".tif" will be added.
         demResolution list<float>[2]    Two floating point numbers representing the desired X and Y output resolution of soil property raster maps; unit: meters.
         srs -- string    Target spatial reference system of output, in EPSG:num format.
