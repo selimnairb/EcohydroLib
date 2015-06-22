@@ -53,16 +53,16 @@ from ecohydrolib.spatialdata.utils import getEPSGStringForUTMZone
 from ecohydrolib.spatialdata.utils import getDimensionsForRaster
 from ecohydrolib.spatialdata.utils import getSpatialReferenceForRaster
 
-import ecohydrolib.usgsdem
+import ecohydrolib.usgs.demwcs
 
 
 class USGSWCSDEM(Command):
     
-    SUPPORTED_COVERAGES = ecohydrolib.usgsdem.COVERAGES.keys()
-    DEFAULT_COVERAGE = ecohydrolib.usgsdem.DEFAULT_COVERAGE
+    SUPPORTED_COVERAGES = ecohydrolib.usgs.demwcs.COVERAGES.keys()
+    DEFAULT_COVERAGE = ecohydrolib.usgs.demwcs.DEFAULT_COVERAGE
     
-    DEFAULT_RASTER_RESAMPLE_METHOD = ecohydrolib.usgsdem.DEFAULT_RASTER_RESAMPLE_METHOD
-    RASTER_RESAMPLE_METHOD = ecohydrolib.usgsdem.RASTER_RESAMPLE_METHOD
+    DEFAULT_RASTER_RESAMPLE_METHOD = ecohydrolib.usgs.demwcs.DEFAULT_RASTER_RESAMPLE_METHOD
+    RASTER_RESAMPLE_METHOD = ecohydrolib.usgs.demwcs.RASTER_RESAMPLE_METHOD
     
     def __init__(self, projectDir, configFile=None, outfp=sys.stdout):
             """ Construct a USGSWCSDEM command.
@@ -125,7 +125,7 @@ class USGSWCSDEM(Command):
             srs = getEPSGStringForUTMZone(utmZone, isNorth)
         
         try: 
-            (dataFetched, urlFetched) = ecohydrolib.usgsdem.getDEMForBoundingBox(self.context.config, 
+            (dataFetched, urlFetched) = ecohydrolib.usgs.demwcs.getDEMForBoundingBox(self.context.config, 
                                            self.context.projectDir,
                                            demFilename,
                                            bbox,

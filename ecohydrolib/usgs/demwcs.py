@@ -1,4 +1,4 @@
-"""@package ecohydrolib.usgsdem
+"""@package ecohydrolib.usgs.demwcs
     
 @brief Make WCS 1.1.1 query for DEM data hosted by U.S. Geological Survey
 
