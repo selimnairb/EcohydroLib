@@ -33,16 +33,10 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 @author Brian Miles <brian_miles@unc.edu>
 """
-import os, sys, errno
-import tempfile
-import shutil
-from subprocess import Popen
+import os, sys
 import traceback
 
 from owslib.wcs import WebCoverageService
-
-from ecohydrolib.spatialdata.utils import RASTER_RESAMPLE_METHOD
-from ecohydrolib.spatialdata.utils import resampleRaster
 
 FORMAT_GEOTIFF = 'GeoTIFF'
 FORMATS = set([FORMAT_GEOTIFF])
@@ -138,28 +132,21 @@ def getNLCDRasterDataForBoundingBox(config, outputDir, bbox,
             delete = True
     
     try:
-        tmpdir = tempfile.mkdtemp()
-        print(tmpdir)
-        outFilepathTmp = os.path.join(tmpdir, outFilename)
+        if delete:
+            os.unlink(outFilepath)
         
         wcs = WebCoverageService(URL_BASE, version='1.0.0')
         bbox = [bbox['minX'], bbox['minY'], bbox['maxX'], bbox['maxY']]
         wcsfp = wcs.getCoverage(identifier=COVERAGES[coverage], bbox=bbox,
-                                crs='EPSG:4326',
-                                response_crs='EPSG:4326',
+                                crs=srs,
+                                response_crs=srs,
                                 resx=resx, # their WCS seems to accept resx, resy in meters
                                 resy=resy,
                                 format=fmt,
                                 interpolation=INTERPOLATION_METHODS[interpolation])
-        f = open(outFilepathTmp, 'wb')
+        f = open(outFilepath, 'wb')
         f.write(wcsfp.read())
         f.close()
-            
-        # Resample raster
-        if delete:
-            os.unlink(outFilepath)
-        resampleRaster(config, outputDir, outFilepathTmp, outFilepath,
-                       'EPSG:4326', srs, resx, resy, resampleMethod=interpolation)
         
         return (True, URL_BASE, outFilename)
     except Exception as e:
@@ -167,6 +154,4 @@ def getNLCDRasterDataForBoundingBox(config, outputDir, bbox,
         raise(e)
     finally:
         # Clean-up
-        #shutil.rmtree(tmpdir)
         pass
-    

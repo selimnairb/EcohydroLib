@@ -45,13 +45,7 @@ from ecohydrolib.command.exceptions import CommandException
 from ecohydrolib.metadata import GenericMetadata
 from ecohydrolib.metadata import AssetProvenance
 
-from ecohydrolib.spatialdata.utils import isValidSrs
-from ecohydrolib.spatialdata.utils import bboxFromString
-from ecohydrolib.spatialdata.utils import calculateBoundingBoxCenter
-from ecohydrolib.spatialdata.utils import getUTMZoneFromCoordinates
-from ecohydrolib.spatialdata.utils import getEPSGStringForUTMZone
-from ecohydrolib.spatialdata.utils import getDimensionsForRaster
-from ecohydrolib.spatialdata.utils import getSpatialReferenceForRaster
+from ecohydrolib.spatialdata.utils import getRasterExtentAsBbox
 
 import ecohydrolib.usgs.nlcdwcs
 from ecohydrolib.usgs.nlcdwcs import getNLCDRasterDataForBoundingBox
@@ -82,8 +76,9 @@ class USGSWCSNLCD(Command):
         super(USGSWCSNLCD, self).checkMetadata()
         
         # Check for necessary information in metadata 
-        if not 'bbox_wgs84' in self.studyArea:
-            raise MetadataException("Metadata in project directory %s does not contain a bounding box" % (self.context.projectDir,)) 
+        self.manifest = GenericMetadata.readManifestEntries(self.context)
+        if not 'dem' in self.manifest:
+            raise MetadataException("Metadata in project directory %s does not contain a DEM" % (self.context.projectDir,)) 
         if not 'dem_srs' in self.studyArea:
             raise MetadataException("Metadata in project directory %s does not contain a spatial reference system" % (self.context.projectDir,))
         if not 'dem_res_x' in self.studyArea:
@@ -112,7 +107,10 @@ class USGSWCSNLCD(Command):
         
         self.checkMetadata()
         
-        bbox = bboxFromString(self.studyArea['bbox_wgs84'])
+        demFilename = self.manifest['dem']
+        demFilepath = os.path.join(self.context.projectDir, demFilename)
+        demFilepath = os.path.abspath(demFilepath)
+        bbox = getRasterExtentAsBbox(demFilepath)
  
         if not outfile:
             outfile = 'NLCD'
@@ -145,7 +143,7 @@ class USGSWCSNLCD(Command):
         asset.name = 'landcover'
         asset.dcIdentifier = fname
         asset.dcSource = urlFetched
-        asset.dcTitle = 'The National Landcover Database'
+        asset.dcTitle = "The National Landcover Database: {0}".format(lctype)
         asset.dcPublisher = 'USGS'
         asset.dcDescription = cmdline
         asset.writeToMetadata(self.context)
