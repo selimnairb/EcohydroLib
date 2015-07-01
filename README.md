@@ -122,7 +122,7 @@ Documentation can be found at: http://pythonhosted.org/ecohydrolib
 
 Installation
 ------------
-Detailed installation instructions can be found in the RHESSysWorkflows 
+Detailed installation and usage instructions can be found in the RHESSysWorkflows 
 [readme](https://github.com/selimnairb/RHESSysWorkflows).
 
 The following instructions should only be used by advanced users. 
