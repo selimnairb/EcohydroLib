@@ -45,10 +45,10 @@ class SSURGOFeatureHandler(xml.sax.ContentHandler):
             /wfs:FeatureCollection/gml:featureMember/ms:MapunitPoly/ms:MUKEY
         @note Parses with namespaces turned off. Parse also assumes XML is well-formed
     """
-    wfs_FeatureCollection = "wfs:FeatureCollection"
-    gml_featureMember = "gml:featureMember"
-    ms_MapunitPoly = "ms:MapunitPoly"
-    ms_MapunitPolyExtended = "ms:MapunitPolyExtended"
+    wfs_FeatureCollection = "wfs:featurecollection"
+    gml_featureMember = "gml:featuremember"
+    ms_MapunitPoly = "ms:mapunitpoly"
+    ms_MapunitPolyExtended = "ms:mapunitpolyextended"
     ms_MUKEY = "ms:mukey"
     
     inWfsFeatureCollection = False
@@ -84,8 +84,10 @@ class SSURGOFeatureHandler(xml.sax.ContentHandler):
             @param name The name of the object
             @param attrs Attributes of the element
         """
+        name = name.lower()
+        #import pdb; pdb.set_trace()
         #print "startElement: " + name
-        if (self.inMapunitPolyExtended or self.inMapunitPoly) and ( self.ms_MUKEY == name.lower() ):
+        if (self.inMapunitPolyExtended or self.inMapunitPoly) and (self.ms_MUKEY == name):
             self.getMukey = True
         elif self.inGmlFeatureMember and (self.ms_MapunitPolyExtended == name):
             self.inMapunitPolyExtended = True
@@ -103,6 +105,7 @@ class SSURGOFeatureHandler(xml.sax.ContentHandler):
             @param self This object
             @param name The name of the object
         """
+        name = name.lower()
         if self.getMukey and (self.ms_MUKEY == name):
             self.getMukey = False
         elif self.inMapunitPolyExtended and (self.ms_MapunitPolyExtended == name):

@@ -183,7 +183,7 @@ def _getMapunitFeaturesForBoundingBoxTile(config, outputDir, bboxTile, typeName,
         sys.stderr.write("Fetching SSURGO data for tile %s of %s, bbox: %s\n" % (currTile, numTiles, bboxLabel))
         sys.stderr.flush()
     
-        wfs = WebFeatureService(WFS_URL, version='1.0.0', timeout=SSURGO_WFS_TIMEOUT_SEC)
+        wfs = WebFeatureService(WFS_URL, version='1.1.0', timeout=SSURGO_WFS_TIMEOUT_SEC)
         filter = "<Filter><BBOX><PropertyName>Geometry</PropertyName> <Box srsName='EPSG:4326'><coordinates>%f,%f %f,%f</coordinates> </Box></BBOX></Filter>" % (minX, minY, maxX, maxY)
         
         intGmlFilename = "%s_bbox_%s.gml" % (typeName, bboxLabel)
@@ -194,7 +194,7 @@ def _getMapunitFeaturesForBoundingBoxTile(config, outputDir, bboxTile, typeName,
         downloadAttempts = 0
         while not downloadComplete:
             try:
-                gml = wfs.getfeature(typename=(typeName,), filter=filter, propertyname=None)
+                gml = wfs.getfeature(typename=typeName, filter=filter, propertyname=None)
         
                 # Write intermediate GML to a file
                 out = open(intGmlFilepath, 'w')
@@ -228,7 +228,8 @@ def _getMapunitFeaturesForBoundingBoxTile(config, outputDir, bboxTile, typeName,
         
         # Convert GML to GeoJSON so that we can add fields easily (GDAL 1.10+ validates GML schema 
         #   and won't let us add fields)
-        tmpGeoJSONFilename = convertGMLToGeoJSON(config, outputDir, intGmlFilepath, geoJSONLayername)
+        tmpGeoJSONFilename = convertGMLToGeoJSON(config, outputDir, intGmlFilepath, geoJSONLayername,
+                                                 flip_gml_coords=True)
         tmpGeoJSONFilepath = os.path.join(outputDir, tmpGeoJSONFilename)
         
         # Join map unit component-averaged soil properties to attribute table in GeoJSON file

@@ -479,7 +479,8 @@ def convertGMLToShapefile(config, outputDir, gmlFilepath, layerName, t_srs):
     return shpFilename
 
 
-def convertGMLToGeoJSON(config, outputDir, gmlFilepath, layerName, t_srs='EPSG:4326'):
+def convertGMLToGeoJSON(config, outputDir, gmlFilepath, layerName, t_srs='EPSG:4326',
+                        flip_gml_coords=False):
     """ Convert a GML file to a shapefile.  Will silently exit if GeoJSON already exists
     
         @param config A Python ConfigParser containing the section 'GDAL/OGR' and option 'PATH_OF_OGR2OGR'
@@ -503,7 +504,13 @@ def convertGMLToGeoJSON(config, outputDir, gmlFilepath, layerName, t_srs='EPSG:4
     geojsonFilename = "%s.geojson" % (layerName,)
     geojsonFilepath = os.path.join(outputDir, geojsonFilename)
     if not os.path.exists(geojsonFilepath):
-        ogrCommand = "%s -f 'GeoJSON' -nln %s -t_srs %s %s %s" % (pathToOgrCmd, layerName, t_srs, geojsonFilepath, gmlFilepath)
+        # Need to flip coordinates in GML as SSURGO WFS now returns coordinates in lat, lon order
+        # rather than lon, lat order that OGR expects.  For more information, see:
+        #   http://trac.osgeo.org/gdal/wiki/FAQVector#HowdoIflipcoordinateswhentheyarenotintheexpectedorder
+        if flip_gml_coords and t_srs =='EPSG:4326':
+            ogrCommand = "%s -f 'GeoJSON' -nln %s -s_srs '+proj=latlong +datum=WGS84 +axis=neu +wktext' -t_srs %s %s %s" % (pathToOgrCmd, layerName, t_srs, geojsonFilepath, gmlFilepath)
+        else:
+            ogrCommand = "%s -f 'GeoJSON' -nln %s -t_srs %s %s %s" % (pathToOgrCmd, layerName, t_srs, geojsonFilepath, gmlFilepath)
         returnCode = os.system(ogrCommand)
         if returnCode != 0:
             raise Exception("GML to GeoJSON command %s returned %d" % (ogrCommand, returnCode))
