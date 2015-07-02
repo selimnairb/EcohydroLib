@@ -34,6 +34,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 @author Brian Miles <brian_miles@unc.edu>
 """
 import os, sys
+import urllib
 import traceback
 
 from owslib.wcs import WebCoverageService
@@ -143,12 +144,14 @@ def getNLCDRasterDataForBoundingBox(config, outputDir, bbox,
                                 resx=resx, # their WCS seems to accept resx, resy in meters
                                 resy=resy,
                                 format=fmt,
-                                interpolation=INTERPOLATION_METHODS[interpolation])
+                                interpolation=INTERPOLATION_METHODS[interpolation],
+                                **{'band': '1'})
+        url = urllib.unquote(wcsfp.geturl())
         f = open(outFilepath, 'wb')
         f.write(wcsfp.read())
         f.close()
         
-        return (True, URL_BASE, outFilename)
+        return (True, url, outFilename)
     except Exception as e:
         traceback.print_exc(file=outfp)
         raise(e)
