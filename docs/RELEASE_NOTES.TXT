@@ -1,3 +1,11 @@
+# 1.29 - 7/2/2015
+  - GetUSGSNLCDForDEMExtent
+    - Fetch only the first band from USGS NLCD WCS service
+    - Return exact URL of query for	storage	in metadata
+
+# 1.28 - 7/1/2015
+  - Update GetSSURGOFeaturesForBoundingbox to work with latest USDA WFS web service.
+
 # 1.27 - 6/22/2015
   - Add GetUSGSNLCDForDEMExtent to allow NLCD 2006 and 2011 data to be downloaded
     from USGS-hosted WCS web service.
