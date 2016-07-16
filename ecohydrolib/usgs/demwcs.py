@@ -57,8 +57,8 @@ from ecohydrolib.spatialdata.utils import deleteGeoTiff
 
 _BUFF_LEN = 4096 * 100
 
-HOST = 'cida-test.er.usgs.gov'
-URL_PROTO = "/nhdplus/geoserver/ows?service=WCS&version=1.1.1&request=GetCoverage&identifier={coverage}&boundingBox={x1},{y1},{x2},{y2},urn:ogc:def:crs:{bbox_srs}&gridBaseCRS=urn:ogc:def:crs:EPSG::5070&gridOffsets={xoffset},{yoffset}&format=image/tiff&store=true"
+HOST = 'cida.usgs.gov'
+URL_PROTO = "/nwc/geoserver/ows?service=WCS&version=1.1.1&request=GetCoverage&identifier={coverage}&boundingBox={x1},{y1},{x2},{y2},urn:ogc:def:crs:{bbox_srs}&gridBaseCRS=urn:ogc:def:crs:EPSG::5070&gridOffsets={xoffset},{yoffset}&format=image/tiff&store=true"
 
 DEFAULT_SRS = 'EPSG:5070'
 DEFAULT_RASTER_RESAMPLE_METHOD = 'cubic'
