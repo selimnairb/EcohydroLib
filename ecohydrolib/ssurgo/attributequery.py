@@ -294,9 +294,12 @@ WHERE c.mukey IN (%s) ORDER BY c.cokey"""
                 'Content-Type': 'text/xml; charset=utf-8',
                 'Content-length': str(len(soapQuery)) }
     h = httplib2.Http()
+    h.follow_redirects = False
+    num_redirections=0
+    
     res = None
     try:
-        (res, content) = h.request(url, method='POST', body=soapQuery, headers=headers)
+        (res, content) = h.request(url, method='POST', body=soapQuery, headers=headers,redirections=num_redirections)
     except socket.error as e:
         raise e
     
