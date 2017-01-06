@@ -280,7 +280,8 @@ WHERE c.mukey IN (%s) ORDER BY c.cokey"""
     # Manually make SOAP query (it's a long story)
     host = 'sdmdataaccess.nrcs.usda.gov'
     url = '/Tabular/SDMTabularService.asmx'
-    url = "http://" + host + url
+    #ORG url = "http://" + host + url
+    url = "https://" + host + url
     
     soapQueryBegin = """<?xml version="1.0" encoding="UTF-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><soap:Header/><soap:Body>
     <RunQuery xmlns="http://SDMDataAccess.nrcs.usda.gov/Tabular/SDMTabularService.asmx">
