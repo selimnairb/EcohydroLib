@@ -186,7 +186,8 @@ def getDEMForBoundingBox(config, outputDir, outFilename, bbox, srs, coverage=DEF
     # coverage, crs, bbox, format. May have the following fields: response_srs, store, resx, resy, interpolation
     url = URL_PROTO.format(coverage=coverage, x1=xi1, y1=yi1, x2=xi2, y2=yi2, bbox_srs=bbox_srs,
                            xoffset=grid_offset[0], yoffset=grid_offset[1])
-    urlFetched = "http://%s%s" % (HOST, url)
+    #ORG urlFetched = "http://%s%s" % (HOST, url)
+    urlFetched = "https://%s%s" % (HOST, url)
 
     if verbose:
         outfp.write("Acquiring DEM data from {0} ...\n".format(urlFetched))
@@ -212,7 +213,8 @@ def getDEMForBoundingBox(config, outputDir, outFilename, bbox, srs, coverage=DEF
     tmp_cov_name = os.path.join(tmp_dir, 'usgswcsdemtmp')
     tmp_out = open(tmp_cov_name, mode='w+b')
     
-    conn = httplib.HTTPConnection(parsed_coverage_url.netloc)
+    #ORG conn = httplib.HTTPConnection(parsed_coverage_url.netloc)
+    conn = httplib.HTTPSConnection(parsed_coverage_url.netloc)
     try:
         conn.request('GET', parsed_coverage_url.path)
         res = conn.getresponse(buffering=True)
