@@ -133,7 +133,9 @@ if not args.skipGageLoc:
     assert(gageLoc)
     gageLocShp = gageLoc[0]
     assert(os.access(gageLocShp, os.R_OK))
-    ogrCommand = '%s -gt 65536 -f "SQLite" -t_srs "EPSG:4326" %s %s' % (pathOfFind, gageLocDB, gageLocShp)
+    #ORG ogrCommand = '%s -gt 65536 -f "SQLite" -t_srs "EPSG:4326" %s %s' % (pathOfFind, gageLocDB, gageLocShp)
+    ogrCommand = '%s -gt 65536 -f "SQLite" -t_srs "EPSG:4326" %s %s' % (pathOfOgr, gageLocDB, gageLocShp)
+     
     returnCode = os.system(ogrCommand)
     assert(returnCode == 0) 
     
