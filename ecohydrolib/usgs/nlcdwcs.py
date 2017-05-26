@@ -44,8 +44,8 @@ FORMATS = set([FORMAT_GEOTIFF])
 MIME_TYPE = {FORMAT_GEOTIFF: 'image/GeoTIFF'}
 FORMAT_EXT = {FORMAT_GEOTIFF: 'tif'}
 
-URL_BASE = "http://raster.nationalmap.gov/arcgis/services/LandCover/USGS_EROS_LandCover_NLCD/MapServer/WCSServer"
-DC_PUBLISHER = "http://raster.nationalmap.gov/arcgis/rest/services/LandCover/USGS_EROS_LandCover_NLCD/MapServer"
+URL_BASE = "https://raster.nationalmap.gov/arcgis/services/LandCover/USGS_EROS_LandCover_NLCD/MapServer/WCSServer"
+DC_PUBLISHER = "https://raster.nationalmap.gov/arcgis/rest/services/LandCover/USGS_EROS_LandCover_NLCD/MapServer"
 
 COVERAGES = {'Land_Cover_2011_AK_1': '1',
              'Land_Cover_2011_CONUS_2': '2',
